@@ -309,9 +309,7 @@ textarea{resize:vertical;min-height:96px;line-height:1.6}
               <optgroup label="Jurídico &amp; Imóveis">
                 <option value="advocacia">⚖️ Advocacia / Escritório Jurídico</option>
                 <option value="corretor">🏠 Corretor de Imóveis</option>
-              </optgroup>
-              <optgroup label="Alimentação">
-                <option value="restaurante">🍽️ Restaurante / Delivery</option>
+                <option value="imobiliaria">🏢 Imobiliária</option>
               </optgroup>
               <optgroup label="Outros">
                 <option value="prof_liberal">💼 Profissional Liberal</option>
@@ -491,10 +489,16 @@ textarea{resize:vertical;min-height:96px;line-height:1.6}
             <div class="ferr" id="err-msg_bv">Campo obrigatório.</div>
           </div>
           <div class="fg">
-            <label for="info_extra">Instruções extras (opcional)</label>
-            <textarea id="info_extra" maxlength="800" oninput="cntChars(this,'cc-extra')" placeholder="Ex: Não atendemos domingos. Apenas hora marcada. Aceitamos cartão e PIX..."></textarea>
-            <div class="char-c" id="cc-extra">0/800</div>
-            <div class="hint">Regras ou informações importantes para a atendente.</div>
+            <label for="info_extra">Instruções especiais <span class="req">*</span></label>
+            <textarea id="info_extra" maxlength="3000" oninput="cntChars(this,'cc-extra')" placeholder="Descreva as regras e especificidades do seu negócio. Exemplos:
+- Dias e horários de cada profissional (ex: Dr. João atende seg/qua/sex)
+- Tolerância de atraso (ex: até 10 min de tolerância)
+- Antecedência mínima para agendamento (ex: agendar com pelo menos 2h de antecedência)
+- Regras de cancelamento (ex: cancelar com 24h de antecedência)
+- Instruções de chegada ou localização
+- Qualquer regra específica do seu negócio" style="min-height:140px"></textarea>
+            <div class="char-c" id="cc-extra">0/3000</div>
+            <div class="ferr" id="err-info_extra">Campo obrigatório.</div>
           </div>
         </div>
       </div>
@@ -603,15 +607,14 @@ const NICHO_NOMES = {
   estetica:'💆 Estética / Spa', clinica_vet:'🐾 Clínica Veterinária',
   banho_tosa:'🛁 Banho e Tosa', academia:'💪 Academia / Personal',
   advocacia:'⚖️ Advocacia', corretor:'🏠 Corretor de Imóveis',
-  restaurante:'🍽️ Restaurante / Delivery',
+  imobiliaria:'🏢 Imobiliária',
   prof_liberal:'💼 Profissional Liberal', outro:'🔧 Outro segmento'
 };
 
 // ─── Campos comuns a todos os nichos ─────────────────────────────
 function commonF() {
   return [
-    {id:'hr_abertura',  label:'Horário de abertura',  type:'time', half:true},
-    {id:'hr_fechamento',label:'Horário de fechamento', type:'time', half:true},
+    {id:'turnos',       type:'shifts'},
     {id:'dias_atend',   label:'Dias de atendimento',   type:'days'},
     {id:'formas_pagamento',  label:'Formas de pagamento',   type:'text',
      ph:'Ex: PIX, Dinheiro, Cartão de crédito/débito'},
@@ -704,11 +707,10 @@ const NICHO_CFG = {
     {id:'tipos_imoveis',label:'Tipos de imóveis',type:'text',ph:'Ex: Residencial, Comercial, Lançamentos'},
     ...commonF()
   ]},
-  restaurante:{title:'Restaurante / Delivery',fields:[
-    {id:'culinaria',label:'Tipo de culinária',type:'text',ph:'Ex: Brasileira, Italiana, Japonesa, Fast Food',req:true},
-    {id:'modalidade',label:'Modalidade de serviço',type:'sel',opts:['Somente local','Somente delivery','Local e delivery','Drive-thru']},
-    {id:'aceita_reserva',label:'Aceita reservas de mesa?',type:'toggle'},
-    {id:'capacidade',label:'Capacidade (mesas / lugares)',type:'text',ph:'Ex: 20 mesas, 80 lugares'},
+  imobiliaria:{title:'Imobiliária',fields:[
+    {id:'especialidade',label:'Especialidade',type:'sel',opts:['Venda','Locação','Venda e Locação','Lançamentos'],req:true},
+    {id:'regioes',label:'Regiões / bairros atendidos',type:'text',ph:'Ex: Centro, Zona Sul, toda a cidade'},
+    {id:'tipos_imoveis',label:'Tipos de imóveis',type:'text',ph:'Ex: Apartamentos, Casas, Salas Comerciais'},
     ...commonF()
   ]},
   prof_liberal:{title:'Profissional Liberal',fields:[
@@ -802,6 +804,7 @@ function validate(s) {
   if (s === 5) {
     if (!req('nome_atendente','err-nome_atendente')) ok = false;
     if (!req('msg_bv','err-msg_bv'))                ok = false;
+    if (!req('info_extra','err-info_extra'))         ok = false;
   }
   return ok;
 }
@@ -882,6 +885,32 @@ function renderF(f) {
         ${(f.opts||[]).map(o=>`<option>${o}</option>`).join('')}
       </select>
     </div>`;
+  if (f.type === 'shifts') return `
+    <div class="fg full">
+      <label>Horário de funcionamento</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div>
+          <div style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">☀️ Manhã — Abertura</div>
+          <input type="time" id="hr_manha_ini" placeholder="08:00">
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">☀️ Manhã — Fechamento</div>
+          <input type="time" id="hr_manha_fim" placeholder="12:00">
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">🌆 Tarde — Abertura</div>
+          <input type="time" id="hr_tarde_ini" placeholder="13:00">
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">🌆 Tarde — Fechamento</div>
+          <input type="time" id="hr_tarde_fim" placeholder="18:00">
+        </div>
+      </div>
+      <label style="display:flex;gap:8px;align-items:center;cursor:pointer;text-transform:none;letter-spacing:0;font-weight:400;font-size:12px;color:var(--text-muted)">
+        <input type="checkbox" id="sem_almoco" style="width:15px;height:15px;accent-color:var(--violet)">
+        Sem intervalo de almoço (horário corrido)
+      </label>
+    </div>`;
   if (f.type === 'time') return `
     <div class="fg">
       <label for="${f.id}">${f.label}</label>
@@ -900,11 +929,20 @@ function addSvc() {
   const id = 'sv'+svcN;
   const el = document.createElement('div');
   el.className = 'dyn-item'; el.id = id;
-  el.innerHTML = `<div class="dyn-row dyn-row-svc">
-    <input type="text" placeholder="Nome do serviço" data-sn>
-    <input type="text" placeholder="Duração" data-sd>
-    <input type="text" placeholder="Preço" data-sp>
-    <button class="btn-rm" onclick="rmItem('${id}')" title="Remover">×</button>
+  el.innerHTML = `<div style="display:flex;gap:8px;align-items:flex-end">
+    <div style="flex:2">
+      <div style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Serviço</div>
+      <input type="text" placeholder="Ex: Corte feminino" data-sn style="padding:9px 12px;font-size:13px">
+    </div>
+    <div style="width:90px">
+      <div style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Duração</div>
+      <input type="text" placeholder="ex: 45min" data-sd style="padding:9px 12px;font-size:13px">
+    </div>
+    <div style="width:100px">
+      <div style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Preço (R$)</div>
+      <input type="text" placeholder="ex: 25,00" data-sp style="padding:9px 12px;font-size:13px">
+    </div>
+    <button class="btn-rm" onclick="rmItem('${id}')" title="Remover" style="margin-bottom:2px">×</button>
   </div>`;
   document.getElementById('svc-list').appendChild(el);
 }
@@ -1000,9 +1038,21 @@ function collectData() {
   });
 
   const diasAtend = nichoData.dias_atendimento || '';
-  const hrAbert   = nichoData.hr_abertura || '';
-  const hrFecha   = nichoData.hr_fechamento || '';
-  const horario   = [diasAtend, hrAbert && hrFecha ? hrAbert + ' às ' + hrFecha : ''].filter(Boolean).join(' | ');
+  const hMI = document.getElementById('hr_manha_ini')?.value || '';
+  const hMF = document.getElementById('hr_manha_fim')?.value || '';
+  const hTI = document.getElementById('hr_tarde_ini')?.value || '';
+  const hTF = document.getElementById('hr_tarde_fim')?.value || '';
+  const semAlmoco = document.getElementById('sem_almoco')?.checked;
+  let horStr = '';
+  if (semAlmoco && hMI && hTF) {
+    horStr = hMI + ' às ' + hTF + ' (corrido)';
+  } else {
+    const hp = [];
+    if (hMI && hMF) hp.push('Manhã ' + hMI + '–' + hMF);
+    if (hTI && hTF) hp.push('Tarde ' + hTI + '–' + hTF);
+    horStr = hp.join(' | ');
+  }
+  const horario = [diasAtend, horStr].filter(Boolean).join(' | ');
 
   return {
     nicho,
