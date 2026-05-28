@@ -585,6 +585,15 @@ let coupon = null;
 let svcN = 0, stfN = 0;
 const LABELS = ['Negócio','Empresa','Config','Equipe','Agente','Enviar'];
 
+// ─── Plano vindo da URL (?plano=essencial|pro|premium) ────────────
+const PLANO_NOMES = {
+  essencial: 'Essencial — R$ 297/mês',
+  pro:       'Pro — R$ 497/mês',
+  premium:   'Premium — R$ 897/mês',
+};
+let planoSelecionado = (new URLSearchParams(window.location.search).get('plano') || 'essencial').toLowerCase();
+if (!PLANO_NOMES[planoSelecionado]) planoSelecionado = 'essencial';
+
 // ─── Nomes de nichos ──────────────────────────────────────────────
 const NICHO_NOMES = {
   clinica_medica:'🏥 Clínica Médica', odontologia:'🦷 Odontologia',
@@ -957,7 +966,7 @@ function buildResumo() {
      <strong>WhatsApp:</strong> ${g('whatsapp')||'-'}<br>
      <strong>Localização:</strong> ${g('cidade')||'-'} — ${g('estado')||'-'}<br>
      <strong>Atendente:</strong> ${g('nome_atendente')||'-'} · tom: ${tone}<br>
-     <strong>Plano:</strong> 7 dias gratuitos → assinatura mensal após período`;
+     <strong>Plano:</strong> ${PLANO_NOMES[planoSelecionado]} — 7 dias gratuitos incluídos`;
 }
 
 function g(id) { const el=document.getElementById(id); return el?el.value.trim():''; }
@@ -1019,6 +1028,7 @@ function collectData() {
     cupom:                 coupon?.code || '',
     aceite_lgpd:           document.getElementById('aceite_lgpd').checked,
     origem:                'wizard_cadastro',
+    plano:                 planoSelecionado,
   };
 }
 
