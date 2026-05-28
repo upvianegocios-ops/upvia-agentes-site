@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cadastro — UpvIA Agentes</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #07070D;
+  --bg-card: #0D0D1A;
+  --bg-input: #12121E;
+  --bg-hover: #1A1A2E;
+  --cyan: #00D2FF;
+  --cyan-dim: #00A8CC;
+  --cyan-glow: rgba(0,210,255,0.1);
+  --violet: #6C5CE7;
+  --violet-light: #A29BFE;
+  --violet-glow: rgba(108,92,231,0.1);
+  --grad: linear-gradient(135deg,#00D2FF,#6C5CE7);
+  --text: #E8E8F0;
+  --text-muted: #6868A0;
+  --border: rgba(255,255,255,0.07);
+  --border-cyan: rgba(0,210,255,0.35);
+  --border-violet: rgba(108,92,231,0.3);
+  --danger: #FF6B6B;
+  --success: #00CF9D;
+  --success-glow: rgba(0,207,157,0.12);
+  --warning: #F7C948;
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);
+  min-height:100vh;padding:28px 16px 64px;position:relative;overflow-x:hidden;
+}
+body::before,body::after{
+  content:'';position:fixed;border-radius:50%;pointer-events:none;z-index:0;filter:blur(120px);
+}
+body::before{width:700px;height:700px;
+  background:radial-gradient(circle,rgba(0,210,255,0.07) 0%,transparent 70%);
+  top:-200px;left:-200px;}
+body::after{width:700px;height:700px;
+  background:radial-gradient(circle,rgba(108,92,231,0.09) 0%,transparent 70%);
+  bottom:-200px;right:-200px;}
+.wrap{position:relative;z-index:1;max-width:720px;margin:0 auto}
+
+/* Header */
+.site-header{text-align:center;margin-bottom:36px}
+.logo{font-size:30px;font-weight:900;letter-spacing:-1px;
+  background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.logo-sub{margin-top:6px;font-size:14px;color:var(--text-muted)}
+
+/* Progress */
+.progress-wrap{display:flex;align-items:center;justify-content:center;margin-bottom:28px}
+.s-item{display:flex;flex-direction:column;align-items:center;gap:5px;position:relative;z-index:1}
+.s-circle{width:38px;height:38px;border-radius:50%;border:2px solid var(--border-violet);
+  background:var(--bg-card);display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700;color:var(--text-muted);transition:all 0.3s}
+.s-circle.active{border-color:var(--cyan);background:var(--cyan-glow);color:var(--cyan);
+  box-shadow:0 0 14px rgba(0,210,255,0.25)}
+.s-circle.done{border-color:var(--violet);background:var(--violet);color:#fff}
+.s-label{font-size:10px;color:var(--text-muted);font-weight:600;white-space:nowrap;transition:color 0.3s}
+.s-item.active .s-label{color:var(--cyan)}
+.s-item.done .s-label{color:var(--violet-light)}
+.s-line{flex:1;height:2px;background:var(--border);margin:0 6px 22px;
+  transition:background 0.3s;min-width:16px;max-width:60px}
+.s-line.done{background:var(--violet)}
+
+/* Card */
+.wizard-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);
+  box-shadow:0 32px 80px rgba(0,0,0,0.6);overflow:hidden}
+
+/* Panels */
+.panel{display:none;animation:slideIn 0.3s ease}
+.panel.active{display:block}
+@keyframes slideIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
+
+.p-head{padding:26px 30px 18px;border-bottom:1px solid var(--border);
+  background:linear-gradient(135deg,rgba(0,210,255,0.03),rgba(108,92,231,0.03))}
+.p-tag{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--cyan);margin-bottom:6px}
+.p-title{font-size:21px;font-weight:700;margin-bottom:5px}
+.p-desc{font-size:13px;color:var(--text-muted);line-height:1.6}
+.p-body{padding:26px 30px}
+
+/* Forms */
+.fg{display:flex;flex-direction:column;gap:7px}
+.grid{display:grid;gap:18px}
+.grid-2{grid-template-columns:1fr 1fr}
+.full{grid-column:1/-1}
+label{font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px}
+.req{color:var(--cyan);margin-left:2px}
+input[type=text],input[type=email],input[type=tel],input[type=time],
+input[type=number],select,textarea{
+  width:100%;padding:11px 14px;background:var(--bg-input);border:1px solid var(--border);
+  border-radius:var(--radius-sm);color:var(--text);font-family:'Outfit',sans-serif;
+  font-size:14px;transition:all 0.2s;outline:none;appearance:none;
+}
+input:focus,select:focus,textarea:focus{
+  border-color:var(--border-cyan);box-shadow:0 0 0 3px rgba(0,210,255,0.08);background:var(--bg-hover)}
+input::placeholder,textarea::placeholder{color:var(--text-muted);opacity:.55}
+input.err,select.err,textarea.err{border-color:rgba(255,107,107,.5)}
+select{cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 10 7'%3E%3Cpath fill='%236868A0' d='M5 7L0 0h10z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+textarea{resize:vertical;min-height:96px;line-height:1.6}
+.hint{font-size:11px;color:var(--text-muted);margin-top:2px}
+.ferr{font-size:11px;color:var(--danger);margin-top:2px;display:none}
+.ferr.show{display:block}
+
+/* Toggle */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;
+  padding:11px 14px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm)}
+.tg-info h4{font-size:13px;font-weight:600;color:var(--text)}
+.toggle{position:relative;width:44px;height:24px;flex-shrink:0}
+.toggle input{display:none}
+.tslider{position:absolute;inset:0;background:var(--bg-hover);border:1px solid var(--border);
+  border-radius:12px;cursor:pointer;transition:all .3s}
+.tslider::after{content:'';position:absolute;width:16px;height:16px;border-radius:50%;
+  background:var(--text-muted);top:3px;left:3px;transition:all .3s}
+.toggle input:checked+.tslider{background:var(--cyan-glow);border-color:var(--cyan)}
+.toggle input:checked+.tslider::after{background:var(--cyan);transform:translateX(20px)}
+
+/* Day picker */
+.day-picker{display:flex;gap:7px;flex-wrap:wrap;margin-top:2px}
+.day-chip{padding:6px 11px;border-radius:20px;border:1px solid var(--border);
+  background:var(--bg-input);font-size:12px;font-weight:700;color:var(--text-muted);
+  cursor:pointer;transition:all .2s;user-select:none}
+.day-chip.sel{background:var(--violet-glow);border-color:var(--violet);color:var(--violet-light)}
+.day-chip:hover:not(.sel){border-color:var(--border-violet);color:var(--text)}
+
+/* Dynamic lists */
+.dyn-section{margin-bottom:24px}
+.dyn-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:10px}
+.dyn-list{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+.dyn-item{background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px}
+.dyn-row{display:grid;gap:8px;align-items:center}
+.dyn-row-svc{grid-template-columns:2fr 90px 100px 32px}
+.dyn-row-stf{grid-template-columns:1fr 1fr 32px}
+.dyn-row input{padding:9px 12px;font-size:13px}
+.btn-rm{width:28px;height:28px;border-radius:50%;border:1px solid rgba(255,107,107,.3);
+  background:rgba(255,107,107,.07);color:var(--danger);font-size:16px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+.btn-rm:hover{background:rgba(255,107,107,.2);border-color:var(--danger)}
+.btn-add{display:flex;align-items:center;gap:8px;width:100%;padding:9px 14px;
+  background:var(--bg-hover);border:1px dashed var(--border-violet);border-radius:var(--radius-sm);
+  color:var(--violet-light);font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;
+  cursor:pointer;transition:all .2s}
+.btn-add:hover{background:var(--violet-glow);border-color:var(--violet)}
+
+/* Tone cards */
+.tone-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.tone-card{padding:14px;background:var(--bg-input);border:2px solid var(--border);
+  border-radius:var(--radius-sm);cursor:pointer;transition:all .2s;text-align:center}
+.tone-card:hover{border-color:var(--border-violet)}
+.tone-card.sel{border-color:var(--violet);background:var(--violet-glow)}
+.tone-icon{font-size:22px;margin-bottom:5px}
+.tone-name{font-size:13px;font-weight:700;color:var(--text)}
+.tone-desc{font-size:11px;color:var(--text-muted);margin-top:2px}
+.tone-card.sel .tone-name{color:var(--violet-light)}
+.char-c{font-size:11px;color:var(--text-muted);text-align:right;margin-top:3px}
+.char-c.warn{color:var(--warning)}
+.char-c.over{color:var(--danger)}
+
+/* Coupon */
+.coupon-box{background:var(--bg-input);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:18px;margin-bottom:18px}
+.coupon-box h3{font-size:14px;font-weight:700;margin-bottom:10px}
+.coup-row{display:flex;gap:8px}
+.coup-row input{flex:1;text-transform:uppercase;letter-spacing:2px;font-weight:700}
+.btn-coup{padding:11px 18px;background:var(--bg-hover);border:1px solid var(--border-violet);
+  border-radius:var(--radius-sm);color:var(--violet-light);font-family:'Outfit',sans-serif;
+  font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .2s}
+.btn-coup:hover{background:var(--violet-glow);border-color:var(--violet)}
+.coup-result{margin-top:8px;font-size:12px;font-weight:600;display:none}
+.coup-result.ok{color:var(--success);display:block}
+.coup-result.no{color:var(--danger);display:block}
+
+/* LGPD */
+.lgpd-box{background:rgba(108,92,231,.05);border:1px solid var(--border-violet);
+  border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:20px}
+.lgpd-row{display:flex;gap:10px;align-items:flex-start}
+.lgpd-row input[type=checkbox]{width:18px;height:18px;min-width:18px;margin-top:2px;
+  accent-color:var(--violet);cursor:pointer}
+.lgpd-row label{font-size:12px;color:var(--text-muted);line-height:1.6;
+  text-transform:none;letter-spacing:0;font-weight:400;cursor:pointer}
+.lgpd-row label a{color:var(--violet-light);text-decoration:underline}
+
+/* Trial banner */
+.trial-banner{display:flex;align-items:center;gap:12px;padding:12px 16px;
+  background:linear-gradient(135deg,rgba(0,210,255,.06),rgba(108,92,231,.06));
+  border:1px solid rgba(0,210,255,.18);border-radius:var(--radius-sm);margin-bottom:18px}
+.trial-banner .ti{font-size:22px}
+.trial-banner p{font-size:13px;color:var(--text-muted);line-height:1.5}
+.trial-banner strong{color:var(--cyan);display:block;font-size:14px;margin-bottom:2px}
+
+/* Resumo */
+.resumo{background:var(--bg-input);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:18px}
+.resumo-title{font-size:13px;font-weight:700;margin-bottom:8px;color:var(--text)}
+.resumo-body{font-size:12px;color:var(--text-muted);line-height:2}
+.resumo-body strong{color:var(--text)}
+
+/* Nav */
+.wizard-nav{display:flex;gap:10px;padding:18px 30px 24px;
+  border-top:1px solid var(--border);background:rgba(0,0,0,.15)}
+.btn-back{padding:12px 22px;border-radius:var(--radius-sm);border:1px solid var(--border-violet);
+  background:transparent;color:var(--text-muted);font-family:'Outfit',sans-serif;
+  font-size:14px;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-back:hover{background:var(--bg-hover);color:var(--text)}
+.btn-next,.btn-submit{flex:1;padding:12px 22px;border-radius:var(--radius-sm);border:none;
+  background:var(--grad);color:#fff;font-family:'Outfit',sans-serif;font-size:15px;
+  font-weight:700;cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:10px}
+.btn-next:hover,.btn-submit:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.btn-next:active,.btn-submit:active{transform:scale(.98)}
+.btn-next:disabled,.btn-submit:disabled{opacity:.5;cursor:not-allowed;filter:none;transform:none}
+
+/* Spinner */
+.spin{width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;
+  border-radius:50%;animation:rotate .8s linear infinite;display:none}
+.spin.show{display:block}
+@keyframes rotate{to{transform:rotate(360deg)}}
+
+/* Result screens */
+.result-screen{display:none;text-align:center;padding:56px 30px}
+.result-screen.show{display:block}
+.result-icon{width:76px;height:76px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:38px;margin:0 auto 22px}
+.result-icon.ok{background:var(--success-glow);border:2px solid var(--success);
+  box-shadow:0 0 28px rgba(0,207,157,.25)}
+.result-icon.bad{background:rgba(255,107,107,.08);border:2px solid var(--danger);
+  box-shadow:0 0 28px rgba(255,107,107,.2)}
+.result-title{font-size:24px;font-weight:800;margin-bottom:8px}
+.result-title.grad{background:var(--grad);-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;background-clip:text}
+.result-title.err{color:var(--danger)}
+.result-desc{font-size:14px;color:var(--text-muted);line-height:1.7;
+  max-width:460px;margin:0 auto 24px}
+.trial-badge{display:inline-flex;align-items:center;gap:8px;padding:9px 18px;
+  background:var(--success-glow);border:1px solid var(--success);border-radius:22px;
+  font-size:13px;font-weight:700;color:var(--success);margin-bottom:24px}
+.next-steps{padding:14px 18px;background:var(--cyan-glow);border:1px solid rgba(0,210,255,.25);
+  border-radius:var(--radius-sm);font-size:12px;color:var(--text-muted);
+  text-align:left;max-width:400px;margin:0 auto;line-height:1.9}
+.next-steps strong{color:var(--cyan);display:block;margin-bottom:4px}
+.footer{text-align:center;margin-top:20px;font-size:11px;color:var(--text-muted)}
+
+/* Responsive */
+@media(max-width:640px){
+  .p-head,.p-body{padding:18px}
+  .wizard-nav{padding:14px 18px 18px}
+  .grid-2{grid-template-columns:1fr}
+  .dyn-row-svc{grid-template-columns:1fr 32px}
+  .dyn-row-svc input:nth-child(2),.dyn-row-svc input:nth-child(3){display:none}
+  .s-label{display:none}
+  .s-circle{width:32px;height:32px;font-size:12px}
+}
+@media(max-width:380px){body{padding:12px 8px 40px}.logo{font-size:24px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="site-header">
+    <div class="logo">UpvIA Agentes</div>
+    <p class="logo-sub">Configure sua atendente inteligente em minutos ✨</p>
+  </div>
+
+  <div class="progress-wrap" id="progressWrap"></div>
+
+  <div class="wizard-card" id="wizardCard">
+
+    <!-- ETAPA 1 — Tipo de Negócio -->
+    <div class="panel" id="p1">
+      <div class="p-head">
+        <div class="p-tag">Etapa 1 de 6</div>
+        <h2 class="p-title">Qual é o seu segmento?</h2>
+        <p class="p-desc">Escolha o tipo de negócio. Isso adapta os campos das próximas etapas ao seu nicho.</p>
+      </div>
+      <div class="p-body">
+        <div class="grid" style="gap:20px">
+          <div class="fg full">
+            <label for="nicho">Segmento de atuação <span class="req">*</span></label>
+            <select id="nicho" onchange="onNichoChange(this.value)">
+              <option value="">— Selecione o segmento —</option>
+              <optgroup label="Saúde &amp; Bem-estar">
+                <option value="clinica_medica">🏥 Clínica Médica</option>
+                <option value="odontologia">🦷 Odontologia</option>
+                <option value="psicologia">🧠 Psicologia / Terapia</option>
+                <option value="nutricao">🥗 Nutrição</option>
+                <option value="fisioterapia">🏃 Fisioterapia</option>
+                <option value="laboratorio">🔬 Laboratório de Exames</option>
+              </optgroup>
+              <optgroup label="Beleza &amp; Estética">
+                <option value="salao_beleza">💅 Salão de Beleza</option>
+                <option value="barbearia">✂️ Barbearia</option>
+                <option value="estetica">💆 Estética / Spa</option>
+              </optgroup>
+              <optgroup label="Pet">
+                <option value="clinica_vet">🐾 Clínica Veterinária</option>
+                <option value="banho_tosa">🛁 Banho e Tosa / Pet Shop</option>
+              </optgroup>
+              <optgroup label="Fitness">
+                <option value="academia">💪 Academia / Personal Trainer</option>
+              </optgroup>
+              <optgroup label="Jurídico &amp; Imóveis">
+                <option value="advocacia">⚖️ Advocacia / Escritório Jurídico</option>
+                <option value="corretor">🏠 Corretor de Imóveis</option>
+              </optgroup>
+              <optgroup label="Alimentação">
+                <option value="restaurante">🍽️ Restaurante / Delivery</option>
+              </optgroup>
+              <optgroup label="Outros">
+                <option value="prof_liberal">💼 Profissional Liberal</option>
+                <option value="outro">🔧 Outro segmento</option>
+              </optgroup>
+            </select>
+            <div class="ferr" id="err-nicho">Selecione um segmento para continuar.</div>
+          </div>
+          <div id="nicho-preview" style="display:none;padding:12px 14px;background:var(--bg-input);border:1px solid var(--border-cyan);border-radius:var(--radius-sm)">
+            <div id="nicho-preview-name" style="font-size:14px;color:var(--cyan);font-weight:700"></div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:3px">Campos específicos aguardam na etapa 3 ✓</div>
+          </div>
+        </div>
+      </div>
+      <div class="wizard-nav">
+        <button class="btn-next" onclick="goNext()">Próximo →</button>
+      </div>
+    </div>
+
+    <!-- ETAPA 2 — Dados da Empresa -->
+    <div class="panel" id="p2">
+      <div class="p-head">
+        <div class="p-tag">Etapa 2 de 6</div>
+        <h2 class="p-title">Dados da empresa</h2>
+        <p class="p-desc">Informações básicas para identificação e contato do seu negócio.</p>
+      </div>
+      <div class="p-body">
+        <div class="grid grid-2" style="gap:16px">
+          <div class="fg full">
+            <label for="nome_negocio">Nome do negócio <span class="req">*</span></label>
+            <input type="text" id="nome_negocio" placeholder="Ex: Clínica Saúde Plena">
+            <div class="ferr" id="err-nome_negocio">Campo obrigatório.</div>
+          </div>
+          <div class="fg full">
+            <label for="nome_completo">Nome do responsável <span class="req">*</span></label>
+            <input type="text" id="nome_completo" placeholder="Seu nome completo">
+            <div class="ferr" id="err-nome_completo">Campo obrigatório.</div>
+          </div>
+          <div class="fg">
+            <label for="email">E-mail <span class="req">*</span></label>
+            <input type="email" id="email" placeholder="contato@seunegocio.com">
+            <div class="ferr" id="err-email">E-mail inválido.</div>
+          </div>
+          <div class="fg">
+            <label for="telefone">Telefone fixo</label>
+            <input type="tel" id="telefone" placeholder="(11) 3333-4444" oninput="maskPhone(this)">
+          </div>
+          <div class="fg">
+            <label for="whatsapp">WhatsApp <span class="req">*</span></label>
+            <input type="tel" id="whatsapp" placeholder="(11) 99999-8888" oninput="maskPhone(this)">
+            <div class="hint">Receberá notificações do sistema.</div>
+            <div class="ferr" id="err-whatsapp">Campo obrigatório.</div>
+          </div>
+          <div class="fg full">
+            <label for="endereco">Endereço</label>
+            <input type="text" id="endereco" placeholder="Ex: Rua das Flores, 123 — Jardim América">
+            <div class="hint">Endereço completo do negócio (usado para configurar a atendente).</div>
+          </div>
+          <div class="fg">
+            <label for="cidade">Cidade <span class="req">*</span></label>
+            <input type="text" id="cidade" placeholder="Ex: São Paulo">
+            <div class="ferr" id="err-cidade">Campo obrigatório.</div>
+          </div>
+          <div class="fg">
+            <label for="estado">Estado <span class="req">*</span></label>
+            <select id="estado">
+              <option value="">— UF —</option>
+              <option>AC</option><option>AL</option><option>AP</option><option>AM</option>
+              <option>BA</option><option>CE</option><option>DF</option><option>ES</option>
+              <option>GO</option><option>MA</option><option>MT</option><option>MS</option>
+              <option>MG</option><option>PA</option><option>PB</option><option>PR</option>
+              <option>PE</option><option>PI</option><option>RJ</option><option>RN</option>
+              <option>RS</option><option>RO</option><option>RR</option><option>SC</option>
+              <option>SP</option><option>SE</option><option>TO</option>
+            </select>
+            <div class="ferr" id="err-estado">Selecione o estado.</div>
+          </div>
+          <div class="fg full">
+            <label for="instagram">Instagram (opcional)</label>
+            <input type="text" id="instagram" placeholder="Ex: @seunegocio">
+            <div class="hint">Perfil do seu negócio no Instagram.</div>
+          </div>
+        </div>
+      </div>
+      <div class="wizard-nav">
+        <button class="btn-back" onclick="goPrev()">← Voltar</button>
+        <button class="btn-next" onclick="goNext()">Próximo →</button>
+      </div>
+    </div>
+
+    <!-- ETAPA 3 — Config do Nicho (dinâmica) -->
+    <div class="panel" id="p3">
+      <div class="p-head">
+        <div class="p-tag">Etapa 3 de 6</div>
+        <h2 class="p-title" id="p3-title">Configurações do negócio</h2>
+        <p class="p-desc">Detalhes específicos para personalizar sua atendente ao seu segmento.</p>
+      </div>
+      <div class="p-body">
+        <div id="nicho-fields"></div>
+      </div>
+      <div class="wizard-nav">
+        <button class="btn-back" onclick="goPrev()">← Voltar</button>
+        <button class="btn-next" onclick="goNext()">Próximo →</button>
+      </div>
+    </div>
+
+    <!-- ETAPA 4 — Serviços e Profissionais -->
+    <div class="panel" id="p4">
+      <div class="p-head">
+        <div class="p-tag">Etapa 4 de 6</div>
+        <h2 class="p-title">Serviços e profissionais</h2>
+        <p class="p-desc">Cadastre os serviços que você oferece e sua equipe. Pode adicionar mais depois.</p>
+      </div>
+      <div class="p-body">
+        <div class="dyn-section">
+          <div class="dyn-title">🛎️ Serviços oferecidos</div>
+          <div class="dyn-list" id="svc-list"></div>
+          <button class="btn-add" onclick="addSvc()">+ Adicionar serviço</button>
+        </div>
+        <div class="dyn-section" style="margin-top:8px">
+          <div class="dyn-title">👤 Profissionais / Colaboradores</div>
+          <div class="dyn-list" id="stf-list"></div>
+          <button class="btn-add" onclick="addStf()">+ Adicionar profissional</button>
+        </div>
+      </div>
+      <div class="wizard-nav">
+        <button class="btn-back" onclick="goPrev()">← Voltar</button>
+        <button class="btn-next" onclick="goNext()">Próximo →</button>
+      </div>
+    </div>
+
+    <!-- ETAPA 5 — Personalização do Agente -->
+    <div class="panel" id="p5">
+      <div class="p-head">
+        <div class="p-tag">Etapa 5 de 6</div>
+        <h2 class="p-title">Personalização da atendente</h2>
+        <p class="p-desc">Configure nome, personalidade e a primeira mensagem que seus clientes vão receber.</p>
+      </div>
+      <div class="p-body">
+        <div class="grid" style="gap:22px">
+          <div class="fg">
+            <label for="nome_atendente">Nome da atendente <span class="req">*</span></label>
+            <input type="text" id="nome_atendente" value="Mariana" placeholder="Ex: Mariana, Sofia, Ana...">
+            <div class="hint">Nome que seus clientes verão no WhatsApp.</div>
+            <div class="ferr" id="err-nome_atendente">Campo obrigatório.</div>
+          </div>
+          <div class="fg">
+            <label>Tom de voz <span class="req">*</span></label>
+            <div class="tone-grid">
+              <div class="tone-card sel" onclick="selTone('amigavel',this)">
+                <div class="tone-icon">😊</div>
+                <div class="tone-name">Amigável</div>
+                <div class="tone-desc">Caloroso e próximo</div>
+              </div>
+              <div class="tone-card" onclick="selTone('profissional',this)">
+                <div class="tone-icon">💼</div>
+                <div class="tone-name">Profissional</div>
+                <div class="tone-desc">Formal e objetivo</div>
+              </div>
+              <div class="tone-card" onclick="selTone('descontraido',this)">
+                <div class="tone-icon">🎉</div>
+                <div class="tone-name">Descontraído</div>
+                <div class="tone-desc">Leve e divertido</div>
+              </div>
+              <div class="tone-card" onclick="selTone('empatico',this)">
+                <div class="tone-icon">🤝</div>
+                <div class="tone-name">Empático</div>
+                <div class="tone-desc">Cuidadoso e humano</div>
+              </div>
+            </div>
+            <input type="hidden" id="tom_voz" value="amigavel">
+          </div>
+          <div class="fg">
+            <label for="msg_bv">Mensagem de boas-vindas <span class="req">*</span></label>
+            <textarea id="msg_bv" maxlength="400" oninput="cntChars(this,'cc-bv')">Olá! Sou a Mariana, atendente virtual. Como posso te ajudar hoje? 😊</textarea>
+            <div class="char-c" id="cc-bv">0/400</div>
+            <div class="ferr" id="err-msg_bv">Campo obrigatório.</div>
+          </div>
+          <div class="fg">
+            <label for="info_extra">Instruções extras (opcional)</label>
+            <textarea id="info_extra" maxlength="800" oninput="cntChars(this,'cc-extra')" placeholder="Ex: Não atendemos domingos. Apenas hora marcada. Aceitamos cartão e PIX..."></textarea>
+            <div class="char-c" id="cc-extra">0/800</div>
+            <div class="hint">Regras ou informações importantes para a atendente.</div>
+          </div>
+        </div>
+      </div>
+      <div class="wizard-nav">
+        <button class="btn-back" onclick="goPrev()">← Voltar</button>
+        <button class="btn-next" onclick="goNext()">Próximo →</button>
+      </div>
+    </div>
+
+    <!-- ETAPA 6 — Cupom + LGPD + Enviar -->
+    <div class="panel" id="p6">
+      <div class="p-head">
+        <div class="p-tag">Etapa 6 de 6</div>
+        <h2 class="p-title">Quase lá! Finalize o cadastro</h2>
+        <p class="p-desc">Aplique um cupom se tiver, aceite os termos e crie sua atendente.</p>
+      </div>
+      <div class="p-body">
+        <div class="trial-banner">
+          <span class="ti">🎁</span>
+          <p><strong>7 dias gratuitos incluídos</strong>Sem cobrança durante o período de teste. Cancele quando quiser.</p>
+        </div>
+        <div class="coupon-box">
+          <h3>🏷️ Cupom de desconto</h3>
+          <div class="coup-row">
+            <input type="text" id="cupom" placeholder="SEU-CUPOM" autocomplete="off" oninput="this.value=this.value.toUpperCase()">
+            <button class="btn-coup" onclick="aplicarCupom()">Aplicar</button>
+          </div>
+          <div class="coup-result" id="coup-result"></div>
+        </div>
+        <div class="lgpd-box">
+          <div class="lgpd-row">
+            <input type="checkbox" id="aceite_lgpd">
+            <label for="aceite_lgpd">
+              Li e concordo com os <a href="#" onclick="return false">Termos de Uso</a> e a
+              <a href="#" onclick="return false">Política de Privacidade</a> da UpvIA Agentes.
+              Autorizo o tratamento dos meus dados conforme a LGPD (Lei 13.709/2018).
+            </label>
+          </div>
+          <div class="ferr" id="err-lgpd" style="margin-top:8px">Você precisa aceitar os termos para continuar.</div>
+        </div>
+        <div class="resumo">
+          <div class="resumo-title">📋 Resumo do cadastro</div>
+          <div class="resumo-body" id="resumo-body">—</div>
+        </div>
+      </div>
+      <div class="wizard-nav">
+        <button class="btn-back" onclick="goPrev()">← Voltar</button>
+        <button class="btn-submit" id="btn-enviar" onclick="submitForm()">
+          <span id="enviar-txt">Criar minha atendente ✨</span>
+          <div class="spin" id="enviar-spin"></div>
+        </button>
+      </div>
+    </div>
+
+    <!-- SUCESSO -->
+    <div class="result-screen" id="tela-ok">
+      <div class="result-icon ok">✅</div>
+      <h2 class="result-title grad">Cadastro realizado!</h2>
+      <div class="trial-badge">🎁 7 dias gratuitos ativados</div>
+      <p class="result-desc">Sua atendente IA está sendo configurada. Em breve você receberá no WhatsApp o link para conectar seu número e começar a atender seus clientes automaticamente.</p>
+      <div class="next-steps">
+        <strong>📱 Próximos passos:</strong>
+        1. Verifique seu WhatsApp — enviaremos o link de conexão<br>
+        2. Escaneie o QR Code para vincular seu número<br>
+        3. Sua atendente começa a trabalhar imediatamente! 🚀
+      </div>
+    </div>
+
+    <!-- ERRO -->
+    <div class="result-screen" id="tela-err">
+      <div class="result-icon bad">⚠️</div>
+      <h2 class="result-title err">Algo deu errado</h2>
+      <p class="result-desc" id="err-msg">Não foi possível processar seu cadastro. Verifique sua conexão e tente novamente.</p>
+      <button class="btn-next" style="width:auto;padding:12px 28px" onclick="voltarDoErro()">← Tentar novamente</button>
+    </div>
+
+  </div><!-- /wizard-card -->
+
+  <p class="footer">UpvIA Agentes • Seu período de 7 dias gratuitos começa ao conectar o WhatsApp.</p>
+</div>
+
+<script>
+// ─── Estado ───────────────────────────────────────────────────────
+let step = 1;
+const TOTAL = 6;
+let tone = 'amigavel';
+let coupon = null;
+let svcN = 0, stfN = 0;
+const LABELS = ['Negócio','Empresa','Config','Equipe','Agente','Enviar'];
+
+// ─── Nomes de nichos ──────────────────────────────────────────────
+const NICHO_NOMES = {
+  clinica_medica:'🏥 Clínica Médica', odontologia:'🦷 Odontologia',
+  psicologia:'🧠 Psicologia / Terapia', nutricao:'🥗 Nutrição',
+  fisioterapia:'🏃 Fisioterapia', laboratorio:'🔬 Laboratório',
+  salao_beleza:'💅 Salão de Beleza', barbearia:'✂️ Barbearia',
+  estetica:'💆 Estética / Spa', clinica_vet:'🐾 Clínica Veterinária',
+  banho_tosa:'🛁 Banho e Tosa', academia:'💪 Academia / Personal',
+  advocacia:'⚖️ Advocacia', corretor:'🏠 Corretor de Imóveis',
+  restaurante:'🍽️ Restaurante / Delivery',
+  prof_liberal:'💼 Profissional Liberal', outro:'🔧 Outro segmento'
+};
+
+// ─── Campos comuns a todos os nichos ─────────────────────────────
+function commonF() {
+  return [
+    {id:'hr_abertura',  label:'Horário de abertura',  type:'time', half:true},
+    {id:'hr_fechamento',label:'Horário de fechamento', type:'time', half:true},
+    {id:'dias_atend',   label:'Dias de atendimento',   type:'days'},
+    {id:'formas_pagamento',  label:'Formas de pagamento',   type:'text',
+     ph:'Ex: PIX, Dinheiro, Cartão de crédito/débito'},
+  ];
+}
+
+// ─── Configuração de campos por nicho ────────────────────────────
+const NICHO_CFG = {
+  clinica_medica:{title:'Clínica Médica',fields:[
+    {id:'especialidades',label:'Especialidades atendidas',type:'text',ph:'Ex: Clínica Geral, Cardiologia, Pediatria',req:true},
+    {id:'convenios',label:'Convênios aceitos',type:'text',ph:'Ex: Unimed, Bradesco, Particular'},
+    {id:'tipo_atend',label:'Modalidade de atendimento',type:'sel',opts:['Presencial','Teleconsulta','Presencial e Teleconsulta']},
+    {id:'dur_consulta',label:'Duração média da consulta',type:'sel',opts:['30 min','45 min','1 hora','1h30','2 horas']},
+    ...commonF()
+  ]},
+  odontologia:{title:'Odontologia',fields:[
+    {id:'especialidades',label:'Procedimentos / especialidades',type:'text',ph:'Ex: Limpeza, Ortodontia, Clareamento, Implante',req:true},
+    {id:'convenios',label:'Convênios aceitos',type:'text',ph:'Ex: Odontoprev, Porto Seguro, Particular'},
+    {id:'dur_consulta',label:'Duração média da consulta',type:'sel',opts:['30 min','1 hora','1h30','2 horas']},
+    ...commonF()
+  ]},
+  psicologia:{title:'Psicologia / Terapia',fields:[
+    {id:'abordagem',label:'Abordagem terapêutica',type:'text',ph:'Ex: TCC, Psicanálise, Humanista'},
+    {id:'tipo_atend',label:'Modalidade',type:'sel',opts:['Presencial','Online','Presencial e Online']},
+    {id:'dur_sessao',label:'Duração das sessões',type:'sel',opts:['45 min','50 min','1 hora']},
+    {id:'aceita_planos',label:'Aceita planos de saúde?',type:'sel',opts:['Não, apenas particular','Sim, alguns planos','Sim, vários convênios']},
+    ...commonF()
+  ]},
+  nutricao:{title:'Nutrição',fields:[
+    {id:'especialidade',label:'Especialidade em nutrição',type:'text',ph:'Ex: Esportiva, Clínica, Estética, Infantil'},
+    {id:'tipo_atend',label:'Modalidade',type:'sel',opts:['Presencial','Online','Presencial e Online']},
+    {id:'dur_consulta',label:'Duração das consultas',type:'sel',opts:['30 min','45 min','1 hora','1h30']},
+    ...commonF()
+  ]},
+  fisioterapia:{title:'Fisioterapia',fields:[
+    {id:'especialidades',label:'Áreas de atuação',type:'text',ph:'Ex: Ortopédica, Neurológica, Esportiva',req:true},
+    {id:'dur_sessao',label:'Duração média da sessão',type:'sel',opts:['30 min','45 min','1 hora','1h30']},
+    {id:'atende_dom',label:'Atende a domicílio?',type:'toggle'},
+    ...commonF()
+  ]},
+  laboratorio:{title:'Laboratório de Exames',fields:[
+    {id:'tipos_exames',label:'Tipos de exames realizados',type:'text',ph:'Ex: Hemograma, Glicemia, PCR, Hormônios',req:true},
+    {id:'coleta_dom',label:'Realiza coleta a domicílio?',type:'toggle'},
+    {id:'prazo_result',label:'Prazo médio dos resultados',type:'text',ph:'Ex: 24h para maioria, 72h para culturas'},
+    ...commonF()
+  ]},
+  salao_beleza:{title:'Salão de Beleza',fields:[
+    {id:'especialidades',label:'Serviços principais',type:'text',ph:'Ex: Corte, Coloração, Escova, Manicure',req:true},
+    {id:'atende_dom',label:'Atende a domicílio?',type:'toggle'},
+    ...commonF()
+  ]},
+  barbearia:{title:'Barbearia',fields:[
+    {id:'especialidades',label:'Serviços principais',type:'text',ph:'Ex: Corte masculino, Barba, Sobrancelha, Pigmentação',req:true},
+    ...commonF()
+  ]},
+  estetica:{title:'Estética / Spa',fields:[
+    {id:'especialidades',label:'Procedimentos oferecidos',type:'text',ph:'Ex: Limpeza de pele, Massagem, Drenagem',req:true},
+    {id:'atende_dom',label:'Atende a domicílio?',type:'toggle'},
+    {id:'dur_media',label:'Duração média',type:'sel',opts:['30 min','1 hora','1h30','2 horas','Varia por procedimento']},
+    ...commonF()
+  ]},
+  clinica_vet:{title:'Clínica Veterinária',fields:[
+    {id:'especies',label:'Espécies atendidas',type:'text',ph:'Ex: Cães, Gatos, Roedores, Aves, Répteis',req:true},
+    {id:'especialidades',label:'Serviços / especialidades',type:'text',ph:'Ex: Consultas, Cirurgias, Vacinas, Internação'},
+    {id:'atende_dom',label:'Atende a domicílio?',type:'toggle'},
+    {id:'emerg24',label:'Atendimento de emergência 24h?',type:'toggle'},
+    ...commonF()
+  ]},
+  banho_tosa:{title:'Banho e Tosa / Pet Shop',fields:[
+    {id:'especies',label:'Espécies / portes atendidos',type:'text',ph:'Ex: Cães pequenos, médios e grandes, Gatos',req:true},
+    {id:'servicos_extras',label:'Serviços extras',type:'text',ph:'Ex: Hidratação, Hotel pet, Adestramento'},
+    {id:'busca_entrega',label:'Oferece busca e entrega?',type:'toggle'},
+    ...commonF()
+  ]},
+  academia:{title:'Academia / Personal Trainer',fields:[
+    {id:'modalidades',label:'Modalidades oferecidas',type:'text',ph:'Ex: Musculação, Funcional, Pilates, Yoga',req:true},
+    {id:'tipo_contrato',label:'Tipo de plano / contrato',type:'sel',opts:['Mensalidade','Aula avulsa','Pacote de sessões','Mensalidade e avulso']},
+    {id:'atende_dom',label:'Atende a domicílio / online?',type:'toggle'},
+    ...commonF()
+  ]},
+  advocacia:{title:'Advocacia / Escritório Jurídico',fields:[
+    {id:'areas',label:'Áreas de atuação',type:'text',ph:'Ex: Trabalhista, Civil, Família, Empresarial',req:true},
+    {id:'tipo_atend',label:'Modalidade de atendimento',type:'sel',opts:['Presencial','Online','Presencial e Online']},
+    {id:'consulta_gratis',label:'Oferece 1ª consulta gratuita?',type:'toggle'},
+    ...commonF()
+  ]},
+  corretor:{title:'Corretor de Imóveis',fields:[
+    {id:'tipo_imoveis',label:'Tipo de atuação',type:'sel',opts:['Venda','Locação','Venda e Locação'],req:true},
+    {id:'regioes',label:'Regiões / bairros atendidos',type:'text',ph:'Ex: Centro, Zona Sul, toda a cidade'},
+    {id:'tipos_imoveis',label:'Tipos de imóveis',type:'text',ph:'Ex: Residencial, Comercial, Lançamentos'},
+    ...commonF()
+  ]},
+  restaurante:{title:'Restaurante / Delivery',fields:[
+    {id:'culinaria',label:'Tipo de culinária',type:'text',ph:'Ex: Brasileira, Italiana, Japonesa, Fast Food',req:true},
+    {id:'modalidade',label:'Modalidade de serviço',type:'sel',opts:['Somente local','Somente delivery','Local e delivery','Drive-thru']},
+    {id:'aceita_reserva',label:'Aceita reservas de mesa?',type:'toggle'},
+    {id:'capacidade',label:'Capacidade (mesas / lugares)',type:'text',ph:'Ex: 20 mesas, 80 lugares'},
+    ...commonF()
+  ]},
+  prof_liberal:{title:'Profissional Liberal',fields:[
+    {id:'area',label:'Área de atuação / serviço principal',type:'text',ph:'Ex: Consultoria, Design, Contabilidade',req:true},
+    {id:'tipo_atend',label:'Modalidade',type:'sel',opts:['Presencial','Online','Presencial e Online','A combinar']},
+    {id:'atende_dom',label:'Atende externamente / domicílio?',type:'toggle'},
+    ...commonF()
+  ]},
+  outro:{title:'Informações do negócio',fields:[
+    {id:'desc_servico',label:'Descreva seu serviço principal',type:'text',ph:'O que você oferece?',req:true},
+    {id:'tipo_atend',label:'Modalidade',type:'sel',opts:['Presencial','Online','Presencial e Online','A combinar']},
+    ...commonF()
+  ]}
+};
+
+// ─── Cupons válidos ───────────────────────────────────────────────
+const CUPONS = {
+  'UPVIA7':     {desc:'7 dias extras gratuitos'},
+  'PROMO50':    {desc:'50% de desconto no 1º mês'},
+  'BEMVINDO':   {desc:'1 mês grátis'},
+  'PARCEIRO':   {desc:'30% de desconto por 3 meses'},
+  'LANCAMENTO': {desc:'2 meses pelo preço de 1'},
+};
+
+// ─── Init ─────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  buildProgress();
+  addSvc(); addStf();
+  cntChars(document.getElementById('msg_bv'), 'cc-bv');
+  setStep(1);
+});
+
+// ─── Barra de progresso ───────────────────────────────────────────
+function buildProgress() {
+  const wrap = document.getElementById('progressWrap');
+  let h = '';
+  for (let i = 1; i <= TOTAL; i++) {
+    if (i > 1) h += `<div class="s-line" id="sl${i-1}"></div>`;
+    h += `<div class="s-item" id="si${i}">
+      <div class="s-circle" id="sc${i}">${i}</div>
+      <div class="s-label">${LABELS[i-1]}</div>
+    </div>`;
+  }
+  wrap.innerHTML = h;
+}
+
+function setStep(n) {
+  step = n;
+  for (let i = 1; i <= TOTAL; i++) {
+    const sc = document.getElementById('sc'+i);
+    const si = document.getElementById('si'+i);
+    const p  = document.getElementById('p'+i);
+    if (!sc) continue;
+    sc.className = 's-circle'; si.className = 's-item';
+    if (i < n)       { sc.className='s-circle done'; sc.innerHTML='✓'; si.className='s-item done'; }
+    else if (i === n){ sc.className='s-circle active'; sc.innerHTML=i; si.className='s-item active'; }
+    else             { sc.innerHTML=i; }
+    if (p) p.classList.toggle('active', i === n);
+    const ln = document.getElementById('sl'+(i-1));
+    if (ln) ln.classList.toggle('done', i < n);
+  }
+  if (n === 3) renderNichoFields();
+  if (n === 6) buildResumo();
+}
+
+// ─── Navegação ────────────────────────────────────────────────────
+function goNext() {
+  if (!validate(step)) return;
+  setStep(step + 1);
+  document.getElementById('wizardCard').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function goPrev() {
+  setStep(step - 1);
+  document.getElementById('wizardCard').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// ─── Validação ────────────────────────────────────────────────────
+function validate(s) {
+  let ok = true;
+  if (s === 1) ok = req('nicho','err-nicho');
+  if (s === 2) {
+    ['nome_negocio','nome_completo','cidade','estado','whatsapp'].forEach(id => {
+      if (!req(id,'err-'+id)) ok = false;
+    });
+    const em = document.getElementById('email');
+    const ee = document.getElementById('err-email');
+    if (!em.value.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em.value)) {
+      em.classList.add('err'); ee.classList.add('show'); ok = false;
+    } else { em.classList.remove('err'); ee.classList.remove('show'); }
+  }
+  if (s === 5) {
+    if (!req('nome_atendente','err-nome_atendente')) ok = false;
+    if (!req('msg_bv','err-msg_bv'))                ok = false;
+  }
+  return ok;
+}
+
+function req(id, errId) {
+  const el = document.getElementById(id);
+  const er = document.getElementById(errId);
+  if (!el) return true;
+  if (!el.value.trim()) {
+    el.classList.add('err'); if (er) er.classList.add('show'); return false;
+  }
+  el.classList.remove('err'); if (er) er.classList.remove('show'); return true;
+}
+
+// ─── Etapa 1 — Nicho ──────────────────────────────────────────────
+function onNichoChange(v) {
+  const prev = document.getElementById('nicho-preview');
+  const name = document.getElementById('nicho-preview-name');
+  if (v && NICHO_NOMES[v]) {
+    name.textContent = NICHO_NOMES[v] + ' selecionado';
+    prev.style.display = 'block';
+  } else { prev.style.display = 'none'; }
+}
+
+// ─── Etapa 3 — Campos dinâmicos ──────────────────────────────────
+function renderNichoFields() {
+  const nicho = document.getElementById('nicho').value;
+  const cont  = document.getElementById('nicho-fields');
+  const title = document.getElementById('p3-title');
+  if (!nicho || !NICHO_CFG[nicho]) {
+    cont.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:16px">Volte ao passo 1 e selecione o segmento.</p>';
+    return;
+  }
+  const cfg = NICHO_CFG[nicho];
+  title.textContent = 'Configurações — ' + cfg.title;
+
+  let html = '<div class="grid" style="gap:16px">';
+  let buf = [];
+  cfg.fields.forEach(f => {
+    if (f.half) {
+      buf.push(f);
+      if (buf.length === 2) {
+        html += `<div class="grid grid-2 full" style="gap:12px">${renderF(buf[0])}${renderF(buf[1])}</div>`;
+        buf = [];
+      }
+    } else {
+      if (buf.length) { html += renderF(buf[0]); buf = []; }
+      html += renderF(f);
+    }
+  });
+  if (buf.length) html += renderF(buf[0]);
+  html += '</div>';
+  cont.innerHTML = html;
+}
+
+function renderF(f) {
+  if (f.type === 'toggle') return `
+    <div class="fg full">
+      <div class="toggle-row">
+        <div class="tg-info"><h4>${f.label}</h4></div>
+        <label class="toggle"><input type="checkbox" id="${f.id}"><div class="tslider"></div></label>
+      </div>
+    </div>`;
+  if (f.type === 'days') return `
+    <div class="fg full">
+      <label>${f.label||'Dias de atendimento'}</label>
+      <div class="day-picker">
+        ${['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].map(d =>
+          `<div class="day-chip" data-d="${d}" onclick="this.classList.toggle('sel')">${d}</div>`
+        ).join('')}
+      </div>
+    </div>`;
+  if (f.type === 'sel') return `
+    <div class="fg full">
+      <label for="${f.id}">${f.label}${f.req?' <span class="req">*</span>':''}</label>
+      <select id="${f.id}">
+        <option value="">— Selecione —</option>
+        ${(f.opts||[]).map(o=>`<option>${o}</option>`).join('')}
+      </select>
+    </div>`;
+  if (f.type === 'time') return `
+    <div class="fg">
+      <label for="${f.id}">${f.label}</label>
+      <input type="time" id="${f.id}">
+    </div>`;
+  return `
+    <div class="fg full">
+      <label for="${f.id}">${f.label}${f.req?' <span class="req">*</span>':''}</label>
+      <input type="text" id="${f.id}" placeholder="${f.ph||''}">
+    </div>`;
+}
+
+// ─── Etapa 4 — Serviços / Profissionais ──────────────────────────
+function addSvc() {
+  svcN++;
+  const id = 'sv'+svcN;
+  const el = document.createElement('div');
+  el.className = 'dyn-item'; el.id = id;
+  el.innerHTML = `<div class="dyn-row dyn-row-svc">
+    <input type="text" placeholder="Nome do serviço" data-sn>
+    <input type="text" placeholder="Duração" data-sd>
+    <input type="text" placeholder="Preço" data-sp>
+    <button class="btn-rm" onclick="rmItem('${id}')" title="Remover">×</button>
+  </div>`;
+  document.getElementById('svc-list').appendChild(el);
+}
+
+function addStf() {
+  stfN++;
+  const id = 'st'+stfN;
+  const el = document.createElement('div');
+  el.className = 'dyn-item'; el.id = id;
+  el.innerHTML = `<div class="dyn-row dyn-row-stf">
+    <input type="text" placeholder="Nome do profissional" data-tn>
+    <input type="text" placeholder="Especialidade / função" data-tc>
+    <button class="btn-rm" onclick="rmItem('${id}')" title="Remover">×</button>
+  </div>`;
+  document.getElementById('stf-list').appendChild(el);
+}
+
+function rmItem(id) { const el=document.getElementById(id); if(el) el.remove(); }
+
+// ─── Etapa 5 — Tom de voz / chars ────────────────────────────────
+function selTone(t, el) {
+  document.querySelectorAll('.tone-card').forEach(c => c.classList.remove('sel'));
+  el.classList.add('sel');
+  tone = t;
+  document.getElementById('tom_voz').value = t;
+}
+
+function cntChars(el, cid) {
+  const c = document.getElementById(cid);
+  if (!c) return;
+  const n = el.value.length, mx = el.maxLength;
+  c.textContent = n+'/'+mx;
+  c.className = 'char-c'+(n>=mx?' over':n>mx*.85?' warn':'');
+}
+
+// ─── Etapa 6 — Cupom ─────────────────────────────────────────────
+function aplicarCupom() {
+  const code = document.getElementById('cupom').value.trim().toUpperCase();
+  const res  = document.getElementById('coup-result');
+  if (!code) { res.className='coup-result no'; res.textContent='⚠️ Digite um código de cupom.'; return; }
+  if (CUPONS[code]) {
+    coupon = {code, ...CUPONS[code]};
+    res.className='coup-result ok'; res.textContent='✅ Cupom aplicado: '+coupon.desc;
+  } else {
+    coupon = null;
+    res.className='coup-result no'; res.textContent='❌ Cupom inválido ou expirado.';
+  }
+}
+
+// ─── Etapa 6 — Resumo ────────────────────────────────────────────
+function buildResumo() {
+  const nichoEl = document.getElementById('nicho');
+  const nichoNm = nichoEl.options[nichoEl.selectedIndex]?.text || '-';
+  document.getElementById('resumo-body').innerHTML =
+    `<strong>Negócio:</strong> ${g('nome_negocio')||'-'}<br>
+     <strong>Segmento:</strong> ${nichoNm}<br>
+     <strong>Responsável:</strong> ${g('nome_completo')||'-'}<br>
+     <strong>E-mail:</strong> ${g('email')||'-'}<br>
+     <strong>WhatsApp:</strong> ${g('whatsapp')||'-'}<br>
+     <strong>Localização:</strong> ${g('cidade')||'-'} — ${g('estado')||'-'}<br>
+     <strong>Atendente:</strong> ${g('nome_atendente')||'-'} · tom: ${tone}<br>
+     <strong>Plano:</strong> 7 dias gratuitos → assinatura mensal após período`;
+}
+
+function g(id) { const el=document.getElementById(id); return el?el.value.trim():''; }
+
+// ─── Coleta de dados ──────────────────────────────────────────────
+function collectData() {
+  const nicho = document.getElementById('nicho').value;
+  const cfg   = NICHO_CFG[nicho] || {fields:[]};
+  const nichoData = {};
+  cfg.fields.forEach(f => {
+    if (f.type==='days') {
+      nichoData.dias_atendimento = Array.from(
+        document.querySelectorAll('#nicho-fields .day-chip.sel')
+      ).map(c=>c.dataset.d).join(', ');
+    } else {
+      const el = document.getElementById(f.id);
+      if (el) nichoData[f.id] = f.type==='toggle' ? el.checked : el.value;
+    }
+  });
+
+  const svcs = [];
+  document.querySelectorAll('#svc-list .dyn-item').forEach(it => {
+    const n = it.querySelector('[data-sn]')?.value.trim();
+    if (n) svcs.push({nome:n, duracao:it.querySelector('[data-sd]')?.value.trim()||'', preco:it.querySelector('[data-sp]')?.value.trim()||''});
+  });
+
+  const profs = [];
+  document.querySelectorAll('#stf-list .dyn-item').forEach(it => {
+    const n = it.querySelector('[data-tn]')?.value.trim();
+    if (n) profs.push({nome:n, cargo:it.querySelector('[data-tc]')?.value.trim()||''});
+  });
+
+  const diasAtend = nichoData.dias_atendimento || '';
+  const hrAbert   = nichoData.hr_abertura || '';
+  const hrFecha   = nichoData.hr_fechamento || '';
+  const horario   = [diasAtend, hrAbert && hrFecha ? hrAbert + ' às ' + hrFecha : ''].filter(Boolean).join(' | ');
+
+  return {
+    nicho,
+    tipo_negocio:          nicho,
+    nome_negocio:          g('nome_negocio'),
+    nome_completo:         g('nome_completo'),
+    email:                 g('email'),
+    telefone:              g('telefone'),
+    whatsapp:              g('whatsapp'),
+    endereco:              g('endereco'),
+    instagram:             g('instagram'),
+    cidade:                g('cidade'),
+    estado:                g('estado'),
+    cidade_estado:         g('cidade') + (g('estado') ? ' — ' + g('estado') : ''),
+    horario_funcionamento: horario,
+    formas_pagamento:      nichoData.formas_pagamento || '',
+    servicos:              svcs,
+    profissionais:         profs,
+    nome_atendente:        g('nome_atendente'),
+    tom_voz:               tone,
+    msg_boas_vindas:       document.getElementById('msg_bv').value,
+    info_extra:            g('info_extra'),
+    cupom:                 coupon?.code || '',
+    aceite_lgpd:           document.getElementById('aceite_lgpd').checked,
+    origem:                'wizard_cadastro',
+  };
+}
+
+// ─── Submit ───────────────────────────────────────────────────────
+async function submitForm() {
+  const lgpd = document.getElementById('aceite_lgpd');
+  const lgpdErr = document.getElementById('err-lgpd');
+  if (!lgpd.checked) { lgpdErr.classList.add('show'); return; }
+  lgpdErr.classList.remove('show');
+
+  const btn=document.getElementById('btn-enviar'),
+        txt=document.getElementById('enviar-txt'),
+        spn=document.getElementById('enviar-spin');
+  btn.disabled=true; txt.textContent='Enviando...'; spn.classList.add('show');
+
+  const data = collectData();
+  localStorage.setItem('upvia_trial_inicio',    new Date().toISOString());
+  localStorage.setItem('upvia_trial_expiracao', new Date(Date.now() + 7*24*60*60*1000).toISOString());
+  localStorage.setItem('upvia_negocio',         data.nome_negocio);
+  localStorage.setItem('upvia_nicho',           data.nicho);
+  localStorage.setItem('upvia_email',           data.email);
+
+  try {
+    const res = await fetch('https://n8n.upviaagentes.com/webhook/cadastro-cliente', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(data)
+    });
+    if (res.ok || res.status===200 || res.status===201) { showOk(); }
+    else throw new Error('HTTP '+res.status);
+  } catch(e) {
+    console.error(e);
+    showErr('Não foi possível enviar seu cadastro. Verifique sua conexão e tente novamente.');
+  } finally {
+    btn.disabled=false; txt.textContent='Criar minha atendente ✨'; spn.classList.remove('show');
+  }
+}
+
+function showOk() {
+  document.getElementById('progressWrap').style.display='none';
+  document.querySelectorAll('#wizardCard .panel').forEach(p=>{p.style.display='none';p.classList.remove('active')});
+  document.getElementById('tela-ok').classList.add('show');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function showErr(msg) {
+  document.getElementById('err-msg').textContent = msg||'Erro ao enviar.';
+  document.querySelectorAll('#wizardCard .panel').forEach(p=>{p.style.display='none';p.classList.remove('active')});
+  document.getElementById('tela-err').classList.add('show');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function voltarDoErro() {
+  document.getElementById('tela-err').classList.remove('show');
+  setStep(step);
+}
+
+// ─── Máscara de telefone ──────────────────────────────────────────
+function maskPhone(el) {
+  let v = el.value.replace(/\D/g,'').substring(0,11);
+  if (v.length>10)     v = v.replace(/^(\d{2})(\d{5})(\d{4})$/,'($1) $2-$3');
+  else if (v.length>6) v = v.replace(/^(\d{2})(\d{4})(\d{0,4})$/,'($1) $2-$3');
+  else if (v.length>2) v = v.replace(/^(\d{2})(\d{0,5})$/,'($1) $2');
+  else if (v.length>0) v = '('+v;
+  el.value = v;
+}
+</script>
+</body>
+</html>

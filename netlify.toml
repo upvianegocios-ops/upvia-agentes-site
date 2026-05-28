@@ -1,0 +1,25 @@
+[build]
+  publish = "."
+  command = ""
+
+# Rota limpa para o formulário de onboarding
+[[redirects]]
+  from = "/cadastro"
+  to = "/conectar-whatsapp.html"
+  status = 200
+  force = true
+
+# Garante que a raiz serve index.html
+[[redirects]]
+  from = "/"
+  to = "/index.html"
+  status = 200
+  force = false
+
+# Headers de segurança
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
