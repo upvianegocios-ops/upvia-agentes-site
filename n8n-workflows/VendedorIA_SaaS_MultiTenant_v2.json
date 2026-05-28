@@ -1,4 +1,4 @@
-{
+﻿{
   "name": "VendedorIA SaaS — Multi-Tenant",
   "nodes": [
     {
@@ -68,7 +68,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT id as cliente_id, nome_empresa, instancia_whatsapp, horario_funcionamento, nome_atendente_ia, tom_voz, telefone, nome_proprietario, endereco, formas_pagamento, informacoes_extras, default_calendar, evo_api_url, evo_api_key, \"tabela-serviços+tempo+preço\" as servicos_json, profissionais as profissionais_json, catalogo_sheets_id, link_vendas, tipo_produto, chave_pix, tipo_chave_pix, nome_titular_pix, banco_pix, aceita_cartao, link_checkout, msg_pos_venda FROM clientes_sistema WHERE instancia_whatsapp = '{{ $json.instance }}' AND status = 'ativo' LIMIT 1;",
+        "query": "SELECT id as cliente_id, nome_empresa, instancia_whatsapp, horario_funcionamento, nome_atendente_ia, tom_voz, telefone, nome_proprietario, endereco, formas_pagamento, informacoes_extras, default_calendar, evo_api_url, evo_api_key, servicos as servicos_json, profissionais as profissionais_json, catalogo_sheets_id, link_vendas, tipo_produto, chave_pix, tipo_chave_pix, nome_titular_pix, banco_pix, aceita_cartao, link_checkout, msg_pos_venda FROM clientes_sistema WHERE instancia_whatsapp = '{{ $json.instance }}' AND status = 'ativo' LIMIT 1;",
         "options": {}
       },
       "id": "load-biz-001",

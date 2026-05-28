@@ -1,4 +1,4 @@
-{
+﻿{
   "name": "AtendentIA Multi-Atendimento SaaS",
   "nodes": [
     {
@@ -2726,7 +2726,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT id as cliente_id, nome_empresa, instancia_whatsapp, horario_funcionamento, nome_atendente_ia, tom_voz, telefone, nome_proprietario, endereco, formas_pagamento, informacoes_extras, default_calendar, evo_api_url, evo_api_key, \"tabela-serviços+tempo+preço\" as servicos_json, profissionais as profissionais_json FROM clientes_sistema WHERE  instancia_whatsapp = '{{ $(\"Filtro + Extrair\").item.json.instance }}' LIMIT 1;",
+        "query": "SELECT id as cliente_id, nome_empresa, instancia_whatsapp, horario_funcionamento, nome_atendente_ia, tom_voz, telefone, nome_proprietario, endereco, formas_pagamento, informacoes_extras, default_calendar, evo_api_url, evo_api_key, servicos as servicos_json, profissionais as profissionais_json FROM clientes_sistema WHERE  instancia_whatsapp = '{{ $(\"Filtro + Extrair\").item.json.instance }}' LIMIT 1;",
         "options": {}
       },
       "id": "6a38ad80-b922-4dba-836a-e0cb83eda044",
