@@ -1,0 +1,771 @@
+{
+  "name": "FoodIA SaaS — Multi-Tenant (Restaurantes/Lanchonetes/Pizzarias)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 🍕 FoodIA SaaS — Arquitetura Multi-Tenant\n\n**Agente especializado para Food Service**\n\nRestaurantes, Lanchonetes, Pizzarias, Hamburguerias, Açaiterias, Padarias, Confeitarias, etc.\n\n**Funcionalidades:**\n1. Cardápio dinâmico via Google Sheets (categorias, adicionais, combos)\n2. Montagem inteligente de pedido\n3. Cálculo automático do total\n4. Taxa de entrega por bairro/região\n5. Tempo estimado de preparo + entrega\n6. Pagamento (Pix, cartão, dinheiro/troco)\n7. Status do pedido\n8. Upsell contextual (sobremesa, bebida, combo)\n9. Promoções do dia\n10. Horário de funcionamento inteligente\n\n**Google Sheets necessárias:**\n- Aba 'Cardapio': nome, descricao, preco, categoria, adicionais, disponivel\n- Aba 'Taxas': bairro, taxa, tempo_estimado\n- Aba 'Combos': nome, itens, preco_combo, economia\n- Aba 'Promos': nome, descricao, preco_promo, validade, ativa\n\n**Para adicionar novo restaurante:**\n1. Inserir na tabela `clientes_sistema`\n2. Criar Google Sheet com cardápio\n3. Criar instância Evolution API\n4. Pronto!",
+        "height": 720,
+        "width": 680,
+        "color": 4
+      },
+      "id": "note-arch-001",
+      "name": "Sticky Arquitetura Food",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        60,
+        60
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 🧠 Estratégia de Vendas Food\n\n**Sugestão inteligente:** IA sugere complementos baseado no pedido\n- Pediu hambúrguer → sugere batata e bebida\n- Pediu pizza → sugere borda recheada e refrigerante\n- Pediu açaí → sugere complementos premium\n- Final do pedido → sugere sobremesa\n\n**Combos:** Sempre menciona economia do combo vs itens separados\n\n**Promo do dia:** Se tem promo ativa, menciona naturalmente no início\n\n**Upsell por horário:**\n- Almoço: sugere sobremesa\n- Noite: sugere combo família\n- Final de semana: sugere porção extra",
+        "height": 380,
+        "width": 520,
+        "color": 3
+      },
+      "id": "note-vendas-001",
+      "name": "Sticky Estratégia Food",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        60,
+        820
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "food-ia",
+        "options": {
+          "rawBody": true
+        },
+        "responseMode": "responseNode"
+      },
+      "id": "wh-001",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        840,
+        400
+      ],
+      "typeVersion": 2,
+      "webhookId": "food-ia-saas"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json;\nconst body = raw.body || raw;\n\nconst evento = (body?.event || '').toLowerCase();\nconst fromMe = body?.data?.key?.fromMe ?? false;\nconst remoteJid = body?.data?.key?.remoteJid || '';\nconst messageId = body?.data?.key?.id || '';\nconst instance = body?.instance || body?.instanceName || '';\n\nconst msg = body?.data?.message || {};\nconst text = msg.conversation || msg.extendedTextMessage?.text || '';\nconst hasContent = !!(text || msg.audioMessage || msg.imageMessage || msg.locationMessage);\nconst pushName = body?.data?.pushName || '';\n\nconst isMessage = evento.includes('messages');\nconst isGroup = remoteJid.endsWith('@g.us');\n\nif (!isMessage || isGroup || !hasContent || (fromMe && !text.trim().startsWith('#'))) {\n  return [];\n}\n\n// Detectar localização enviada (para entrega)\nconst location = msg.locationMessage ? {\n  lat: msg.locationMessage.degreesLatitude,\n  lng: msg.locationMessage.degreesLongitude\n} : null;\n\nreturn [{\n  json: {\n    instance: String(instance),\n    remoteJid,\n    telefone: remoteJid.replace(/@s\\.whatsapp\\.net$/, ''),\n    text: text || (location ? 'Localização enviada' : ''),\n    pushName,\n    fromMe,\n    evento,\n    messageId,\n    location,\n    body\n  }\n}];"
+      },
+      "id": "filtro-001",
+      "name": "Filtro + Extrair",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1080,
+        400
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id as cliente_id, nome_empresa, instancia_whatsapp, horario_funcionamento, nome_atendente_ia, tom_voz, telefone, nome_proprietario, endereco, formas_pagamento, informacoes_extras, evo_api_url, evo_api_key, catalogo_sheets_id, chave_pix, tipo_chave_pix, nome_titular_pix, banco_pix, aceita_cartao, link_checkout, tempo_preparo_medio, taxa_entrega_padrao, raio_entrega_km, pedido_minimo, aceita_retirada, msg_pos_pedido FROM clientes_sistema WHERE instancia_whatsapp = '{{ $json.instance }}' AND status = 'ativo' LIMIT 1;",
+        "options": {}
+      },
+      "id": "load-biz-001",
+      "name": "Carregar Dados Negócio",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        1320,
+        400
+      ],
+      "typeVersion": 2.5,
+      "credentials": {
+        "postgres": {
+          "id": "NYf8MN7CUQgKD1Bp",
+          "name": "Postgres account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const txt = v => (v == null || v === '') ? '' : String(v).trim();\n\nlet f = {};\ntry { f = $('Filtro + Extrair').first().json; } catch { f = {}; }\n\nconst telefone = txt(f.telefone);\nconst pushName = txt(f.pushName);\nconst fromMe = f.fromMe ?? false;\nconst inst = txt(f.instance);\nconst text = txt(f.text);\nconst messageId = txt(f.messageId);\nconst location = f.location || null;\n\nlet raw = [];\ntry { raw = $('Carregar Dados Negócio').all().map(i => i.json); } catch { raw = []; }\n\nif (raw.length === 0) {\n  return [{ json: { erro: 'Restaurante não encontrado.', instancia_recebida: inst } }];\n}\n\nconst n = raw[0];\nconst instFinal = inst || txt(n.instancia_whatsapp);\n\nlet infoPag = '';\nif (txt(n.chave_pix)) {\n  infoPag += 'PIX ' + txt(n.tipo_chave_pix).toUpperCase() + ': ' + txt(n.chave_pix);\n  if (txt(n.nome_titular_pix)) infoPag += ' | Titular: ' + txt(n.nome_titular_pix);\n  if (txt(n.banco_pix)) infoPag += ' | ' + txt(n.banco_pix);\n}\nif (n.aceita_cartao) infoPag += (infoPag ? ' | ' : '') + 'Cartão na entrega/maquininha';\ninfoPag += (infoPag ? ' | ' : '') + 'Dinheiro (troco disponível)';\n\n// Determinar período do dia para sugestões contextuais\nconst hora = new Date().getHours() - 3; // Ajuste fuso BRT\nlet periodo = 'dia';\nif (hora >= 6 && hora < 11) periodo = 'manha';\nelse if (hora >= 11 && hora < 15) periodo = 'almoco';\nelse if (hora >= 15 && hora < 18) periodo = 'tarde';\nelse if (hora >= 18 && hora < 23) periodo = 'noite';\nelse periodo = 'madrugada';\n\nreturn [{ json: {\n  instancia: instFinal,\n  cliente_id: n.cliente_id ?? n.id ?? null,\n  session_id: instFinal + '_' + telefone,\n  nome_empresa: txt(n.nome_empresa) || 'Restaurante',\n  nome_proprietario: txt(n.nome_proprietario),\n  telefone_empresa: txt(n.telefone),\n  endereco: txt(n.endereco),\n  horario_funcionamento: txt(n.horario_funcionamento) || 'Horário comercial',\n  formas_pagamento: txt(n.formas_pagamento) || 'Pix, Cartão, Dinheiro',\n  informacoes_extras: txt(n.informacoes_extras),\n  nome_atendente_ia: txt(n.nome_atendente_ia) || 'Atendente Virtual',\n  tom_voz: txt(n.tom_voz) || 'Simpática, ágil e prestativa',\n  telefone, pushName, fromMe, text, messageId, location,\n  telefone_proprietario: txt(n.telefone),\n  remoteJid: telefone + '@s.whatsapp.net',\n  evo_api_url: txt(n.evo_api_url) || 'https://evo.upviaagentes.com',\n  evo_api_key: txt(n.evo_api_key) || '3gl0eq56t0ahsh3m5lx7ruv8i764qcvd',\n  catalogo_sheets_id: txt(n.catalogo_sheets_id),\n  chave_pix: txt(n.chave_pix),\n  tipo_chave_pix: txt(n.tipo_chave_pix),\n  nome_titular_pix: txt(n.nome_titular_pix),\n  banco_pix: txt(n.banco_pix),\n  info_pagamento: infoPag,\n  aceita_cartao: n.aceita_cartao || false,\n  link_checkout: txt(n.link_checkout),\n  tempo_preparo_medio: n.tempo_preparo_medio || 40,\n  taxa_entrega_padrao: n.taxa_entrega_padrao || 5,\n  raio_entrega_km: n.raio_entrega_km || 10,\n  pedido_minimo: n.pedido_minimo || 0,\n  aceita_retirada: n.aceita_retirada ?? true,\n  msg_pos_pedido: txt(n.msg_pos_pedido),\n  periodo\n} }];"
+      },
+      "id": "ctx-001",
+      "name": "Montar Contexto Dinâmico",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1560,
+        400
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "g1",
+              "leftValue": "={{ $json.erro }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notExists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "guard-001",
+      "name": "Guard Erro",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        1800,
+        400
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Montar Contexto Dinâmico').first().json.catalogo_sheets_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Cardapio"
+        },
+        "options": {}
+      },
+      "id": "sheets-cardapio-001",
+      "name": "Carregar Cardápio",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        2040,
+        240
+      ],
+      "typeVersion": 4.5,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SHEETS_CRED_ID",
+          "name": "Google Sheets account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Montar Contexto Dinâmico').first().json.catalogo_sheets_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Taxas"
+        },
+        "options": {}
+      },
+      "id": "sheets-taxas-001",
+      "name": "Carregar Taxas",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        2040,
+        400
+      ],
+      "typeVersion": 4.5,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SHEETS_CRED_ID",
+          "name": "Google Sheets account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Montar Contexto Dinâmico').first().json.catalogo_sheets_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Promos"
+        },
+        "options": {}
+      },
+      "id": "sheets-promos-001",
+      "name": "Carregar Promos",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        2040,
+        560
+      ],
+      "typeVersion": 4.5,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SHEETS_CRED_ID",
+          "name": "Google Sheets account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Cardápio\nlet cardapioItems = [];\ntry { cardapioItems = $('Carregar Cardápio').all().map(i => i.json); } catch {}\n\nlet cardapio = '';\nif (cardapioItems.length > 0) {\n  // Agrupar por categoria\n  const categorias = {};\n  for (const item of cardapioItems) {\n    if (item.disponivel === 'não' || item.disponivel === 'nao' || item.disponivel === false) continue;\n    const cat = item.categoria || item.Categoria || 'Outros';\n    if (!categorias[cat]) categorias[cat] = [];\n    const nome = item.nome || item.Produto || item.Nome || 'Item';\n    const preco = item.preco || item.Preço || item.valor || '?';\n    const desc = item.descricao || item.Descrição || '';\n    const adicionais = item.adicionais || item.Adicionais || '';\n    const tamanhos = item.tamanhos || item.Tamanhos || '';\n    categorias[cat].push(`${nome} — R$ ${preco}${desc ? ' (' + desc + ')' : ''}${adicionais ? ' | Adicionais: ' + adicionais : ''}${tamanhos ? ' | Tamanhos: ' + tamanhos : ''}`);\n  }\n  for (const [cat, items] of Object.entries(categorias)) {\n    cardapio += `\\n[${cat.toUpperCase()}]\\n`;\n    items.forEach((item, i) => { cardapio += `  ${i+1}. ${item}\\n`; });\n  }\n} else {\n  cardapio = 'Cardápio indisponível no momento. Pergunte ao atendente.';\n}\n\n// Taxas de entrega\nlet taxas = '';\ntry {\n  const taxaItems = $('Carregar Taxas').all().map(i => i.json);\n  if (taxaItems.length > 0) {\n    taxas = taxaItems.map(t => {\n      const bairro = t.bairro || t.Bairro || t.regiao || 'Região';\n      const taxa = t.taxa || t.Taxa || t.valor || '0';\n      const tempo = t.tempo_estimado || t.Tempo || '';\n      return `${bairro}: R$ ${taxa}${tempo ? ' (~' + tempo + ' min)' : ''}`;\n    }).join(' | ');\n  }\n} catch {}\n\n// Promoções ativas\nlet promos = '';\ntry {\n  const promoItems = $('Carregar Promos').all().map(i => i.json);\n  const ativas = promoItems.filter(p => p.ativa === 'sim' || p.ativa === true || p.Ativa === 'sim');\n  if (ativas.length > 0) {\n    promos = ativas.map(p => {\n      const nome = p.nome || p.Nome || 'Promoção';\n      const desc = p.descricao || p.Descrição || '';\n      const preco = p.preco_promo || p.Preço || '';\n      const validade = p.validade || p.Validade || '';\n      return `${nome}${desc ? ': ' + desc : ''}${preco ? ' — R$ ' + preco : ''}${validade ? ' (até ' + validade + ')' : ''}`;\n    }).join(' | ');\n  }\n} catch {}\n\nconst ctx = $('Montar Contexto Dinâmico').first().json;\n\nreturn [{ json: { ...ctx, cardapio, taxas_entrega: taxas || 'Taxa padrão: R$ ' + (ctx.taxa_entrega_padrao || 5), promos_ativas: promos || 'Nenhuma promoção ativa no momento' } }];"
+      },
+      "id": "cardapio-001",
+      "name": "Montar Cardápio Completo",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        2360,
+        400
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Montar Contexto Dinâmico').first().json.text || '' }}",
+        "options": {
+          "systemMessage": "=Hoje: {{ $now.weekdayLong }}, {{ $now.format('dd/MM/yyyy') }} {{ $now.hour.toString().padStart(2, '0') }}:{{ $now.minute.toString().padStart(2, '0') }}\nPeríodo: {{ $('Montar Contexto Dinâmico').first().json.periodo }}\n\n# IDENTIDADE\nVocê é {{ $('Montar Cardápio Completo').first().json.nome_atendente_ia }}, atendente virtual de {{ $('Montar Cardápio Completo').first().json.nome_empresa }}.\nTom: {{ $('Montar Cardápio Completo').first().json.tom_voz }}.\nDono(a): {{ $('Montar Cardápio Completo').first().json.nome_proprietario }}\n\n# CARDÁPIO\n{{ $('Montar Cardápio Completo').first().json.cardapio }}\n\n# PROMOÇÕES DO DIA\n{{ $('Montar Cardápio Completo').first().json.promos_ativas }}\n\n# INFORMAÇÕES DO RESTAURANTE\nEndereço: {{ $('Montar Cardápio Completo').first().json.endereco }}\nHorário: {{ $('Montar Cardápio Completo').first().json.horario_funcionamento }}\nPagamento: {{ $('Montar Cardápio Completo').first().json.formas_pagamento }}\nTempo médio de preparo: {{ $('Montar Cardápio Completo').first().json.tempo_preparo_medio }} minutos\nPedido mínimo: R$ {{ $('Montar Cardápio Completo').first().json.pedido_minimo || '0 (sem mínimo)' }}\nRetirada no local: {{ $('Montar Cardápio Completo').first().json.aceita_retirada ? 'Sim' : 'Não' }}\nInfo extra: {{ $('Montar Cardápio Completo').first().json.informacoes_extras }}\n\n# TAXAS DE ENTREGA\n{{ $('Montar Cardápio Completo').first().json.taxas_entrega }}\nRaio máximo de entrega: {{ $('Montar Cardápio Completo').first().json.raio_entrega_km }} km\n\n# DADOS DE PAGAMENTO\n{{ $('Montar Cardápio Completo').first().json.info_pagamento }}\n\n# FLUXO DE ATENDIMENTO (siga esta ordem)\n\n## 1. BOAS-VINDAS\n- Cumprimente usando o nome: {{ $('Montar Cardápio Completo').first().json.pushName }}\n- Se tiver promoção ativa, mencione rapidamente: \"Hoje temos [promo]! 🔥\"\n- Pergunte o que deseja pedir ou se quer ver o cardápio\n- NÃO despeje o cardápio inteiro. Pergunte a categoria ou o que tem vontade\n\n## 2. MONTAGEM DO PEDIDO\n- Quando o cliente pedir um item, confirme e pergunte:\n  a) Tamanho (se aplicável): \"Qual tamanho? P, M ou G?\"\n  b) Adicionais: \"Quer adicionar alguma coisa? Temos [adicionais do item]\"\n  c) Observações: \"Alguma observação? Sem cebola, bem passado...\"\n- Após cada item, pergunte: \"Mais alguma coisa?\"\n- SUGESTÃO INTELIGENTE baseada no pedido:\n  * Pediu lanche/hambúrguer → \"Quer acompanhar com batata frita e uma bebida?\"\n  * Pediu pizza → \"Que tal uma borda recheada? Só mais R$X\"\n  * Pediu prato principal → \"Temos sobremesa deliciosa hoje!\"\n  * Pediu só bebida → \"Temos uns petiscos que combinam super bem!\"\n  * Se período = almoco → sugira combo almoço se existir\n  * Se período = noite → sugira combo família se existir\n- Sempre mencione a ECONOMIA se escolher combo vs itens separados\n\n## 3. RESUMO DO PEDIDO\nQuando o cliente disser que é só isso, faça o resumo:\n\"Beleza! Seu pedido ficou assim:\n\n[lista dos itens com preço]\n\nSubtotal: R$ XX\nTaxa de entrega: R$ XX\nTotal: R$ XX\n\nTudo certo?\"\n\n- Calcule o total corretamente somando todos os itens + adicionais + taxa\n- Se o total for menor que o pedido mínimo, avise gentilmente\n\n## 4. ENTREGA OU RETIRADA\nApós confirmar o pedido:\n- Pergunte: \"Vai ser entrega ou retirada no local?\"\n- Se ENTREGA:\n  * Peça o endereço completo (rua, número, bairro, complemento, referência)\n  * Informe a taxa de entrega baseada no bairro (consulte as taxas)\n  * Informe o tempo estimado: preparo ({{ $('Montar Cardápio Completo').first().json.tempo_preparo_medio }} min) + entrega\n- Se RETIRADA:\n  * Informe o endereço: {{ $('Montar Cardápio Completo').first().json.endereco }}\n  * Informe apenas o tempo de preparo\n  * Não cobre taxa de entrega\n\n## 5. PAGAMENTO\nPergunte a forma de pagamento:\n\n### PIX:\n\"Os dados do Pix:\n\nChave {{ $('Montar Cardápio Completo').first().json.tipo_chave_pix }}: {{ $('Montar Cardápio Completo').first().json.chave_pix }}\nTitular: {{ $('Montar Cardápio Completo').first().json.nome_titular_pix }}\n{{ $('Montar Cardápio Completo').first().json.banco_pix }}\nValor: R$ [total]\n\nMe envia o comprovante quando fizer! 😊\"\n\n### CARTÃO:\n\"Aceitamos cartão na maquininha! Débito ou crédito, o entregador leva a maquininha 💳\"\n\n### DINHEIRO:\n\"Sem problemas! Vai precisar de troco pra quanto?\"\n\n## 6. CONFIRMAÇÃO FINAL\nApós definir pagamento:\n\"Pedido confirmado! ✅\n\n[resumo rápido do pedido]\nEntrega em: ~XX minutos\nPagamento: [forma escolhida]\n\nObrigado(a) pela preferência! {{ $('Montar Cardápio Completo').first().json.msg_pos_pedido || 'Bom apetite! 🍽️' }}\"\n\n# SITUAÇÕES ESPECIAIS\n\n## Item indisponível:\n\"Poxa, esse item tá indisponível no momento 😕 Mas posso sugerir [alternativa similar]?\"\n\n## Fora do horário:\n\"Nosso horário de funcionamento é {{ $('Montar Cardápio Completo').first().json.horario_funcionamento }}. Posso anotar seu pedido pra quando abrirmos?\"\n\n## Fora da área de entrega:\n\"Infelizmente seu bairro tá fora da nossa área de entrega ({{ $('Montar Cardápio Completo').first().json.raio_entrega_km }}km). Mas você pode retirar aqui no {{ $('Montar Cardápio Completo').first().json.endereco }}!\"\n\n## Status do pedido:\nSe perguntarem sobre pedido em andamento, diga: \"Vou verificar com a cozinha e te retorno rapidinho!\"\nE avise o proprietário.\n\n## Reclamação:\nSeja empática, peça desculpas e diga: \"Vou chamar {{ $('Montar Cardápio Completo').first().json.nome_proprietario }} pra resolver isso pra você agora mesmo!\"\n\n# REGRAS ABSOLUTAS\n- Máximo 4-5 frases por mensagem\n- SEM markdown, SEM asteriscos para negrito, SEM bullets\n- Emojis com moderação (2-3 por mensagem, use os de comida 🍕🍔🥤)\n- NUNCA invente itens que não estão no cardápio\n- NUNCA erre o cálculo do total. Some com cuidado\n- NUNCA revele que é IA\n- Se pedirem humano: chame {{ $('Montar Cardápio Completo').first().json.nome_proprietario }}\n- Sempre confirme o pedido antes de finalizar\n- Seja RÁPIDA nas respostas, cliente com fome não quer esperar\n- Trate personalização com naturalidade: \"sem cebola\", \"bem passado\", \"molho à parte\" etc"
+        }
+      },
+      "id": "agent-001",
+      "name": "FoodIA Agente",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        2680,
+        400
+      ],
+      "typeVersion": 1.7
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "llm-001",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "position": [
+        2600,
+        640
+      ],
+      "typeVersion": 1.3,
+      "credentials": {
+        "openAiApi": {
+          "id": "msfDvfd79sELLqWQ",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Montar Contexto Dinâmico').first().json.session_id }}",
+        "contextWindowLength": 20
+      },
+      "id": "mem-001",
+      "name": "Postgres Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "position": [
+        2720,
+        640
+      ],
+      "typeVersion": 1.1,
+      "credentials": {
+        "postgres": {
+          "id": "NYf8MN7CUQgKD1Bp",
+          "name": "Postgres account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Montar Contexto Dinâmico').first().json.evo_api_url }}/message/sendText/{{ $('Montar Contexto Dinâmico').first().json.instancia }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $('Montar Contexto Dinâmico').first().json.evo_api_key }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinâmico').first().json.remoteJid }}\",\n  \"text\": {{ JSON.stringify($json.output || $json.text || '') }}\n}",
+        "options": {}
+      },
+      "id": "resp-001",
+      "name": "Resposta ao Cliente",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        2920,
+        400
+      ],
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "p1",
+              "leftValue": "={{ ($json.output || '').toLowerCase() }}",
+              "rightValue": "pedido confirmado",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "p2",
+              "leftValue": "={{ ($json.output || '').toLowerCase() }}",
+              "rightValue": "bom apetite",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "p3",
+              "leftValue": "={{ ($json.output || '').toLowerCase() }}",
+              "rightValue": "comprovante",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "p4",
+              "leftValue": "={{ ($json.output || '').toLowerCase() }}",
+              "rightValue": "chave pix",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "p5",
+              "leftValue": "={{ ($json.output || '').toLowerCase() }}",
+              "rightValue": "total: r$",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "detect-order-001",
+      "name": "Pedido ou Pagamento?",
+      "type": "n8n-nodes-base.filter",
+      "position": [
+        3160,
+        560
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Montar Contexto Dinâmico').first().json.evo_api_url }}/message/sendText/{{ $('Montar Contexto Dinâmico').first().json.instancia }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $('Montar Contexto Dinâmico').first().json.evo_api_key }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinâmico').first().json.telefone_proprietario }}\",\n  \"text\": \"🔔 NOVO PEDIDO / PAGAMENTO\\n\\nCliente: {{ $('Montar Contexto Dinâmico').first().json.pushName }}\\nTel: {{ $('Montar Contexto Dinâmico').first().json.telefone }}\\n\\nA IA finalizou ou está finalizando um pedido. Verifique a conversa e prepare o pedido!\\n\\nÚltima resposta da IA: {{ ($json.output || '').substring(0, 300) }}\"\n}",
+        "options": {}
+      },
+      "id": "notify-kitchen-001",
+      "name": "Notificar Cozinha/Dono",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        3400,
+        560
+      ],
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "h1",
+              "leftValue": "={{ $('Montar Contexto Dinâmico').first().json.text }}",
+              "rightValue": "atendente",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "h2",
+              "leftValue": "={{ $('Montar Contexto Dinâmico').first().json.text }}",
+              "rightValue": "humano",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "h3",
+              "leftValue": "={{ $('Montar Contexto Dinâmico').first().json.text }}",
+              "rightValue": "reclamação",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "h4",
+              "leftValue": "={{ $('Montar Contexto Dinâmico').first().json.text }}",
+              "rightValue": "gerente",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "human-001",
+      "name": "Pediu Humano?",
+      "type": "n8n-nodes-base.filter",
+      "position": [
+        2040,
+        720
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Montar Contexto Dinâmico').first().json.evo_api_url }}/message/sendText/{{ $('Montar Contexto Dinâmico').first().json.instancia }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $('Montar Contexto Dinâmico').first().json.evo_api_key }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinâmico').first().json.remoteJid }}\",\n  \"text\": \"Sem problemas! Já estou chamando {{ $('Montar Contexto Dinâmico').first().json.nome_proprietario }} pra te atender. Um minutinho! 😊\"\n}",
+        "options": {}
+      },
+      "id": "human-msg-001",
+      "name": "Avisar Cliente Humano",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        2280,
+        720
+      ],
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Montar Contexto Dinâmico').first().json.evo_api_url }}/message/sendText/{{ $('Montar Contexto Dinâmico').first().json.instancia }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $('Montar Contexto Dinâmico').first().json.evo_api_key }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinâmico').first().json.telefone_proprietario }}\",\n  \"text\": \"🔔 ATENDIMENTO HUMANO\\n\\nCliente {{ $('Montar Contexto Dinâmico').first().json.pushName }} ({{ $('Montar Contexto Dinâmico').first().json.telefone }}) pediu pra falar com você.\\n\\nMsg: {{ $('Montar Contexto Dinâmico').first().json.text }}\"\n}",
+        "options": {}
+      },
+      "id": "human-notify-001",
+      "name": "Notificar Dono",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        2520,
+        720
+      ],
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "ALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS tempo_preparo_medio integer DEFAULT 40;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS taxa_entrega_padrao numeric(10,2) DEFAULT 5.00;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS raio_entrega_km integer DEFAULT 10;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS pedido_minimo numeric(10,2) DEFAULT 0;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS aceita_retirada boolean DEFAULT true;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS msg_pos_pedido text;",
+        "options": {}
+      },
+      "id": "sql-setup-001",
+      "name": "Setup Tabelas Food (executar 1x)",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        840,
+        1100
+      ],
+      "typeVersion": 2.5,
+      "credentials": {
+        "postgres": {
+          "id": "NYf8MN7CUQgKD1Bp",
+          "name": "Postgres account 3"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Filtro + Extrair",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtro + Extrair": {
+      "main": [
+        [
+          {
+            "node": "Carregar Dados Negócio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Carregar Dados Negócio": {
+      "main": [
+        [
+          {
+            "node": "Montar Contexto Dinâmico",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Contexto Dinâmico": {
+      "main": [
+        [
+          {
+            "node": "Guard Erro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guard Erro": {
+      "main": [
+        [
+          {
+            "node": "Carregar Cardápio",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Carregar Taxas",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Carregar Promos",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Pediu Humano?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Carregar Cardápio": {
+      "main": [
+        [
+          {
+            "node": "Montar Cardápio Completo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Carregar Taxas": {
+      "main": [
+        [
+          {
+            "node": "Montar Cardápio Completo",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Carregar Promos": {
+      "main": [
+        [
+          {
+            "node": "Montar Cardápio Completo",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Montar Cardápio Completo": {
+      "main": [
+        [
+          {
+            "node": "FoodIA Agente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "FoodIA Agente",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "FoodIA Agente",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FoodIA Agente": {
+      "main": [
+        [
+          {
+            "node": "Resposta ao Cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resposta ao Cliente": {
+      "main": [
+        [
+          {
+            "node": "Pedido ou Pagamento?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pedido ou Pagamento?": {
+      "main": [
+        [
+          {
+            "node": "Notificar Cozinha/Dono",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pediu Humano?": {
+      "main": [
+        [
+          {
+            "node": "Avisar Cliente Humano",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Avisar Cliente Humano": {
+      "main": [
+        [
+          {
+            "node": "Notificar Dono",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}

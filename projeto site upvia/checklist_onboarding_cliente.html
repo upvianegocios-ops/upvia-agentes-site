@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checklist de Onboarding — UpVia Agentes</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --border: #1e1e2e;
+    --accent: #7c3aed;
+    --accent2: #06b6d4;
+    --accent3: #10b981;
+    --warn: #f59e0b;
+    --danger: #ef4444;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --card: #13131c;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 40px 20px 80px;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: -200px; left: -200px;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(124,58,237,0.12) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: -200px; right: -100px;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(6,182,212,0.08) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 860px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* HEADER */
+  .header {
+    text-align: center;
+    margin-bottom: 56px;
+    animation: fadeDown 0.6s ease both;
+  }
+
+  .logo-tag {
+    display: inline-block;
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid rgba(124,58,237,0.4);
+    padding: 6px 16px;
+    border-radius: 100px;
+    margin-bottom: 24px;
+    background: rgba(124,58,237,0.07);
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(28px, 5vw, 48px);
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 16px;
+  }
+
+  h1 span {
+    background: linear-gradient(135deg, #7c3aed, #06b6d4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 14px;
+    letter-spacing: 0.5px;
+  }
+
+  /* PRODUTO SELECTOR */
+  .product-selector {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 40px;
+    animation: fadeUp 0.6s 0.1s ease both;
+  }
+
+  .prod-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    padding: 8px 18px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+  }
+
+  .prod-btn:hover { border-color: var(--accent); color: var(--text); }
+  .prod-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(124,58,237,0.1); }
+  .prod-btn[data-prod="shopee"].active { border-color: var(--accent2); color: var(--accent2); background: rgba(6,182,212,0.1); }
+  .prod-btn[data-prod="restaurante"].active { border-color: var(--accent3); color: var(--accent3); background: rgba(16,185,129,0.1); }
+
+  /* PROGRESS BAR */
+  .progress-bar-wrap {
+    background: var(--border);
+    border-radius: 100px;
+    height: 4px;
+    margin-bottom: 40px;
+    overflow: hidden;
+    animation: fadeUp 0.6s 0.15s ease both;
+  }
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 100px;
+    transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
+    width: 0%;
+  }
+  .progress-label {
+    text-align: right;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 8px;
+    letter-spacing: 0.5px;
+  }
+
+  /* SECTION */
+  .section {
+    margin-bottom: 32px;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .section-number {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    background: rgba(124,58,237,0.12);
+    border: 1px solid rgba(124,58,237,0.25);
+    padding: 3px 10px;
+    border-radius: 6px;
+    letter-spacing: 1px;
+  }
+
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: 0.3px;
+  }
+
+  .section-badge {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 3px 10px;
+    border-radius: 100px;
+  }
+
+  /* CHECKLIST */
+  .checklist { display: flex; flex-direction: column; gap: 6px; }
+
+  .item {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+  }
+
+  .item:hover { border-color: rgba(124,58,237,0.3); background: #15151f; }
+  .item.done { border-color: rgba(16,185,129,0.25); background: rgba(16,185,129,0.04); }
+  .item.done .item-text { color: var(--muted); text-decoration: line-through; text-decoration-color: rgba(100,116,139,0.5); }
+  .item.done .item-tag { opacity: 0.5; }
+
+  .checkbox {
+    width: 20px; height: 20px;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    flex-shrink: 0;
+    margin-top: 1px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    background: transparent;
+  }
+
+  .item:hover .checkbox { border-color: var(--accent); }
+  .item.done .checkbox {
+    background: var(--accent3);
+    border-color: var(--accent3);
+  }
+
+  .checkbox svg { display: none; }
+  .item.done .checkbox svg { display: block; }
+
+  .item-body { flex: 1; }
+
+  .item-text {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text);
+    transition: color 0.2s;
+  }
+
+  .item-note {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+    line-height: 1.5;
+  }
+
+  .item-tag {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 100px;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+    margin-top: 2px;
+    font-weight: 500;
+  }
+
+  .tag-claude { background: rgba(124,58,237,0.15); color: #a78bfa; border: 1px solid rgba(124,58,237,0.2); }
+  .tag-supabase { background: rgba(6,182,212,0.12); color: #67e8f9; border: 1px solid rgba(6,182,212,0.2); }
+  .tag-n8n { background: rgba(245,158,11,0.12); color: #fcd34d; border: 1px solid rgba(245,158,11,0.2); }
+  .tag-shopee { background: rgba(239,68,68,0.12); color: #fca5a5; border: 1px solid rgba(239,68,68,0.2); }
+  .tag-cliente { background: rgba(16,185,129,0.12); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.2); }
+  .tag-sheets { background: rgba(52,211,153,0.12); color: #34d399; border: 1px solid rgba(52,211,153,0.2); }
+
+  /* NOTA ESPECIAL */
+  .note-box {
+    border: 1px solid rgba(245,158,11,0.25);
+    background: rgba(245,158,11,0.05);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 12px;
+  }
+
+  .note-box .icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+  .note-box p { font-size: 12px; color: #fcd34d; line-height: 1.6; }
+
+  /* DIVIDER */
+  .section-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
+    margin: 12px 0 28px;
+  }
+
+  /* PRODUCT-SPECIFIC */
+  .prod-section { display: none; }
+  .prod-section.visible { display: block; }
+
+  /* FOOTER */
+  .footer {
+    margin-top: 56px;
+    padding-top: 32px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: gap;
+    gap: 16px;
+    animation: fadeUp 0.5s 0.3s ease both;
+  }
+
+  .footer-brand {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--muted);
+  }
+
+  .footer-brand span { color: var(--accent); }
+
+  .reset-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    padding: 8px 20px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .reset-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Print */
+  @media print {
+    body { background: white; color: black; padding: 20px; }
+    .prod-btn, .reset-btn { display: none; }
+    .item { border: 1px solid #ddd; }
+    .item.done .item-text { color: #999; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="logo-tag">UpVia Agentes</div>
+    <h1>Onboarding de<br><span>Novo Cliente</span></h1>
+    <p class="subtitle">Checklist completo por produto — marque cada etapa conforme avança</p>
+  </div>
+
+  <!-- PRODUCT SELECTOR -->
+  <div class="product-selector">
+    <button class="prod-btn active" data-prod="todos" onclick="selectProd('todos')">Todos os Produtos</button>
+    <button class="prod-btn" data-prod="agendamento" onclick="selectProd('agendamento')">Agente Agendamento</button>
+    <button class="prod-btn" data-prod="vendedor" onclick="selectProd('vendedor')">VendedorIA WhatsApp</button>
+    <button class="prod-btn" data-prod="restaurante" onclick="selectProd('restaurante')">Agente Restaurante</button>
+    <button class="prod-btn" data-prod="shopee" onclick="selectProd('shopee')">Vendedor Shopee</button>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="progress-bar-wrap">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+  <div class="progress-label" id="progressLabel">0 de 0 etapas concluídas</div>
+
+  <!-- ============ SEÇÃO 1: DADOS DO CLIENTE ============ -->
+  <div class="section" style="animation-delay:0.1s">
+    <div class="section-header">
+      <span class="section-number">01</span>
+      <span class="section-title">Dados e Acesso do Cliente</span>
+      <span class="section-badge">Todos os produtos</span>
+    </div>
+    <div class="checklist">
+      <div class="item" onclick="toggle(this)">
+        <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-body">
+          <div class="item-text">Coletar nome completo, empresa e WhatsApp do responsável</div>
+        </div>
+        <span class="item-tag tag-cliente">Cliente</span>
+      </div>
+      <div class="item" onclick="toggle(this)">
+        <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-body">
+          <div class="item-text">Coletar número de WhatsApp exclusivo do agente (chip separado)</div>
+          <div class="item-note">⚠️ O número não pode estar sendo usado no WhatsApp Web ou app principal — vai desconectar</div>
+        </div>
+        <span class="item-tag tag-cliente">Cliente</span>
+      </div>
+      <div class="item" onclick="toggle(this)">
+        <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-body">
+          <div class="item-text">Assinar contrato de prestação de serviço + definir mensalidade</div>
+        </div>
+        <span class="item-tag tag-cliente">Cliente</span>
+      </div>
+      <div class="item" onclick="toggle(this)">
+        <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-body">
+          <div class="item-text">Definir nome, tom de voz e "personalidade" do agente com o cliente</div>
+          <div class="item-note">Ex: "Seja simpático, use emojis moderados, nunca fale mal de concorrentes"</div>
+        </div>
+        <span class="item-tag tag-cliente">Cliente</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- ============ SEÇÃO 2: INFRAESTRUTURA ============ -->
+  <div class="section" style="animation-delay:0.15s">
+    <div class="section-header">
+      <span class="section-number">02</span>
+      <span class="section-title">Infraestrutura Base</span>
+      <span class="section-badge">Todos os produtos</span>
+    </div>
+    <div class="checklist">
+      <div class="item" onclick="toggle(this)">
+        <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-body">
+          <div class="item-text">Criar nova instância na Evolution API com nome do cliente</div>
+          <div class="item-note">Padrão: nome sem espaços, tudo minúsculo — ex: <code>clinicajoao</code></div>
+        </div>
+        <span class="item-tag tag-n8n">Evolution API</span>
+      </div>
+      <div class="item" onclick="toggle(this)">
+        <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-body">
+          <div class="item-text">Conectar o QR Code do WhatsApp do cliente na instância</div>
+          <div class="item-note">Validar status "connected" antes de continuar</div>
+        </div>
+        <span class="item-tag tag-n8n">Evolution API</span>
+      </div>
+      <div class="item" onclick="toggle(this)">
+        <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-body">
+          <div class="item-text">Duplicar o workflow base no n8n e renomear com nome do cliente</div>
+        </div>
+        <span class="item-tag tag-n8n">n8n</span>
+      </div>
+      <div class="item" onclick="toggle(this)">
+        <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-body">
+          <div class="item-text">Atualizar nome da instância no webhook do n8n</div>
+          <div class="item-note">Filtro "Não Veio de Grupos?" — trocar o nome da instância</div>
+        </div>
+        <span class="item-tag tag-n8n">n8n</span>
+      </div>
+      <div class="item" onclick="toggle(this)">
+        <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-body">
+          <div class="item-text">Configurar webhook na Evolution API apontando para o n8n do cliente</div>
+          <div class="item-note">URL: <code>https://n8n.upviaagentes.com/webhook/{ID_DO_WORKFLOW}</code></div>
+        </div>
+        <span class="item-tag tag-n8n">Evolution API</span>
+      </div>
+      <div class="item" onclick="toggle(this)">
+        <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-body">
+          <div class="item-text">Ativar eventos no webhook: <code>messages.upsert</code> (obrigatório) + desativar os demais</div>
+        </div>
+        <span class="item-tag tag-n8n">Evolution API</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- ============ PRODUTO: AGENDAMENTO ============ -->
+  <div class="prod-section" id="sec-agendamento" style="animation-delay:0.2s">
+    <div class="section">
+      <div class="section-header">
+        <span class="section-number">03</span>
+        <span class="section-title">Agente de Agendamento</span>
+        <span class="section-badge">Agendamento / Clínicas</span>
+      </div>
+      <div class="checklist">
+        <div class="item" onclick="toggle(this)">
+          <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="item-body">
+            <div class="item-text">Cadastrar cliente na tabela <code>clientes_sistema</code> no Supabase (projeto upvia-agentes)</div>
+            <div class="item-note">Campos: nome_negocio, whatsapp, horarios, servicos, informacoes_extras, tipo_produto</div>
+          </div>
+          <span class="item-tag tag-supabase">Supabase</span>
+        </div>
+        <div class="item" onclick="toggle(this)">
+          <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="item-body">
+            <div class="item-text">Criar Google Calendar exclusivo para o cliente e compartilhar com a conta de serviço</div>
+          </div>
+          <span class="item-tag tag-sheets">Google</span>
+        </div>
+        <div class="item" onclick="toggle(this)">
+          <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="item-body">
+            <div class="item-text">Vincular Calendar ID no registro do cliente no Supabase</div>
+          </div>
+          <span class="item-tag tag-supabase">Supabase</span>
+        </div>
+        <div class="item" onclick="toggle(this)">
+          <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="item-body">
+            <div class="item-text">Personalizar o campo <code>informacoes_extras</code> com regras do nicho</div>
+            <div class="item-note">Ex para saúde: "Nunca dar diagnóstico. Dizer que o doutor vai avaliar."</div>
+          </div>
+          <span class="item-tag tag-supabase">Supabase</span>
+        </div>
+        <div class="item" onclick="toggle(this)">
+          <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="item-body">
+            <div class="item-text">Testar agendamento completo: mensagem → IA responde → evento criado no Calendar</div>
+          </div>
+          <span class="item-tag tag-n8n">Teste</span>
+        </div>
+      </div>
+    </div>
+    <div class="section-divider"></div>
+  </div>
+
+  <!-- ============ PRODUTO: VENDEDOR WHATSAPP ============ -->
+  <div class="prod-section" id="sec-vendedor" style="animation-delay:0.2s">
+    <div class="section">
+      <div class="section-header">
+        <span class="section-number">03</span>
+        <span class="section-title">VendedorIA WhatsApp</span>
+        <span class="section-badge">Infoproduto / Produto Físico</span>
+      </div>
+      <div class="checklist">
+        <div class="item" onclick="toggle(this)">
+          <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="item-body">
+            <div class="item-text">Criar Google Sheet de catálogo do cliente com abas: Catalogo, Config, Clientes</div>
+            <div class="item-note">Colunas: nome, preco, descricao, beneficio, categoria, upsell, estoque, disponivel</div>
+          </div>
+          <span class="item-tag tag-sheets">Google Sheets</span>
+        </div>
+        <div class="item" onclick="toggle(this)">
+          <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="item-body">
+            <div class="item-text">Preencher a aba Config com dados do negócio: nome, Pix, link de checkout, horários</div>
+          </div>
+          <span class="item-tag tag-sheets">Google Sheets</span>
+        </div>
+        <div class="item" onclick="toggle(this)">
+          <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="item-body">
+            <div class="item-text">Cadastrar cliente em <code>clientes_sistema</code> com o Sheets ID e tipo_produto</div>
+            <div class="item-note">tipo_produto: 'fisico' ou 'infoproduto' ou 'ambos'</div>
+          </div>
+          <span class="item-tag tag-supabase">Supabase</span>
+        </div>
+        <div class="item" onclick="toggle(this)">
+          <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="item-body">
+            <div class="item-text">Verificar se tabela <code>carrinho_abandonado</code> existe — rodar nó Setup 1x se não existir</div>
+          </div>
+          <span class="item-tag tag-supabase">Supabase</span>
+        </div>
+        <div class="item" onclick="toggle(this)">
+          <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="item-body">
+            <div class="item-text">Testar venda completa: mensagem → catálogo carregado → oferta → link de pagamento</div>
+          </div>
+          <span class="item-tag tag-n8n">Teste</span>
+        </div>
+      </div>
+    </div>
+    <div class="section-divider"></div>
+  </div>
+
+  <!-- ============ PRODUTO: RESTAURANTE ============ -->
+  <div class="prod-section" id="sec-restaurante" style="animation-delay:0.2s">
+    <div class="section">
+      <div class="section-header">
+        <span class="section-number">03</span>
+        <span class="section-title">Agente Restaurante / Food Service</span>
+        <span class="section-badge">Food Service</span>
+      </div>
+      <div class="checklist">
+        <div class="item" onclick="toggle(this)">
+          <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="item-body">
+            <div class="item-text">Criar Google Sheet com 3 abas: Cardápio, Config_Restaurante, Pedidos</div>
+          </div>
+          <span class="item-tag tag-sheets">Google Sheets</span>
+        </div>
+        <div class="item" onclick="toggle(this)">
+          <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="item-body">
+            <div class="item-text">Preencher Config com: taxa_entrega, raio_entrega_km, pedido_minimo, aceita_retirada, horario_funcionamento</div>
+          </div>
+          <span class="item-tag tag-sheets">Google Sheets</span>
+        </div>
+        <div class="item" onclick="toggle(this)">
+          <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="item-body">
+            <div class="item-text">Cadastrar cliente em <code>clientes_sistema</code> com catalogo_sheets_id e campos de restaurante</div>
+          </div>
+          <span class="item-tag tag-supabase">Supabase</span>
+        </div>
+        <div class="item" onclick="toggle(this)">
+          <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="item-body">
+            <div class="item-text">Definir msg_pos_pedido personalizada (mensagem enviada após confirmação do pedido)</div>
+          </div>
+          <span class="item-tag tag-supabase">Supabase</span>
+        </div>
+        <div class="item" onclick="toggle(this)">
+          <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="item-body">
+            <div class="item-text">Testar pedido completo: cliente manda pedido → IA confirma itens → registra → envia confirmação</div>
+          </div>
+          <span class="item-tag tag-n8n">Teste</span>
+        </div>
+      </div>
+    </div>
+    <div class="section-divider"></div>
+  </div>
+
+  <!-- ============ PRODUTO: SHOPEE ============ -->
+  <div class="prod-section" id="sec-shopee" style="animation-delay:0.2s">
+    <div class="section">
+      <div class="section-header">
+        <span class="section-number">03</span>
+        <span class="section-title">Vendedor Shopee — Configuração Exclusiva</span>
+        <span class="section-badge">Shopee</span>
+      </div>
+
+      <div class="note-box">
+        <span class="icon">⚠️</span>
+        <p>O Vendedor Shopee usa um <strong>projeto Supabase separado</strong> (upvia-shopee). Não misturar com o projeto dos agentes WhatsApp.</p>
+      </div>
+
+      <div class="checklist">
+        <div class="item" onclick="toggle(this)">
+          <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="item-body">
+            <div class="item-text">Criar novo projeto no Supabase: <code>upvia-shopee-[nomecliente]</code></div>
+          </div>
+          <span class="item-tag tag-supabase">Supabase</span>
+        </div>
+        <div class="item" onclick="toggle(this)">
+          <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="item-body">
+            <div class="item-text">Executar os 4 SQLs de criação de tabelas no novo projeto Supabase</div>
+            <div class="item-note"><code>historico_chat_shopee</code> · <code>pedidos_shopee</code> · <code>produtos_dropship</code> · <code>log_campanhas_shopee</code></div>
+          </div>
+          <span class="item-tag tag-supabase">Supabase</span>
+        </div>
+        <div class="item" onclick="toggle(this)">
+          <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="item-body">
+            <div class="item-text">Registrar conta de parceiro na Shopee Open Platform em open.shopee.com</div>
+          </div>
+          <span class="item-tag tag-shopee">Shopee</span>
+        </div>
+        <div class="item" onclick="toggle(this)">
+          <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="item-body">
+            <div class="item-text">Coletar: Partner ID, Partner Key, Shop ID e gerar Access Token via OAuth</div>
+          </div>
+          <span class="item-tag tag-shopee">Shopee</span>
+        </div>
+        <div class="item" onclick="toggle(this)">
+          <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="item-body">
+            <div class="item-text">Habilitar permissões na Shopee API: product.add_item · sellerchat.send_message · ads.*</div>
+          </div>
+          <span class="item-tag tag-shopee">Shopee</span>
+        </div>
+        <div class="item" onclick="toggle(this)">
+          <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="item-body">
+            <div class="item-text">Criar Google Sheet com 4 abas: Produtos · Oportunidades Dropship · Log Campanhas · Config</div>
+          </div>
+          <span class="item-tag tag-sheets">Google Sheets</span>
+        </div>
+        <div class="item" onclick="toggle(this)">
+          <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="item-body">
+            <div class="item-text">Substituir todas as variáveis SEU_ / SUA_ no workflow n8n com as credenciais coletadas</div>
+          </div>
+          <span class="item-tag tag-n8n">n8n</span>
+        </div>
+        <div class="item" onclick="toggle(this)">
+          <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="item-body">
+            <div class="item-text">Configurar webhook da Shopee apontando para o n8n (Módulo 2 e Módulo 3)</div>
+            <div class="item-note">URLs: <code>/webhook/shopee-chat-webhook</code> e <code>/webhook/shopee-orders-webhook</code></div>
+          </div>
+          <span class="item-tag tag-shopee">Shopee</span>
+        </div>
+        <div class="item" onclick="toggle(this)">
+          <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="item-body">
+            <div class="item-text">Adicionar chave Claude API ao workflow (SUA_CHAVE_CLAUDE_AQUI em todos os nós)</div>
+          </div>
+          <span class="item-tag tag-claude">Claude</span>
+        </div>
+        <div class="item" onclick="toggle(this)">
+          <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="item-body">
+            <div class="item-text">Testar Módulo 1: adicionar linha na planilha com status "publicar" e confirmar publicação na Shopee</div>
+          </div>
+          <span class="item-tag tag-n8n">Teste</span>
+        </div>
+        <div class="item" onclick="toggle(this)">
+          <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="item-body">
+            <div class="item-text">Testar Módulo 4: acionar manualmente o Schedule de pesquisa e verificar aba "Oportunidades Dropship"</div>
+          </div>
+          <span class="item-tag tag-n8n">Teste</span>
+        </div>
+      </div>
+    </div>
+    <div class="section-divider"></div>
+  </div>
+
+  <!-- ============ SEÇÃO FINAL: VALIDAÇÃO ============ -->
+  <div class="section" style="animation-delay:0.25s">
+    <div class="section-header">
+      <span class="section-number">04</span>
+      <span class="section-title">Validação Final e Entrega</span>
+      <span class="section-badge">Todos os produtos</span>
+    </div>
+    <div class="checklist">
+      <div class="item" onclick="toggle(this)">
+        <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-body">
+          <div class="item-text">Fazer teste completo de ponta a ponta com mensagem real no WhatsApp / plataforma</div>
+        </div>
+        <span class="item-tag tag-n8n">Teste</span>
+      </div>
+      <div class="item" onclick="toggle(this)">
+        <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-body">
+          <div class="item-text">Apresentar o funcionamento ao cliente e coletar aprovação</div>
+        </div>
+        <span class="item-tag tag-cliente">Cliente</span>
+      </div>
+      <div class="item" onclick="toggle(this)">
+        <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-body">
+          <div class="item-text">Ativar o workflow no n8n (toggle "Active" no canto superior direito)</div>
+        </div>
+        <span class="item-tag tag-n8n">n8n</span>
+      </div>
+      <div class="item" onclick="toggle(this)">
+        <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-body">
+          <div class="item-text">Configurar cobrança recorrente (mensalidade) no sistema de pagamento da agência</div>
+        </div>
+        <span class="item-tag tag-cliente">Cliente</span>
+      </div>
+      <div class="item" onclick="toggle(this)">
+        <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-body">
+          <div class="item-text">Registrar cliente no controle interno da agência (nome, produto, data de início, valor)</div>
+        </div>
+        <span class="item-tag tag-cliente">Cliente</span>
+      </div>
+      <div class="item" onclick="toggle(this)">
+        <div class="checkbox"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-body">
+          <div class="item-text">Agendar revisão de 15 dias para ajustar o agente com base no feedback real</div>
+        </div>
+        <span class="item-tag tag-cliente">Cliente</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="footer-brand">UpVia <span>Agentes</span> — Checklist Operacional v1.0</div>
+    <button class="reset-btn" onclick="resetAll()">Resetar tudo</button>
+  </div>
+
+</div>
+
+<script>
+  const STORAGE_KEY = 'upvia_checklist_v1';
+
+  function toggle(el) {
+    el.classList.toggle('done');
+    saveState();
+    updateProgress();
+  }
+
+  function updateProgress() {
+    const allVisible = [...document.querySelectorAll('.item')].filter(el => {
+      return el.offsetParent !== null || el.closest('.section') && !el.closest('.prod-section[style*="display: none"]');
+    });
+    const items = document.querySelectorAll('.item');
+    const done = document.querySelectorAll('.item.done');
+    const pct = items.length ? Math.round((done.length / items.length) * 100) : 0;
+    document.getElementById('progressBar').style.width = pct + '%';
+    document.getElementById('progressLabel').textContent = `${done.length} de ${items.length} etapas concluídas (${pct}%)`;
+  }
+
+  function saveState() {
+    const states = [...document.querySelectorAll('.item')].map(el => el.classList.contains('done'));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(states));
+  }
+
+  function loadState() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      const items = document.querySelectorAll('.item');
+      saved.forEach((done, i) => { if (items[i] && done) items[i].classList.add('done'); });
+    } catch(e) {}
+    updateProgress();
+  }
+
+  function resetAll() {
+    if (!confirm('Resetar todas as marcações?')) return;
+    document.querySelectorAll('.item.done').forEach(el => el.classList.remove('done'));
+    localStorage.removeItem(STORAGE_KEY);
+    updateProgress();
+  }
+
+  function selectProd(prod) {
+    document.querySelectorAll('.prod-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`[data-prod="${prod}"]`).classList.add('active');
+
+    const sections = { agendamento: 'sec-agendamento', vendedor: 'sec-vendedor', restaurante: 'sec-restaurante', shopee: 'sec-shopee' };
+
+    if (prod === 'todos') {
+      Object.values(sections).forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.style.display = 'block'; el.classList.add('visible'); }
+      });
+    } else {
+      Object.entries(sections).forEach(([key, id]) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (key === prod) { el.style.display = 'block'; el.classList.add('visible'); }
+        else { el.style.display = 'none'; el.classList.remove('visible'); }
+      });
+    }
+    updateProgress();
+  }
+
+  // Init
+  selectProd('todos');
+  loadState();
+</script>
+</body>
+</html>

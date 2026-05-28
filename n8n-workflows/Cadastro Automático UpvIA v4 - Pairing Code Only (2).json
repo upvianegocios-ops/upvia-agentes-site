@@ -1,0 +1,1271 @@
+{
+  "name": "Cadastro Automático UpvIA v4 - Pairing Code Only",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "cadastro-cliente",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              }
+            ]
+          }
+        }
+      },
+      "id": "70d28992-73fe-4460-8d06-c31da8c8c37a",
+      "name": "Webhook Cadastro",
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        -1680,
+        80
+      ],
+      "typeVersion": 2,
+      "webhookId": "cadastro-cliente-upvia-v2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\n\nconst nomeCompleto = body.nome_completo || '';\nconst email = body.email || '';\nconst telefone = (body.telefone || '').replace(/\\D/g, '');\nconst cpfCnpj = body.cpf_cnpj || '';\n\nconst nomeNegocio = body.nome_negocio || '';\nconst tipoNegocio = body.tipo_negocio || 'salao_beleza';\nconst endereco = body.endereco || '';\nconst cidadeEstado = body.cidade_estado || '';\nconst instagram = body.instagram || '';\nconst horarioFuncionamento = body.horario_funcionamento || '';\nconst formasPagamento = body.formas_pagamento || '';\n\nconst nomeAtendente = body.nome_atendente || 'Atendente';\nconst tomVoz = body.tom_voz || 'simpática e profissional';\nconst infoExtra = body.info_extra || '';\n\nconst planoSlug = body.plano || 'light';\nconst cupom = (body.cupom || '').toUpperCase().trim();\nconst origem = body.origem || 'site';\n\nconst profissionais = body.profissionais || [];\nconst servicos = body.servicos || [];\n\nconst precos = {\n  light: { mensal: 250, adesao: 0, agendas: 1 },\n  pro: { mensal: 400, adesao: 700, agendas: 5 },\n  premium: { mensal: 750, adesao: 1000, agendas: 10 }\n};\n\nconst planoInfo = precos[planoSlug] || precos.light;\n\n// Gerar tenant e instancia baseados no EMAIL (fixo) em vez de Date.now() (variável)\nconst emailBase = email.toLowerCase().replace(/[^a-z0-9]/g, '-').substring(0, 30);\nconst nomeBase = nomeNegocio\n  .toLowerCase()\n  .normalize('NFD').replace(/[\\u0300-\\u036f]/g, '')\n  .replace(/[^a-z0-9]/g, '-')\n  .replace(/-+/g, '-')\n  .replace(/^-+|-+$/g, '')\n  .substring(0, 30);\n\n// Instancia fixa por negócio - não muda entre execuções\nconst instancia = nomeBase || emailBase;\nconst tenantId = instancia.replace(/-/g, '_');\n\nlet tipoAtivacao = 'trial';\nlet status = 'trial';\nlet trialEndDate = null;\nlet planoExpiraEm = null;\nlet adesaoPaga = false;\n\nif (cupom === 'VALIDA3MESES') {\n  tipoAtivacao = 'gratuito_3meses';\n  status = 'ativo';\n  const d = new Date(); d.setMonth(d.getMonth() + 3); planoExpiraEm = d.toISOString();\n  adesaoPaga = true;\n} else if (cupom === 'SOCIOVIP') {\n  tipoAtivacao = 'gratuito_6meses';\n  status = 'ativo';\n  const d = new Date(); d.setMonth(d.getMonth() + 6); planoExpiraEm = d.toISOString();\n  adesaoPaga = true;\n} else {\n  const d = new Date(); d.setDate(d.getDate() + 7); trialEndDate = d.toISOString();\n}\n\nconst apikey = '3gl0eq56t0ahsh3m5lx7ruv8i764qcvd';\nconst nomeNegocioCodificado = encodeURIComponent(nomeNegocio);\nconst linkConexao = `https://n8n.upviaagentes.com/webhook/conectar?i=${instancia}&k=${apikey}&n=${nomeNegocioCodificado}`;\n\nreturn [{\n  json: {\n    tenant_id: tenantId,\n    instancia: instancia,\n    nome_completo: nomeCompleto,\n    email: email,\n    telefone: telefone,\n    telefone_wpp: telefone + '@s.whatsapp.net',\n    cpf_cnpj: cpfCnpj,\n    nome_negocio: nomeNegocio,\n    tipo_negocio: tipoNegocio,\n    plano_slug: planoSlug,\n    plano_nome: planoSlug.charAt(0).toUpperCase() + planoSlug.slice(1),\n    preco_mensal: planoInfo.mensal,\n    taxa_adesao: planoInfo.adesao,\n    max_agentes: planoInfo.agendas,\n    cupom: cupom,\n    tipo_ativacao: tipoAtivacao,\n    status: status,\n    trial_end_date: trialEndDate,\n    plano_expira_em: planoExpiraEm,\n    adesso_paga: adesaoPaga,\n    nome_atendente: nomeAtendente,\n    tom_voz: tomVoz,\n    endereco: endereco,\n    instagram: instagram,\n    horario_funcionamento: horarioFuncionamento,\n    formas_pagamento: formasPagamento,\n    info_extra: infoExtra,\n    profissionais: profissionais,\n    servicos: servicos,\n    origem: origem,\n    link_checkout_asaas: body.link_checkout_asaas || '',\n    asaas_customer_id: body.asaas_customer_id || '',\n    asaas_payment_id: body.asaas_payment_id || '',\n    data_cadastro: new Date().toISOString(),\n    link_conexao: linkConexao\n  }\n}];"
+      },
+      "id": "0454984f-9e1c-4f63-bd2b-f7cffd35b12b",
+      "name": "Validar Cadastro",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        -1232,
+        80
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "jsCode": "const dados = $('Validar Cadastro').first().json;\nconst telefone = dados.telefone || '';\nconst telefoneFormatado = telefone.startsWith('55') ? telefone : '55' + telefone;\n\nreturn [{\n  json: {\n    ...dados,\n    telefone: telefoneFormatado,\n    telefone_wpp: telefoneFormatado + '@s.whatsapp.net'\n  }\n}];"
+      },
+      "id": "b99ac860-245a-4274-bf13-132a0a6ed6b3",
+      "name": "Tratar Telefone (55)",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        -1008,
+        80
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT instancia_whatsapp FROM clientes_sistema WHERE email = '{{ $('Tratar Telefone (55)').first().json.email }}' AND instancia_whatsapp IS NOT NULL AND instancia_whatsapp != '' LIMIT 1;",
+        "options": {}
+      },
+      "id": "38092896-2c8e-4aa7-ac3d-cd306379e0d0",
+      "name": "Verificar Instância Existente",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        -768,
+        80
+      ],
+      "typeVersion": 2.5,
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Verificar se o Postgres retornou alguma instância existente\nconst result = $input.first().json;\nconst dados = $('Tratar Telefone (55)').first().json;\n\nlet jaExiste = false;\n\n// Se o Postgres retornou um registro com instancia_whatsapp preenchida\nif (result && result.instancia_whatsapp && result.instancia_whatsapp.trim() !== '') {\n  jaExiste = true;\n}\n\nreturn [{\n  json: {\n    ...dados,\n    instancia_ja_existe: jaExiste,\n    instancia_existente: result ? result.instancia_whatsapp || '' : ''\n  }\n}];"
+      },
+      "id": "75d11d38-2a5e-4d4f-9339-6e1e8a90dc9d",
+      "name": "Checar Resultado",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        -528,
+        80
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cond-ja-existe",
+              "leftValue": "={{ $json.instancia_ja_existe }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -288,
+        80
+      ],
+      "id": "834e783b-e1e6-44ec-bffb-e3342c48c811",
+      "name": "Já tem instância?"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO clientes_sistema (\n  tenant_id,\n  nome_empresa,\n  nome_proprietario,\n  telefone,\n  email,\n  cpf_cnpj,\n  endereco,\n  instagram,\n  horario_funcionamento,\n  nome_atendente_ia,\n  tom_voz,\n  plano,\n  plano_nome,\n  status,\n  trial_end_date,\n  plano_expira_em,\n  cupom,\n  tipo_ativacao,\n  origem,\n  adesso_paga,\n  link_checkout_asaas,\n  asaas_customer_id,\n  preco_mensal,\n  taxa_adesao,\n  max_agentes,\n  instancia_whatsapp\n) VALUES (\n  '{{ $('Tratar Telefone (55)').first().json.tenant_id || '' }}',\n  '{{ $('Tratar Telefone (55)').first().json.nome_negocio || '' }}',\n  '{{ $('Tratar Telefone (55)').first().json.nome_completo || '' }}',\n  '{{ $('Tratar Telefone (55)').first().json.telefone || '' }}',\n  '{{ $('Tratar Telefone (55)').first().json.email || '' }}',\n  '{{ $('Tratar Telefone (55)').first().json.cpf_cnpj || '' }}',\n  '{{ $('Tratar Telefone (55)').first().json.endereco || '' }}',\n  '{{ $('Tratar Telefone (55)').first().json.instagram || '' }}',\n  '{{ $('Tratar Telefone (55)').first().json.horario_funcionamento || '' }}',\n  '{{ $('Tratar Telefone (55)').first().json.nome_atendente || 'Atendente' }}',\n  '{{ $('Tratar Telefone (55)').first().json.tom_voz || 'simpatica e profissional' }}',\n  '{{ $('Tratar Telefone (55)').first().json.plano_slug || 'light' }}',\n  '{{ $('Tratar Telefone (55)').first().json.plano_nome || 'Light' }}',\n  'ativo',\n  {{ $('Tratar Telefone (55)').first().json.trial_end_date ? \"'\" + $('Tratar Telefone (55)').first().json.trial_end_date + \"'\" : \"NULL\" }},\n  {{ $('Tratar Telefone (55)').first().json.plano_expira_em ? \"'\" + $('Tratar Telefone (55)').first().json.plano_expira_em + \"'\" : \"NULL\" }},\n  '{{ $('Tratar Telefone (55)').first().json.cupom || '' }}',\n  '{{ $('Tratar Telefone (55)').first().json.tipo_ativacao || 'trial' }}',\n  '{{ $('Tratar Telefone (55)').first().json.origem || 'site' }}',\n  {{ $('Tratar Telefone (55)').first().json.adesso_paga ? 'true' : 'false' }},\n  '{{ $('Tratar Telefone (55)').first().json.link_checkout_asaas || '' }}',\n  '{{ $('Tratar Telefone (55)').first().json.asaas_customer_id || '' }}',\n  {{ $('Tratar Telefone (55)').first().json.preco_mensal || 0 }},\n  {{ $('Tratar Telefone (55)').first().json.taxa_adesao || 0 }},\n  {{ $('Tratar Telefone (55)').first().json.max_agentes || 1 }},\n  '{{ $('Tratar Telefone (55)').first().json.instancia || '' }}'\n)\nON CONFLICT (email)\nDO UPDATE SET\n  nome_proprietario = EXCLUDED.nome_proprietario,\n  telefone = EXCLUDED.telefone,\n  status = EXCLUDED.status,\n  nome_empresa = EXCLUDED.nome_empresa,\n  instancia_whatsapp = EXCLUDED.instancia_whatsapp\nRETURNING id, email, nome_proprietario;",
+        "options": {}
+      },
+      "id": "1ab69fe7-d891-4009-961a-7f22e9a08af4",
+      "name": "Registrar Cliente Admin",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 2.5,
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://evo.upviaagentes.com/instance/create",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"instanceName\": \"{{ $('Tratar Telefone (55)').first().json.instancia }}\",\n  \"qrcode\": false,\n  \"integration\": \"WHATSAPP-BAILEYS\",\n  \"rejectCall\": true,\n  \"msgCall\": \"No momento não aceitamos chamadas.\",\n  \"groupsIgnore\": true,\n  \"alwaysOnline\": true,\n  \"readMessages\": false,\n  \"readStatus\": false,\n  \"syncFullHistory\": false\n}",
+        "options": {}
+      },
+      "id": "ed06166b-c2e9-4a08-adf0-12efbe714e20",
+      "name": "Criar Instância Evolution",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        240,
+        0
+      ],
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ \"https://evo.upviaagentes.com/webhook/set/\" + $('Tratar Telefone (55)').first().json.instancia }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"url\": \"https://n8n.upviaagentes.com/webhook/atendentia-webhook\",\n  \"webhook_by_events\": false,\n  \"webhook_base64\": false,\n  \"events\": [\"MESSAGES_UPSERT\"]\n}",
+        "options": {}
+      },
+      "id": "6f8308c1-dfee-4239-9abe-02e71afe9543",
+      "name": "Configurar Webhook Instância",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        480,
+        0
+      ],
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://evo.upviaagentes.com/message/sendText/Upvia_adm",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $('Tratar Telefone (55)').first().json.telefone }}\",\n  \"text\": \"🎉 *Bem-vindo(a) à UpvIA Agentes!*\\n\\nOlá, {{ $('Tratar Telefone (55)').first().json.nome_completo }}!\\n\\nSeu cadastro para *{{ $('Tratar Telefone (55)').first().json.nome_negocio }}* foi realizado com sucesso! 🚀\\n\\n📋 *Plano:* {{ $('Tratar Telefone (55)').first().json.plano_nome }} (R$ {{ $('Tratar Telefone (55)').first().json.preco_mensal }}/mês)\\n\\n{{ $('Tratar Telefone (55)').first().json.tipo_ativacao === 'trial' ? '⏳ Você tem *7 dias de teste grátis*.' : '✅ Plano ativado via cupom *' + $('Tratar Telefone (55)').first().json.cupom + '*!' }}\\n\\n✅ Sua atendente *{{ $('Tratar Telefone (55)').first().json.nome_atendente }}* está quase pronta.\\n\\n📱 *Próximo passo:* Conectar seu WhatsApp.\\n\\nVamos enviar um link especial para você fazer a conexão. Veja a próxima mensagem 👇\"\n}",
+        "options": {}
+      },
+      "id": "59914b9d-c80a-48e7-9db9-f5b2c58be546",
+      "name": "Enviar Boas-vindas",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        880,
+        80
+      ],
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://evo.upviaagentes.com/message/sendText/Upvia_adm",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $('Tratar Telefone (55)').first().json.telefone }}\",\n  \"text\": \"🔗 *Link de Conexão do WhatsApp*\\n\\n👉 {{ $('Tratar Telefone (55)').first().json.link_conexao }}\\n\\n📲 *Como conectar:*\\n\\n*Opção 1 — Com ajuda de alguém:*\\n1️⃣ Encaminhe este link para alguém próximo (marido, amiga, funcionário)\\n2️⃣ A pessoa abre o link no celular ou computador dela\\n3️⃣ No *seu celular*, abra o WhatsApp → *Dispositivos conectados* → *Conectar um dispositivo*\\n4️⃣ Aponte a câmera para o QR Code na tela da outra pessoa\\n\\n*Opção 2 — Sozinha:*\\n1️⃣ Abra este link no *navegador do seu computador*\\n2️⃣ No *seu celular*, abra o WhatsApp → *Dispositivos conectados* → *Conectar um dispositivo*\\n3️⃣ Aponte a câmera para o QR Code na tela do computador\\n\\n⏳ Se o QR expirar, clique no botão *Gerar novo QR Code* na página.\\n\\n✨ Assim que conectar, sua atendente estará ativa!\",\n  \"delay\": 3000\n}",
+        "options": {}
+      },
+      "id": "44b2d475-2be8-409b-b1e5-4d6334219ea6",
+      "name": "Enviar Link QR Code",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1120,
+        80
+      ],
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://evo.upviaagentes.com/message/sendMedia/Upvia_adm",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $('Tratar Telefone (55)').first().json.telefone }}\",\n  \"mediatype\": \"video\",\n  \"media\": \"https://qzgokcxvyasftuqgqonn.supabase.co/storage/v1/object/public/videos/video_tutorial_conexao.mp4\",\n  \"caption\": \"📺 Assista esse vídeo rápido para ver como conectar seu WhatsApp!\",\n  \"delay\": 5000\n}",
+        "options": {}
+      },
+      "id": "545a23e3-b676-4572-a94d-91b7a7139148",
+      "name": "Enviar Video Tutorial1",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1360,
+        80
+      ],
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n.upviaagentes.com/webhook/ativar-atendente",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"tenant_id\": \"{{ $('Tratar Telefone (55)').first().json.tenant_id }}\",\n  \"instancia\": \"{{ $('Tratar Telefone (55)').first().json.instancia }}\",\n  \"telefone\": \"{{ $('Tratar Telefone (55)').first().json.telefone }}\",\n  \"nome_negocio\": \"{{ $('Tratar Telefone (55)').first().json.nome_negocio }}\",\n  \"nome_atendente\": \"{{ $('Tratar Telefone (55)').first().json.nome_atendente }}\",\n  \"tom_voz\": \"{{ $('Tratar Telefone (55)').first().json.tom_voz }}\",\n  \"plano_slug\": \"{{ $('Tratar Telefone (55)').first().json.plano_slug }}\",\n  \"tipo_negocio\": \"{{ $('Tratar Telefone (55)').first().json.tipo_negocio }}\",\n  \"horario_funcionamento\": \"{{ $('Tratar Telefone (55)').first().json.horario_funcionamento }}\",\n  \"servicos\": {{ JSON.stringify($('Tratar Telefone (55)').first().json.servicos || []) }},\n  \"status\": \"{{ $('Tratar Telefone (55)').first().json.status }}\"\n}",
+        "options": {}
+      },
+      "id": "454b7681-e98b-4d44-b7e7-820355ccc24d",
+      "name": "Ativar Webhook Atendente IA",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1600,
+        80
+      ],
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE clientes_sistema SET \n  status = '{{ $('Tratar Telefone (55)').first().json.status }}', \n  criado_em = NOW() \nWHERE tenant_id = '{{ $('Tratar Telefone (55)').first().json.tenant_id }}';",
+        "options": {}
+      },
+      "id": "f4f9fbc1-3726-464e-89bb-97858c7bf4ab",
+      "name": "Atualizar Status",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        1840,
+        80
+      ],
+      "typeVersion": 2.5,
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO upvia_log (tenant_id, evento, detalhes) VALUES (\n  '{{ $('Tratar Telefone (55)').first().json.tenant_id }}',\n  'provisionamento_completo',\n  'Instância: {{ $('Tratar Telefone (55)').first().json.instancia }} | Link QR enviado | Tutorial enviado'\n);",
+        "options": {}
+      },
+      "id": "abe79eab-2db2-4419-88d7-b97758a762f2",
+      "name": "Log Provisionamento",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        2080,
+        80
+      ],
+      "typeVersion": 2.5,
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://evo.upviaagentes.com/message/sendText/Upvia_adm",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"5553981613729\",\n  \"text\": \"🆕 *NOVO CLIENTE CADASTRADO!*\\n\\n📍 {{ $('Tratar Telefone (55)').first().json.nome_negocio }}\\n👤 {{ $('Tratar Telefone (55)').first().json.nome_completo }}\\n📱 {{ $('Tratar Telefone (55)').first().json.telefone }}\\n🏷️ Plano: {{ $('Tratar Telefone (55)').first().json.plano_nome }} (R$ {{ $('Tratar Telefone (55)').first().json.preco_mensal }}/mês)\\n🎟️ Cupom: {{ $('Tratar Telefone (55)').first().json.cupom || 'Nenhum' }}\\n📌 Tipo: {{ $('Tratar Telefone (55)').first().json.tipo_ativacao }}\\n🤖 Atendente: {{ $('Tratar Telefone (55)').first().json.nome_atendente }}\\n🔗 Instância: {{ $('Tratar Telefone (55)').first().json.instancia }}\\n🔗 Link: {{ $('Tratar Telefone (55)').first().json.link_conexao }}\"\n}",
+        "options": {}
+      },
+      "id": "dbbdea93-29b4-4790-afde-992d0aa8dde0",
+      "name": "Notificar UpvIA",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        2320,
+        80
+      ],
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Cadastro realizado com sucesso!\",\n  \"tenant_id\": \"{{ $('Tratar Telefone (55)').first().json.tenant_id }}\",\n  \"email\": \"{{ $('Tratar Telefone (55)').first().json.email }}\",\n  \"link_conexao\": \"{{ $('Tratar Telefone (55)').first().json.link_conexao }}\"\n}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2560,
+        80
+      ],
+      "id": "e8caa17c-9392-42a7-9268-5c6f2752e85f",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "daec0ff7-2a08-4f0c-97c9-a9fdeccac6de",
+              "leftValue": "=={{ $json.body.nome_completo }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1456,
+        80
+      ],
+      "id": "149e27a0-cf3f-4480-9d35-52fb7f257b6c",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 24
+            }
+          ]
+        }
+      },
+      "id": "cdf9579e-cf43-47c9-a6be-21ac97f90787",
+      "name": "Schedule Trials Vencidos",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        -1664,
+        672
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n  tenant_id, instancia_whatsapp, nome_negocio, telefone,\n  email, nome_completo, plano_nome, link_checkout_asaas, preco_mensal\nFROM upvia_clientes\nWHERE status = 'trial'\n  AND trial_end_date IS NOT NULL\n  AND trial_end_date::date <= CURRENT_DATE\n  AND whatsapp_conectado = true;",
+        "options": {}
+      },
+      "id": "8237dbce-a57a-472f-ae75-77248c169106",
+      "name": "Buscar Trials Vencidos",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        -1440,
+        672
+      ],
+      "typeVersion": 2.5,
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "2758af13-fa04-4a05-8f25-ac0d98359383",
+      "name": "Loop Trials",
+      "type": "n8n-nodes-base.splitInBatches",
+      "position": [
+        -1232,
+        672
+      ],
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://evo.upviaagentes.com/message/sendText/{{ $json.instancia_whatsapp }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"55{{ $json.telefone }}\",\n  \"text\": \"⏳ *Seu período de teste encerrou!*\\n\\nOlá, {{ $json.nome_completo }}!\\n\\nOs 7 dias de teste da AtendentIA para *{{ $json.nome_negocio }}* terminaram.\\n\\nPara continuar, assine o plano *{{ $json.plano_nome }}* (R$ {{ $json.preco_mensal }}/mês):\\n\\n🔗 {{ $json.link_checkout_asaas || 'Entre em contato para o link de pagamento' }}\\n\\n✅ Após o pagamento, sua automação volta imediatamente!\"\n}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "e358d942-1d3d-45e3-aaca-0b60d5f7de5d",
+      "name": "Enviar Cobrança Trial",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        -1008,
+        672
+      ],
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE upvia_clientes SET\n  status = 'aguardando_pagamento',\n  updated_at = NOW()\nWHERE tenant_id = '{{ $json.tenant_id }}';",
+        "options": {}
+      },
+      "id": "18e233e3-2ec1-43d2-a012-db0f2773f288",
+      "name": "Atualizar Status → Aguardando Pgto",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        -784,
+        672
+      ],
+      "typeVersion": 2.5,
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 24
+            }
+          ]
+        }
+      },
+      "id": "195ac947-4db5-421d-8314-6dc7fdb85bdb",
+      "name": "Schedule Suspender Inadimplentes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        -1664,
+        960
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT tenant_id, instancia_whatsapp, nome_negocio, telefone, nome_completo\nFROM upvia_clientes\nWHERE status = 'aguardando_pagamento'\n  AND trial_end_date IS NOT NULL\n  AND trial_end_date::date <= CURRENT_DATE - INTERVAL '2 days';",
+        "options": {}
+      },
+      "id": "943647a5-97a7-459e-9697-59eaafaf1104",
+      "name": "Buscar Inadimplentes",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        -1440,
+        960
+      ],
+      "typeVersion": 2.5,
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "00fe6f57-c20e-4b91-b2f2-65f1433b2002",
+      "name": "Loop Inadimplentes",
+      "type": "n8n-nodes-base.splitInBatches",
+      "position": [
+        -1232,
+        960
+      ],
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE upvia_clientes SET\n  status = 'suspenso',\n  whatsapp_conectado = false,\n  updated_at = NOW()\nWHERE tenant_id = '{{ $json.tenant_id }}';",
+        "options": {}
+      },
+      "id": "037f6558-169f-442c-9f29-90242adf38be",
+      "name": "Suspender Cliente",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        -1008,
+        960
+      ],
+      "typeVersion": 2.5,
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://evo.upviaagentes.com/message/sendText/upvia_admin",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"55{{ $json.telefone }}\",\n  \"text\": \"🚫 *Automação Suspensa*\\n\\nOlá, {{ $json.nome_completo }}!\\n\\nSua AtendentIA para *{{ $json.nome_negocio }}* foi suspensa por falta de pagamento.\\n\\nPara reativar, realize o pagamento pelo link que enviamos anteriormente.\\n\\nDúvidas? Fale conosco. 💬\"\n}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "9ee9b9dd-2258-4fd3-83ac-a4f89d4d9492",
+      "name": "Notificar Suspensão",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        -784,
+        960
+      ],
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "asaas-webhook",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "9ec5abb7-ebf5-49bf-8bb0-92dfa8bc97ef",
+      "name": "Webhook Asaas",
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        -1664,
+        1264
+      ],
+      "typeVersion": 2,
+      "webhookId": "asaas-pagamento-upvia-v4"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nconst event = body.event || '';\nconst payment = body.payment || body;\n\nconst eventosValidos = ['PAYMENT_CONFIRMED', 'PAYMENT_RECEIVED'];\nif (!eventosValidos.includes(event)) {\n  return [{ json: { ignorar: true, motivo: 'Evento ignorado: ' + event } }];\n}\n\nlet metadata = {};\ntry {\n  metadata = payment.externalReference\n    ? JSON.parse(payment.externalReference)\n    : {};\n} catch(e) { metadata = {}; }\n\nreturn [{\n  json: {\n    ignorar: false,\n    asaas_customer_id: payment.customer || '',\n    asaas_payment_id:  payment.id || '',\n    valor_pago:        payment.value || 0,\n    email:             metadata.email || payment.customerEmail || '',\n    nome_negocio:      metadata.nome_negocio || '',\n    tenant_id:         metadata.tenant_id || '',\n    metadata:          metadata\n  }\n}];"
+      },
+      "id": "ac506fa1-5123-4127-9cc3-4c5e54220499",
+      "name": "Validar Pagamento Asaas",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        -1440,
+        1264
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cond-pagamento-valido",
+              "leftValue": "={{ $json.ignorar }}",
+              "rightValue": "false",
+              "operator": {
+                "type": "boolean",
+                "operation": "false"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "3b331dcd-2539-4e56-95a9-f29096741c67",
+      "name": "Pagamento Válido?",
+      "type": "n8n-nodes-base.filter",
+      "position": [
+        -1232,
+        1264
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT tenant_id, status, instancia_whatsapp, telefone, nome_completo, nome_negocio, plano_nome\nFROM upvia_clientes\nWHERE (\n  asaas_customer_id = '{{ $json.asaas_customer_id }}'\n  OR email = '{{ $json.email }}'\n  OR tenant_id = '{{ $json.tenant_id }}'\n)\nLIMIT 1;",
+        "options": {}
+      },
+      "id": "7daa9616-c406-4114-83cd-034e76dbc6cb",
+      "name": "Buscar Cliente por Pagamento",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        -1008,
+        1264
+      ],
+      "typeVersion": 2.5,
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE upvia_clientes SET\n  status = 'ativo',\n  whatsapp_conectado = true,\n  asaas_customer_id = COALESCE(NULLIF(as'), '{{ $('Validar Pagamento Asaas').first().json.asaas_customer_id }}'),\n  asaas_payment_id  = '{{ $('Validar Pagamento Asaas').first().json.asaas_payment_id }}',\n  data_ativacao = NOW(),\n  updated_at = NOW()\nWHERE tenant_id = '{{ $json.tenant_id }}';",
+        "options": {}
+      },
+      "id": "c18f4f74-a518-4f61-b105-203ba4027fdf",
+      "name": "Ativar Cliente Pagante",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        -784,
+        1264
+      ],
+      "typeVersion": 2.5,
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO upvia_pagamentos (tenant_id, asaas_payment_id, tipo, valor, status, data_pagamento)\nVALUES (\n  '{{ $('Buscar Cliente por Pagamento').first().json.tenant_id }}',\n  '{{ $('Validar Pagamento Asaas').first().json.asaas_payment_id }}',\n  'mensalidade',\n  {{ $('Validar Pagamento Asaas').first().json.valor_pago }},\n  'confirmado',\n  NOW()\n)\nON CONFLICT (asaas_payment_id) DO NOTHING;",
+        "options": {}
+      },
+      "id": "6c48af2c-a8ce-4459-8848-3f82b5ff9fa2",
+      "name": "Registrar Pagamento",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        -560,
+        1264
+      ],
+      "typeVersion": 2.5,
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://evo.upviaagentes.com/message/sendText/upvia_admin",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"55{{ $('Buscar Cliente por Pagamento').first().json.telefone }}\",\n  \"text\": \"✅ *Pagamento confirmado!*\\n\\nOlá, {{ $('Buscar Cliente por Pagamento').first().json.nome_completo }}!\\n\\nSeu pagamento foi confirmado e sua AtendentIA para *{{ $('Buscar Cliente por Pagamento').first().json.nome_negocio }}* está *ativa*! 🎉\\n\\nPlano: {{ $('Buscar Cliente por Pagamento').first().json.plano_nome }}\\n\\nA automação de atendimento já está funcionando. Qualquer dúvida, estamos aqui! 💬\"\n}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "1b2387ba-4531-4ca2-968d-71d2d45f2bc6",
+      "name": "Notificar Ativação ao Cliente",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        -352,
+        1264
+      ],
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://evo.upviaagentes.com/message/sendText/upvia_admin",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"5553981613729\",\n  \"text\": \"💰 *PAGAMENTO RECEBIDO!*\\n\\n📍 {{ $('Buscar Cliente por Pagamento').first().json.nome_negocio }}\\n👤 {{ $('Buscar Cliente por Pagamento').first().json.nome_completo }}\\n📱 {{ $('Buscar Cliente por Pagamento').first().json.telefone }}\\n💵 Valor: R$ {{ $('Validar Pagamento Asaas').first().json.valor_pago }}\\n✅ Cliente ativado automaticamente\"\n}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "7e60479e-300f-4a57-9a0e-d6991f49b41e",
+      "name": "Notificar Admin — Pagamento",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        -128,
+        1264
+      ],
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "content": "## ⏳ TRIAL MONITOR\nDiariamente:\n- Busca trials vencidos (WhatsApp conectado)\n- Envia cobrança via instância do CLIENTE\n- Status → aguardando_pagamento\n- Após 2 dias sem pagar → suspende",
+        "height": 240,
+        "width": 480,
+        "color": 5
+      },
+      "id": "586fda86-880c-4b9c-85de-bc328b374dac",
+      "name": "📋 Trial",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1904,
+        416
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 💰 WEBHOOK ASAAS\nPAYMENT_CONFIRMED / PAYMENT_RECEIVED\nBusca por: asaas_customer_id OU email OU tenant_id\nAtiva cliente + ON CONFLICT evita duplicatas",
+        "height": 200,
+        "width": 480,
+        "color": 3
+      },
+      "id": "cca2eb1b-b3a4-40b3-bb0b-a0d7d5084952",
+      "name": "📋 Asaas",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -2192,
+        1184
+      ],
+      "typeVersion": 1
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Cadastro": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar Cadastro": {
+      "main": [
+        [
+          {
+            "node": "Tratar Telefone (55)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tratar Telefone (55)": {
+      "main": [
+        [
+          {
+            "node": "Verificar Instância Existente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verificar Instância Existente": {
+      "main": [
+        [
+          {
+            "node": "Checar Resultado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Checar Resultado": {
+      "main": [
+        [
+          {
+            "node": "Já tem instância?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Já tem instância?": {
+      "main": [
+        [
+          {
+            "node": "Registrar Cliente Admin",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enviar Boas-vindas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar Cliente Admin": {
+      "main": [
+        [
+          {
+            "node": "Criar Instância Evolution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Criar Instância Evolution": {
+      "main": [
+        [
+          {
+            "node": "Configurar Webhook Instância",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Configurar Webhook Instância": {
+      "main": [
+        [
+          {
+            "node": "Enviar Boas-vindas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Boas-vindas": {
+      "main": [
+        [
+          {
+            "node": "Enviar Link QR Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Link QR Code": {
+      "main": [
+        [
+          {
+            "node": "Enviar Video Tutorial1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Video Tutorial1": {
+      "main": [
+        [
+          {
+            "node": "Ativar Webhook Atendente IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ativar Webhook Atendente IA": {
+      "main": [
+        [
+          {
+            "node": "Atualizar Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualizar Status": {
+      "main": [
+        [
+          {
+            "node": "Log Provisionamento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Provisionamento": {
+      "main": [
+        [
+          {
+            "node": "Notificar UpvIA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notificar UpvIA": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Validar Cadastro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trials Vencidos": {
+      "main": [
+        [
+          {
+            "node": "Buscar Trials Vencidos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Trials Vencidos": {
+      "main": [
+        [
+          {
+            "node": "Loop Trials",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Trials": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Enviar Cobrança Trial",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Cobrança Trial": {
+      "main": [
+        [
+          {
+            "node": "Atualizar Status → Aguardando Pgto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualizar Status → Aguardando Pgto": {
+      "main": [
+        [
+          {
+            "node": "Loop Trials",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Suspender Inadimplentes": {
+      "main": [
+        [
+          {
+            "node": "Buscar Inadimplentes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Inadimplentes": {
+      "main": [
+        [
+          {
+            "node": "Loop Inadimplentes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Inadimplentes": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Suspender Cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Suspender Cliente": {
+      "main": [
+        [
+          {
+            "node": "Notificar Suspensão",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notificar Suspensão": {
+      "main": [
+        [
+          {
+            "node": "Loop Inadimplentes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Asaas": {
+      "main": [
+        [
+          {
+            "node": "Validar Pagamento Asaas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar Pagamento Asaas": {
+      "main": [
+        [
+          {
+            "node": "Pagamento Válido?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pagamento Válido?": {
+      "main": [
+        [
+          {
+            "node": "Buscar Cliente por Pagamento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Cliente por Pagamento": {
+      "main": [
+        [
+          {
+            "node": "Ativar Cliente Pagante",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ativar Cliente Pagante": {
+      "main": [
+        [
+          {
+            "node": "Registrar Pagamento",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notificar Ativação ao Cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar Pagamento": {
+      "main": [
+        [
+          {
+            "node": "Notificar Admin — Pagamento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "0b7cca6d-3abf-4b96-a0ef-ed77c3dd69b9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8d72dbf3c0d3b5a1f3a49767a5f36377274bb40c20d10df668ec20eaf034a7c3"
+  },
+  "id": "mCKlUTXD9V6hdnO2",
+  "tags": []
+}

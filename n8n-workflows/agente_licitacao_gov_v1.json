@@ -1,0 +1,1684 @@
+{
+  "name": "Agente Licitação Gov BR — Pesquisa + Resumo + Fornecedores + Alerta de Lances",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "# ⚖️ AGENTE DE LICITAÇÃO GOVERNAMENTAL v1\n\n**MÓDULO 1** → Monitoramento PNCP/ComprasNet/BLL — busca licitações novas a cada 2h\n**MÓDULO 2** → Resumo Inteligente — Claude analisa edital e extrai pontos críticos\n**MÓDULO 3** → Pesquisa de Fornecedores — Claude busca melhores fornecedores do item licitado\n**MÓDULO 4** → Alerta WhatsApp — envia resumo + fornecedores + análise de viabilidade\n**MÓDULO 5** → Assistente de Lances — monitora sessão ao vivo + sugere lances no WhatsApp\n**MÓDULO 6** → Atendente IA WhatsApp — responde dúvidas sobre licitações abertas\n\n⚠️ Substitua todas as variáveis SEU_ / SUA_ antes de ativar.\n📋 Planilha: abas 'Licitacoes', 'Fornecedores', 'Lances', 'Config'",
+        "height": 220,
+        "width": 1000,
+        "color": 7
+      },
+      "id": "sticky-intro",
+      "name": "INTRO",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -500
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 🔍 MÓDULO 1 — Monitoramento de Licitações\nRoda a cada 2h: busca licitações novas no PNCP (federal), BLL e Licitanet via API + web search → filtra por palavras-chave do cliente → envia para análise",
+        "height": 70,
+        "width": 900,
+        "color": 4
+      },
+      "id": "sticky-mod1",
+      "name": "STICKY MOD1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -220
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 2
+            }
+          ]
+        }
+      },
+      "id": "schedule-monitor",
+      "name": "⏰ Schedule 2h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        -60
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "name"
+        },
+        "table": {
+          "__rl": true,
+          "value": "config_licitantes",
+          "mode": "name"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "ativo",
+              "condition": "eq",
+              "keyValue": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "buscar-config-clientes",
+      "name": "🗄️ Buscar Config Clientes",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        220,
+        -60
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Cada cliente tem palavras-chave e categorias de interesse\nconst clientes = $input.all();\nconst agora = new Date();\nconst duasHorasAtras = new Date(agora - 2 * 60 * 60 * 1000).toISOString();\n\nreturn clientes.map(c => ({\n  json: {\n    cliente_id: c.json.id,\n    whatsapp: c.json.whatsapp,\n    nome_empresa: c.json.nome_empresa,\n    palavras_chave: c.json.palavras_chave || [],\n    categorias: c.json.categorias_interesse || [],\n    uf_interesse: c.json.uf_interesse || ['BR'],\n    valor_minimo: c.json.valor_minimo || 10000,\n    valor_maximo: c.json.valor_maximo || 5000000,\n    margem_minima: c.json.margem_minima_percentual || 15,\n    desde: duasHorasAtras,\n    // APIs públicas do PNCP\n    pncp_url: `https://pncp.gov.br/api/pncp/v1/orgaos/compras?dataInicial=${duasHorasAtras.split('T')[0]}&pagina=1&tamanhoPagina=50`,\n    bll_url: 'https://bllcompras.com/api/v1/licitacoes?status=aberta&limit=50',\n  }\n}));"
+      },
+      "id": "prep-busca-licitacoes",
+      "name": "⚙️ Prep Busca por Cliente",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        -60
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.pncp_url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "pncp-buscar",
+      "name": "🏛️ PNCP - Buscar Licitações",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "SUA_CHAVE_CLAUDE_AQUI"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "=",
+              "value": "={{ JSON.stringify({\n  model: 'claude-sonnet-4-20250514',\n  max_tokens: 2048,\n  tools: [{ type: 'web_search_20250305', name: 'web_search' }],\n  messages: [{\n    role: 'user',\n    content: `Você é especialista em licitações públicas brasileiras. Pesquise licitações abertas nas últimas 2 horas nas plataformas: PNCP, BLL Compras, Licitanet e ComprasNet.\n\nDados do cliente licitante:\n- Palavras-chave de interesse: ${JSON.stringify($json.palavras_chave)}\n- Categorias CATMAT/CATSER: ${JSON.stringify($json.categorias)}\n- UFs de interesse: ${JSON.stringify($json.uf_interesse)}\n- Faixa de valor: R$${$json.valor_minimo} a R$${$json.valor_maximo}\n\nPesquise licitações REAIS disponíveis agora que se encaixam nesses critérios.\nRetorne SOMENTE JSON válido sem markdown:\n{\n  \"licitacoes\": [\n    {\n      \"numero_edital\": \"string\",\n      \"orgao\": \"string\",\n      \"objeto\": \"descrição do que está sendo licitado\",\n      \"modalidade\": \"pregão eletrônico|tomada de preços|concorrência|etc\",\n      \"valor_estimado\": 0.00,\n      \"data_abertura\": \"YYYY-MM-DD HH:mm\",\n      \"data_encerramento\": \"YYYY-MM-DD HH:mm\",\n      \"uf\": \"SP\",\n      \"municipio\": \"string\",\n      \"plataforma\": \"PNCP|BLL|Licitanet|ComprasNet\",\n      \"link_edital\": \"url\",\n      \"itens_principais\": [\"item1\", \"item2\"],\n      \"score_relevancia\": 0\n    }\n  ]\n}`\n  }]\n}) }}"
+            }
+          ]
+        }
+      },
+      "id": "claude-buscar-licitacoes",
+      "name": "🤖 Claude Busca Licitações",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const resp = $input.item.json;\nconst config = $('⚙️ Prep Busca por Cliente').item.json;\n\nconst text = (resp.content || []).map(b => b.type === 'text' ? b.text : '').join('\\n');\nlet parsed;\ntry {\n  const match = text.replace(/```json|```/g,'').trim().match(/\\{[\\s\\S]*\\}/);\n  parsed = match ? JSON.parse(match[0]) : { licitacoes: [] };\n} catch(e) { parsed = { licitacoes: [] }; }\n\n// Filtra por score e valor\nconst filtradas = (parsed.licitacoes || [])\n  .filter(l => l.score_relevancia >= 6 && l.valor_estimado >= config.valor_minimo)\n  .sort((a,b) => b.score_relevancia - a.score_relevancia)\n  .slice(0, 10);\n\nreturn filtradas.map(l => ({\n  json: {\n    ...config,\n    licitacao: l,\n    ja_processada: false\n  }\n}));"
+      },
+      "id": "parse-licitacoes",
+      "name": "⚙️ Parse + Filtrar Licitações",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        -60
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "name"
+        },
+        "table": {
+          "__rl": true,
+          "value": "licitacoes_monitoradas",
+          "mode": "name"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "numero_edital",
+              "condition": "eq",
+              "keyValue": "={{ $json.licitacao.numero_edital }}"
+            }
+          ]
+        },
+        "limit": 1,
+        "options": {}
+      },
+      "id": "checar-duplicata",
+      "name": "🗄️ Checar se Já Processada",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        -60
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const existe = $input.item.json;\nconst dados = $('⚙️ Parse + Filtrar Licitações').item.json;\n// Se retornou algum registro, já foi processada\nif (existe && existe.id) {\n  return [{ json: { ...dados, ja_processada: true } }];\n}\nreturn [{ json: { ...dados, ja_processada: false } }];"
+      },
+      "id": "marcar-duplicata",
+      "name": "⚙️ Marcar Duplicata",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        -60
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $json.ja_processada }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ]
+        }
+      },
+      "id": "filtro-novas",
+      "name": "🔍 Filtro: Apenas Novas",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        -60
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 📋 MÓDULO 2 — Resumo Inteligente do Edital\nClaude acessa o edital completo, extrai e resume os pontos críticos: habilitação, documentos, prazos, critérios de julgamento, penalidades e alertas",
+        "height": 70,
+        "width": 900,
+        "color": 6
+      },
+      "id": "sticky-mod2",
+      "name": "STICKY MOD2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "SUA_CHAVE_CLAUDE_AQUI"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "=",
+              "value": "={{ JSON.stringify({\n  model: 'claude-sonnet-4-20250514',\n  max_tokens: 3000,\n  tools: [{ type: 'web_search_20250305', name: 'web_search' }],\n  messages: [{\n    role: 'user',\n    content: `Você é um especialista em licitações públicas brasileiras com 20 anos de experiência. Acesse e analise o edital da licitação abaixo.\n\nLicitação:\n- Número: ${$json.licitacao.numero_edital}\n- Órgão: ${$json.licitacao.orgao}\n- Objeto: ${$json.licitacao.objeto}\n- Plataforma: ${$json.licitacao.plataforma}\n- Link: ${$json.licitacao.link_edital}\n\nAcesse o edital e retorne SOMENTE JSON válido sem markdown:\n{\n  \"resumo_executivo\": \"3-4 linhas explicando o que o governo quer comprar em linguagem simples\",\n  \"itens_licitados\": [{\"descricao\": \"string\", \"quantidade\": 0, \"unidade\": \"string\", \"valor_unitario_estimado\": 0.00}],\n  \"documentos_habilitacao\": [\"doc1\", \"doc2\"],\n  \"requisitos_tecnicos\": [\"req1\", \"req2\"],\n  \"criterio_julgamento\": \"menor preço|técnica e preço|melhor técnica\",\n  \"prazo_entrega_dias\": 0,\n  \"local_entrega\": \"string\",\n  \"prazo_vigencia_contrato_meses\": 0,\n  \"penalidades\": \"resumo das multas e penalidades\",\n  \"pontos_atencao\": [\"alerta1\", \"alerta2\"],\n  \"permite_consorcio\": true,\n  \"exclusivo_me_epp\": false,\n  \"exige_visita_tecnica\": false,\n  \"viabilidade_score\": 0,\n  \"justificativa_viabilidade\": \"por que vale ou não a pena participar\"\n}`\n  }]\n}) }}"
+            }
+          ]
+        }
+      },
+      "id": "claude-resumo-edital",
+      "name": "🤖 Claude Resumo Edital",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const resp = $input.item.json;\nconst dados = $('🔍 Filtro: Apenas Novas').item.json;\n\nconst text = (resp.content || []).map(b => b.type === 'text' ? b.text : '').join('\\n');\nlet resumo;\ntry {\n  const match = text.replace(/```json|```/g,'').trim().match(/\\{[\\s\\S]*\\}/);\n  resumo = match ? JSON.parse(match[0]) : {};\n} catch(e) { resumo = { resumo_executivo: 'Erro ao processar edital', viabilidade_score: 0 }; }\n\nreturn [{ json: { ...dados, resumo_edital: resumo } }];"
+      },
+      "id": "parse-resumo",
+      "name": "⚙️ Parse Resumo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 🏭 MÓDULO 3 — Pesquisa de Fornecedores\nClaude pesquisa os melhores fornecedores dos itens licitados: preço de custo, prazo, qualidade, certificações exigidas pelo edital",
+        "height": 70,
+        "width": 900,
+        "color": 3
+      },
+      "id": "sticky-mod3",
+      "name": "STICKY MOD3",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        680
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "SUA_CHAVE_CLAUDE_AQUI"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "=",
+              "value": "={{ JSON.stringify({\n  model: 'claude-sonnet-4-20250514',\n  max_tokens: 2048,\n  tools: [{ type: 'web_search_20250305', name: 'web_search' }],\n  messages: [{\n    role: 'user',\n    content: `Você é especialista em supply chain e fornecedores para licitações governamentais brasileiras.\n\nItens que o governo quer comprar:\n${JSON.stringify($json.resumo_edital.itens_licitados || [])}\n\nObjeto: ${$json.licitacao.objeto}\nUF de entrega: ${$json.licitacao.uf}\nPrazo de entrega exigido: ${$json.resumo_edital.prazo_entrega_dias || 30} dias\nRequisitos técnicos: ${JSON.stringify($json.resumo_edital.requisitos_tecnicos || [])}\n\nPesquise fornecedores REAIS brasileiros que fornecem esses itens para o mercado de licitações.\nRetorne SOMENTE JSON válido sem markdown:\n{\n  \"fornecedores\": [\n    {\n      \"nome_empresa\": \"string\",\n      \"cnpj\": \"string se disponível\",\n      \"cidade_uf\": \"string\",\n      \"itens_que_fornece\": [\"item1\"],\n      \"preco_estimado_unitario\": 0.00,\n      \"prazo_entrega_dias\": 0,\n      \"diferenciais\": \"por que esse fornecedor é bom para licitação\",\n      \"tem_nota_fiscal\": true,\n      \"aceita_empenho\": true,\n      \"contato\": \"site ou telefone\",\n      \"score_fornecedor\": 0\n    }\n  ],\n  \"margem_estimada_percentual\": 0,\n  \"custo_total_estimado\": 0.00,\n  \"lucro_estimado\": 0.00\n}`\n  }]\n}) }}"
+            }
+          ]
+        }
+      },
+      "id": "claude-fornecedores",
+      "name": "🤖 Claude Pesquisa Fornecedores",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        860
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const resp = $input.item.json;\nconst dados = $('⚙️ Parse Resumo').item.json;\n\nconst text = (resp.content || []).map(b => b.type === 'text' ? b.text : '').join('\\n');\nlet fornecedores;\ntry {\n  const match = text.replace(/```json|```/g,'').trim().match(/\\{[\\s\\S]*\\}/);\n  fornecedores = match ? JSON.parse(match[0]) : { fornecedores: [] };\n} catch(e) { fornecedores = { fornecedores: [], margem_estimada_percentual: 0 }; }\n\nreturn [{ json: { ...dados, analise_fornecedores: fornecedores } }];"
+      },
+      "id": "parse-fornecedores",
+      "name": "⚙️ Parse Fornecedores",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        860
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "name"
+        },
+        "table": {
+          "__rl": true,
+          "value": "licitacoes_monitoradas",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "cliente_id": "={{ $json.cliente_id }}",
+            "numero_edital": "={{ $json.licitacao.numero_edital }}",
+            "orgao": "={{ $json.licitacao.orgao }}",
+            "objeto": "={{ $json.licitacao.objeto }}",
+            "modalidade": "={{ $json.licitacao.modalidade }}",
+            "valor_estimado": "={{ $json.licitacao.valor_estimado }}",
+            "data_abertura": "={{ $json.licitacao.data_abertura }}",
+            "data_encerramento": "={{ $json.licitacao.data_encerramento }}",
+            "uf": "={{ $json.licitacao.uf }}",
+            "plataforma": "={{ $json.licitacao.plataforma }}",
+            "link_edital": "={{ $json.licitacao.link_edital }}",
+            "resumo_edital": "={{ JSON.stringify($json.resumo_edital) }}",
+            "fornecedores": "={{ JSON.stringify($json.analise_fornecedores) }}",
+            "viabilidade_score": "={{ $json.resumo_edital.viabilidade_score || 0 }}",
+            "status": "nova",
+            "margem_estimada": "={{ $json.analise_fornecedores.margem_estimada_percentual || 0 }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "salvar-licitacao-supabase",
+      "name": "🗄️ Salvar Licitação Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        440,
+        860
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "SEU_GOOGLE_SHEETS_ID_AQUI",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Licitacoes",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Data": "={{ new Date().toISOString().split('T')[0] }}",
+            "Número Edital": "={{ $json.licitacao.numero_edital }}",
+            "Órgão": "={{ $json.licitacao.orgao }}",
+            "Objeto": "={{ $json.licitacao.objeto }}",
+            "Valor Estimado": "={{ $json.licitacao.valor_estimado }}",
+            "Margem Estimada %": "={{ $json.analise_fornecedores.margem_estimada_percentual }}",
+            "Lucro Estimado": "={{ $json.analise_fornecedores.lucro_estimado }}",
+            "Data Abertura": "={{ $json.licitacao.data_abertura }}",
+            "Data Encerramento": "={{ $json.licitacao.data_encerramento }}",
+            "Plataforma": "={{ $json.licitacao.plataforma }}",
+            "UF": "={{ $json.licitacao.uf }}",
+            "Viabilidade Score": "={{ $json.resumo_edital.viabilidade_score }}",
+            "Status": "Nova",
+            "Link": "={{ $json.licitacao.link_edital }}",
+            "Participar?": "=Revisar"
+          }
+        },
+        "options": {}
+      },
+      "id": "salvar-licitacao-sheets",
+      "name": "📊 Salvar Licitação Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [
+        660,
+        860
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 📱 MÓDULO 4 — Alerta WhatsApp\nMonta mensagem completa com resumo do edital + melhores fornecedores + score de viabilidade e envia para o licitante via Evolution API",
+        "height": 70,
+        "width": 900,
+        "color": 2
+      },
+      "id": "sticky-mod4",
+      "name": "STICKY MOD4",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        1100
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $json.resumo_edital.viabilidade_score }}",
+              "rightValue": 5,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ]
+        }
+      },
+      "id": "filtro-viavel",
+      "name": "🔍 Filtro: Viabilidade ≥ 5",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [
+        0,
+        1260
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.item.json;\nconst lit = d.licitacao;\nconst res = d.resumo_edital;\nconst forn = d.analise_fornecedores;\n\nconst top3forn = (forn.fornecedores || []).slice(0, 3)\n  .map((f, i) => `${i+1}. *${f.nome_empresa}* — R$${f.preco_estimado_unitario?.toFixed(2) || 'N/D'}/un | ${f.prazo_entrega_dias}d | ${f.diferenciais}`)\n  .join('\\n');\n\nconst pontos = (res.pontos_atencao || []).map(p => `⚠️ ${p}`).join('\\n');\nconst docs = (res.documentos_habilitacao || []).slice(0, 5).map(d => `📄 ${d}`).join('\\n');\n\nconst viabilidadeEmoji = res.viabilidade_score >= 8 ? '🟢' : res.viabilidade_score >= 6 ? '🟡' : '🔴';\n\nconst msg = `⚖️ *NOVA LICITAÇÃO IDENTIFICADA*\n\n*${lit.orgao}*\n📋 Edital: ${lit.numero_edital}\n🏛️ Plataforma: ${lit.plataforma} | ${lit.uf}\n\n📦 *O que o governo quer:*\n${res.resumo_executivo}\n\n💰 *Valores:*\n• Estimado: R$${lit.valor_estimado?.toLocaleString('pt-BR') || 'N/D'}\n• Custo estimado: R$${forn.custo_total_estimado?.toLocaleString('pt-BR') || 'N/D'}\n• Lucro estimado: R$${forn.lucro_estimado?.toLocaleString('pt-BR') || 'N/D'}\n• Margem: ${forn.margem_estimada_percentual || 0}%\n\n${viabilidadeEmoji} *Viabilidade: ${res.viabilidade_score}/10*\n${res.justificativa_viabilidade}\n\n📅 *Prazos:*\n• Abertura: ${lit.data_abertura}\n• Encerramento: ${lit.data_encerramento}\n• Entrega: ${res.prazo_entrega_dias} dias\n\n📋 *Documentos necessários:*\n${docs}\n\n${pontos ? `⚠️ *Pontos de Atenção:*\\n${pontos}` : ''}\n\n🏭 *Top 3 Fornecedores:*\n${top3forn}\n\n🔗 ${lit.link_edital}\n\nResponda *SIM* para confirmar participação ou *NÃO* para ignorar.`;\n\nreturn [{ json: { ...d, mensagem_whatsapp: msg } }];"
+      },
+      "id": "montar-alerta-wpp",
+      "name": "⚙️ Montar Alerta WhatsApp",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        1260
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://evo.upviaagentes.com/message/sendText/SEU_NOME_INSTANCIA_AQUI",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "SUA_API_KEY_EVOLUTION_AQUI"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "=",
+              "value": "={{ JSON.stringify({\n  number: $json.whatsapp,\n  text: $json.mensagem_whatsapp\n}) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "enviar-alerta-wpp",
+      "name": "📱 Enviar Alerta WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        1260
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "name"
+        },
+        "table": {
+          "__rl": true,
+          "value": "licitacoes_monitoradas",
+          "mode": "name"
+        },
+        "filterType": "manual",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "numero_edital",
+              "condition": "eq",
+              "keyValue": "={{ $json.licitacao.numero_edital }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "values": [
+            {
+              "fieldId": "status",
+              "fieldValue": "alerta_enviado"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "atualizar-status-alerta",
+      "name": "🗄️ Atualizar Status: Alerta Enviado",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        660,
+        1260
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 🎯 MÓDULO 5 — Assistente de Lances\nWebhook WhatsApp: cliente responde SIM → confirma participação → monitora sessão de lances → sugere valores estratégicos no WhatsApp na hora certa",
+        "height": 70,
+        "width": 1000,
+        "color": 1
+      },
+      "id": "sticky-mod5",
+      "name": "STICKY MOD5",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        1480
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "licitacao-wpp-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-wpp-licitacao",
+      "name": "📩 Webhook WhatsApp Licitação",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        1660
+      ],
+      "webhookId": "licitacao-wpp-webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.item.json.body || $input.item.json;\nconst data = body.data || {};\nconst msg = (data.message?.conversation || data.message?.extendedTextMessage?.text || '').trim().toUpperCase();\nconst from = data.key?.remoteJid?.replace('@s.whatsapp.net','') || '';\nconst pushName = data.pushName || '';\n\nreturn [{ json: {\n  from, pushName, mensagem: msg,\n  eh_confirmacao: msg === 'SIM' || msg.includes('SIM'),\n  eh_rejeicao: msg === 'NÃO' || msg === 'NAO' || msg.includes('NÃO'),\n  eh_lance: msg.startsWith('LANCE') || msg.startsWith('PARTICIPAR'),\n  eh_limite: msg.startsWith('LIMITE') || msg.startsWith('MAX'),\n  raw_msg: (data.message?.conversation || data.message?.extendedTextMessage?.text || '').trim()\n} }];"
+      },
+      "id": "extrair-resp-wpp",
+      "name": "⚙️ Extrair Resposta WhatsApp",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        1660
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $json.eh_confirmacao }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ]
+        }
+      },
+      "id": "filtro-confirmacao",
+      "name": "🔍 Filtro: Confirmou Participação",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [
+        440,
+        1580
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $json.eh_lance || $json.eh_limite }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ]
+        }
+      },
+      "id": "filtro-config-lance",
+      "name": "🔍 Filtro: Config de Lance",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [
+        440,
+        1740
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "name"
+        },
+        "table": {
+          "__rl": true,
+          "value": "licitacoes_monitoradas",
+          "mode": "name"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "status",
+              "condition": "eq",
+              "keyValue": "alerta_enviado"
+            },
+            {
+              "keyName": "cliente_id",
+              "condition": "eq",
+              "keyValue": "={{ $json.from }}"
+            }
+          ]
+        },
+        "sort": {
+          "values": [
+            {
+              "column": "created_at",
+              "direction": "DESC"
+            }
+          ]
+        },
+        "limit": 1,
+        "options": {}
+      },
+      "id": "buscar-licitacao-pendente",
+      "name": "🗄️ Buscar Licitação Pendente",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        660,
+        1580
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "name"
+        },
+        "table": {
+          "__rl": true,
+          "value": "licitacoes_monitoradas",
+          "mode": "name"
+        },
+        "filterType": "manual",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "values": [
+            {
+              "fieldId": "status",
+              "fieldValue": "participando"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "confirmar-participacao",
+      "name": "🗄️ Confirmar Participação",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        880,
+        1580
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://evo.upviaagentes.com/message/sendText/SEU_NOME_INSTANCIA_AQUI",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "SUA_API_KEY_EVOLUTION_AQUI"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "=",
+              "value": "={{ JSON.stringify({\n  number: $('⚙️ Extrair Resposta WhatsApp').item.json.from,\n  text: `✅ *Participação confirmada!*\\n\\nVocê está inscrito para monitorar os lances desta licitação.\\n\\n📌 Para definir seu lance máximo, envie:\\n*LIMITE R$[valor]*\\n\\nExemplo: LIMITE R$45000\\n\\nEu vou monitorar os lances e te avisar quando for a hora de dar o próximo lance! 🎯`\n}) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "wpp-confirmado",
+      "name": "📱 WPP: Participação Confirmada",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        1580
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.item.json;\n// Extrai valor máximo da mensagem: \"LIMITE R$45000\" ou \"MAX 45000\"\nconst msg = d.raw_msg || '';\nconst match = msg.match(/[R$]?\\s*([\\d.,]+)/);\nconst valorMax = match ? parseFloat(match[1].replace('.','').replace(',','.')) : 0;\n\nreturn [{ json: { ...d, lance_maximo: valorMax } }];"
+      },
+      "id": "extrair-lance-maximo",
+      "name": "⚙️ Extrair Lance Máximo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        1740
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "name"
+        },
+        "table": {
+          "__rl": true,
+          "value": "licitacoes_monitoradas",
+          "mode": "name"
+        },
+        "filterType": "manual",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "status",
+              "condition": "eq",
+              "keyValue": "participando"
+            },
+            {
+              "keyName": "cliente_whatsapp",
+              "condition": "eq",
+              "keyValue": "={{ $json.from }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "values": [
+            {
+              "fieldId": "lance_maximo",
+              "fieldValue": "={{ $json.lance_maximo }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "salvar-lance-maximo",
+      "name": "🗄️ Salvar Lance Máximo",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        880,
+        1740
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 3
+            }
+          ]
+        }
+      },
+      "id": "schedule-monitor-lances",
+      "name": "⏰ Schedule 3min Lances",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        2000
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "name"
+        },
+        "table": {
+          "__rl": true,
+          "value": "licitacoes_monitoradas",
+          "mode": "name"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "status",
+              "condition": "eq",
+              "keyValue": "participando"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "buscar-licitacoes-ativas",
+      "name": "🗄️ Buscar Licitações Ativas",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        220,
+        2000
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "SUA_CHAVE_CLAUDE_AQUI"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "=",
+              "value": "={{ JSON.stringify({\n  model: 'claude-sonnet-4-20250514',\n  max_tokens: 1024,\n  tools: [{ type: 'web_search_20250305', name: 'web_search' }],\n  messages: [{\n    role: 'user',\n    content: `Você é especialista em licitações públicas. Monitore a sessão de lances desta licitação AGORA.\n\nEdital: ${$json.numero_edital}\nÓrgão: ${$json.orgao}\nPlataforma: ${$json.plataforma}\nLink: ${$json.link_edital}\nLance máximo do cliente: R$${$json.lance_maximo}\nMargem mínima aceitável: ${$json.margem_minima || 15}%\nCusto total dos itens: R$${JSON.parse($json.fornecedores || '{}').custo_total_estimado || 0}\n\nAcesse a plataforma e verifique:\n1. Lance atual vencedor\n2. Número de participantes ativos\n3. Fase da sessão (aberta/iminente encerramento/encerrada)\n4. Se vale a pena nosso cliente dar um lance agora\n\nRetorne SOMENTE JSON válido sem markdown:\n{\n  \"sessao_ativa\": true,\n  \"fase\": \"aberta|iminente|encerrada\",\n  \"lance_vencedor_atual\": 0.00,\n  \"num_participantes\": 0,\n  \"minutos_para_encerrar\": 0,\n  \"deve_dar_lance\": true,\n  \"valor_lance_sugerido\": 0.00,\n  \"justificativa\": \"por que dar ou não esse lance agora\",\n  \"ainda_viavel\": true,\n  \"motivo_inviavel\": \"string se não viável\"\n}`\n  }]\n}) }}"
+            }
+          ]
+        }
+      },
+      "id": "claude-monitor-lances",
+      "name": "🤖 Claude Monitor Lances",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        2000
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const resp = $input.item.json;\nconst licitacao = $('🗄️ Buscar Licitações Ativas').item.json;\n\nconst text = (resp.content || []).map(b => b.type === 'text' ? b.text : '').join('\\n');\nlet analise;\ntry {\n  const match = text.replace(/```json|```/g,'').trim().match(/\\{[\\s\\S]*\\}/);\n  analise = match ? JSON.parse(match[0]) : { deve_dar_lance: false, sessao_ativa: false };\n} catch(e) { analise = { deve_dar_lance: false, sessao_ativa: false }; }\n\n// Verifica se lance sugerido está dentro do limite máximo\nconst dentroDolimite = analise.valor_lance_sugerido <= (licitacao.lance_maximo || 0);\nconst deveAvisar = analise.deve_dar_lance && dentroDolimite && analise.sessao_ativa;\nconst atingiuLimite = analise.valor_lance_sugerido > (licitacao.lance_maximo || 0);\n\nreturn [{ json: {\n  ...licitacao,\n  analise_lance: analise,\n  deve_avisar: deveAvisar,\n  atingiu_limite: atingiuLimite\n} }];"
+      },
+      "id": "parse-analise-lance",
+      "name": "⚙️ Parse Análise Lance",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        2000
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $json.deve_avisar }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ]
+        }
+      },
+      "id": "filtro-deve-avisar",
+      "name": "🔍 Filtro: Deve Avisar",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [
+        880,
+        2000
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.item.json;\nconst a = d.analise_lance;\n\nlet msg;\nif (d.atingiu_limite) {\n  msg = `🛑 *LIMITE ATINGIDO — ${d.numero_edital}*\\n\\nO lance necessário agora seria R$${a.valor_lance_sugerido?.toLocaleString('pt-BR')}, mas seu limite máximo é R$${d.lance_maximo?.toLocaleString('pt-BR')}.\\n\\nEstou saindo desta licitação automaticamente.\\n\\n❌ Margem não comporta mais lances.`;\n} else if (a.fase === 'iminente') {\n  msg = `⚡ *LANCE URGENTE — ${d.numero_edital}*\\n\\n⏰ ${a.minutos_para_encerrar} minutos para encerrar!\\n\\n🏆 Lance vencedor atual: R$${a.lance_vencedor_atual?.toLocaleString('pt-BR')}\\n💡 Lance sugerido: *R$${a.valor_lance_sugerido?.toLocaleString('pt-BR')}*\\n\\n📊 ${a.justificativa}\\n\\n*Acesse agora a plataforma e dê este lance!*\\n🔗 ${d.link_edital}`;\n} else {\n  msg = `🎯 *OPORTUNIDADE DE LANCE — ${d.numero_edital}*\\n\\n🏆 Lance vencedor atual: R$${a.lance_vencedor_atual?.toLocaleString('pt-BR')}\\n👥 Participantes: ${a.num_participantes}\\n\\n💡 *Lance sugerido: R$${a.valor_lance_sugerido?.toLocaleString('pt-BR')}*\\n\\n📊 ${a.justificativa}\\n\\n*Acesse a plataforma para dar o lance:*\\n🔗 ${d.link_edital}`;\n}\n\nreturn [{ json: { ...d, mensagem_lance: msg } }];"
+      },
+      "id": "montar-msg-lance",
+      "name": "⚙️ Montar Mensagem Lance",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        2000
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://evo.upviaagentes.com/message/sendText/SEU_NOME_INSTANCIA_AQUI",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "SUA_API_KEY_EVOLUTION_AQUI"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "=",
+              "value": "={{ JSON.stringify({\n  number: $json.cliente_whatsapp,\n  text: $json.mensagem_lance\n}) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "enviar-alerta-lance",
+      "name": "📱 Enviar Alerta Lance",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        2000
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 🤖 MÓDULO 6 — Atendente IA WhatsApp\nResponde dúvidas do licitante sobre editais abertos, documentação, prazos e estratégias via WhatsApp",
+        "height": 70,
+        "width": 900,
+        "color": 5
+      },
+      "id": "sticky-mod6",
+      "name": "STICKY MOD6",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        2280
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $('⚙️ Extrair Resposta WhatsApp').item.json.eh_confirmacao }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            },
+            {
+              "leftValue": "={{ $('⚙️ Extrair Resposta WhatsApp').item.json.eh_rejeicao }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            },
+            {
+              "leftValue": "={{ $('⚙️ Extrair Resposta WhatsApp').item.json.eh_lance }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "filtro-pergunta-livre",
+      "name": "🔍 Filtro: Pergunta Livre",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [
+        0,
+        2460
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "name"
+        },
+        "table": {
+          "__rl": true,
+          "value": "licitacoes_monitoradas",
+          "mode": "name"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "cliente_whatsapp",
+              "condition": "eq",
+              "keyValue": "={{ $('⚙️ Extrair Resposta WhatsApp').item.json.from }}"
+            }
+          ]
+        },
+        "sort": {
+          "values": [
+            {
+              "column": "created_at",
+              "direction": "DESC"
+            }
+          ]
+        },
+        "limit": 5,
+        "options": {}
+      },
+      "id": "buscar-contexto-cliente",
+      "name": "🗄️ Buscar Contexto do Cliente",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        220,
+        2460
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "SUA_CHAVE_CLAUDE_AQUI"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "=",
+              "value": "={{ JSON.stringify({\n  model: 'claude-sonnet-4-20250514',\n  max_tokens: 600,\n  messages: [{\n    role: 'user',\n    content: `Você é um consultor especializado em licitações públicas brasileiras. Responda a dúvida do licitante de forma direta, prática e em linguagem simples. Máximo 4 frases. Sem asteriscos desnecessários.\n\nLicitações recentes do cliente:\n${$input.all().map(l => `- ${l.json.numero_edital} | ${l.json.orgao} | Status: ${l.json.status}`).join('\\n')}\n\nPergunta: ${$('⚙️ Extrair Resposta WhatsApp').item.json.raw_msg}\n\nResponda APENAS o texto da mensagem.`\n  }]\n}) }}"
+            }
+          ]
+        }
+      },
+      "id": "claude-atendente",
+      "name": "🤖 Claude Atendente Licitação",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        2460
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://evo.upviaagentes.com/message/sendText/SEU_NOME_INSTANCIA_AQUI",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "SUA_API_KEY_EVOLUTION_AQUI"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "=",
+              "value": "={{ JSON.stringify({\n  number: $('⚙️ Extrair Resposta WhatsApp').item.json.from,\n  text: $input.item.json.content?.[0]?.text || 'Desculpe, não consegui processar sua pergunta. Tente novamente.'\n}) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "enviar-resposta-atendente",
+      "name": "📱 Enviar Resposta Atendente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        2460
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "OK",
+        "options": {}
+      },
+      "id": "respond-wpp",
+      "name": "✅ Respond Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        880,
+        2460
+      ]
+    }
+  ],
+  "connections": {
+    "⏰ Schedule 2h": {
+      "main": [
+        [
+          {
+            "node": "🗄️ Buscar Config Clientes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🗄️ Buscar Config Clientes": {
+      "main": [
+        [
+          {
+            "node": "⚙️ Prep Busca por Cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⚙️ Prep Busca por Cliente": {
+      "main": [
+        [
+          {
+            "node": "🏛️ PNCP - Buscar Licitações",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "🤖 Claude Busca Licitações",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🏛️ PNCP - Buscar Licitações": {
+      "main": [
+        [
+          {
+            "node": "⚙️ Parse + Filtrar Licitações",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🤖 Claude Busca Licitações": {
+      "main": [
+        [
+          {
+            "node": "⚙️ Parse + Filtrar Licitações",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⚙️ Parse + Filtrar Licitações": {
+      "main": [
+        [
+          {
+            "node": "🗄️ Checar se Já Processada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🗄️ Checar se Já Processada": {
+      "main": [
+        [
+          {
+            "node": "⚙️ Marcar Duplicata",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⚙️ Marcar Duplicata": {
+      "main": [
+        [
+          {
+            "node": "🔍 Filtro: Apenas Novas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔍 Filtro: Apenas Novas": {
+      "main": [
+        [
+          {
+            "node": "🤖 Claude Resumo Edital",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🤖 Claude Resumo Edital": {
+      "main": [
+        [
+          {
+            "node": "⚙️ Parse Resumo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⚙️ Parse Resumo": {
+      "main": [
+        [
+          {
+            "node": "🤖 Claude Pesquisa Fornecedores",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🤖 Claude Pesquisa Fornecedores": {
+      "main": [
+        [
+          {
+            "node": "⚙️ Parse Fornecedores",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⚙️ Parse Fornecedores": {
+      "main": [
+        [
+          {
+            "node": "🗄️ Salvar Licitação Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🗄️ Salvar Licitação Supabase": {
+      "main": [
+        [
+          {
+            "node": "📊 Salvar Licitação Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📊 Salvar Licitação Sheets": {
+      "main": [
+        [
+          {
+            "node": "🔍 Filtro: Viabilidade ≥ 5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔍 Filtro: Viabilidade ≥ 5": {
+      "main": [
+        [
+          {
+            "node": "⚙️ Montar Alerta WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⚙️ Montar Alerta WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "📱 Enviar Alerta WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📱 Enviar Alerta WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "🗄️ Atualizar Status: Alerta Enviado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📩 Webhook WhatsApp Licitação": {
+      "main": [
+        [
+          {
+            "node": "⚙️ Extrair Resposta WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⚙️ Extrair Resposta WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "🔍 Filtro: Confirmou Participação",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "🔍 Filtro: Config de Lance",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "🔍 Filtro: Pergunta Livre",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔍 Filtro: Confirmou Participação": {
+      "main": [
+        [
+          {
+            "node": "🗄️ Buscar Licitação Pendente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🗄️ Buscar Licitação Pendente": {
+      "main": [
+        [
+          {
+            "node": "🗄️ Confirmar Participação",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🗄️ Confirmar Participação": {
+      "main": [
+        [
+          {
+            "node": "📱 WPP: Participação Confirmada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔍 Filtro: Config de Lance": {
+      "main": [
+        [
+          {
+            "node": "⚙️ Extrair Lance Máximo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⚙️ Extrair Lance Máximo": {
+      "main": [
+        [
+          {
+            "node": "🗄️ Salvar Lance Máximo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⏰ Schedule 3min Lances": {
+      "main": [
+        [
+          {
+            "node": "🗄️ Buscar Licitações Ativas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🗄️ Buscar Licitações Ativas": {
+      "main": [
+        [
+          {
+            "node": "🤖 Claude Monitor Lances",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🤖 Claude Monitor Lances": {
+      "main": [
+        [
+          {
+            "node": "⚙️ Parse Análise Lance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⚙️ Parse Análise Lance": {
+      "main": [
+        [
+          {
+            "node": "🔍 Filtro: Deve Avisar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔍 Filtro: Deve Avisar": {
+      "main": [
+        [
+          {
+            "node": "⚙️ Montar Mensagem Lance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⚙️ Montar Mensagem Lance": {
+      "main": [
+        [
+          {
+            "node": "📱 Enviar Alerta Lance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔍 Filtro: Pergunta Livre": {
+      "main": [
+        [
+          {
+            "node": "🗄️ Buscar Contexto do Cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🗄️ Buscar Contexto do Cliente": {
+      "main": [
+        [
+          {
+            "node": "🤖 Claude Atendente Licitação",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🤖 Claude Atendente Licitação": {
+      "main": [
+        [
+          {
+            "node": "📱 Enviar Resposta Atendente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📱 Enviar Resposta Atendente": {
+      "main": [
+        [
+          {
+            "node": "✅ Respond Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "id": "licitacao-tag",
+      "name": "Licitação"
+    },
+    {
+      "id": "gov-tag",
+      "name": "Governo"
+    }
+  ],
+  "triggerCount": 3,
+  "updatedAt": "2026-05-21T00:00:00.000Z",
+  "versionId": "1"
+}

@@ -1,0 +1,138 @@
+{
+  "name": "Catálogo Unhabella — Edição Gratuita v2",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "node-001",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "const { execSync } = require('child_process');\n\ntry {\n  // Instala dependências Python\n  const resultado = execSync('pip install rembg pillow numpy onnxruntime 2>&1 | tail -3', { timeout: 180000 }).toString();\n  return [{ json: { status: 'deps_ok', log: resultado } }];\n} catch(e) {\n  // Tenta com pip3\n  try {\n    const resultado = execSync('pip3 install rembg pillow numpy onnxruntime 2>&1 | tail -3', { timeout: 180000 }).toString();\n    return [{ json: { status: 'deps_ok', log: resultado } }];\n  } catch(e2) {\n    return [{ json: { status: 'deps_error', log: e2.message } }];\n  }\n}"
+      },
+      "id": "node-002",
+      "name": "Instalar Dependências Python",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "const { execSync } = require('child_process');\nconst fs = require('fs');\n\n// Garante que as pastas existem\ntry { fs.mkdirSync('/files/catalogo-entrada', { recursive: true }); } catch(e) {}\ntry { fs.mkdirSync('/files/catalogo-final', { recursive: true }); } catch(e) {}\n\n// Lista imagens\nlet arquivos = [];\ntry {\n  const saida = execSync('ls /files/catalogo-entrada/ 2>/dev/null | grep -iE \"\\\\.(jpg|jpeg|png|webp)$\" | sort').toString();\n  arquivos = saida.trim().split('\\n').filter(f => f.trim() !== '');\n} catch(e) {\n  arquivos = [];\n}\n\nif (arquivos.length === 0) {\n  throw new Error('Nenhuma imagem encontrada em /files/catalogo-entrada/ — coloque as fotos lá antes de executar.');\n}\n\nreturn arquivos.map((arquivo, index) => ({\n  json: {\n    arquivo: arquivo.trim(),\n    indice: index,\n    codigo: 'REF-' + String(index + 1).padStart(3, '0'),\n    caminho_entrada: '/files/catalogo-entrada/' + arquivo.trim(),\n    caminho_saida: '/files/catalogo-final/REF-' + String(index + 1).padStart(3, '0') + '.png',\n    total: arquivos.length\n  }\n}));"
+      },
+      "id": "node-003",
+      "name": "Listar Imagens + Gerar Códigos REF",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 400]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "node-004",
+      "name": "Processar 1 por vez",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [900, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "const { execSync } = require('child_process');\nconst fs = require('fs');\n\nconst entrada = $json.caminho_entrada;\nconst codigo = $json.codigo;\nconst saida = $json.caminho_saida;\nconst indice = $json.indice;\n\n// Garante pasta de saída\ntry { fs.mkdirSync('/files/catalogo-final', { recursive: true }); } catch(e) {}\n\n// Verifica se o script Python existe\nif (!fs.existsSync('/files/editar_catalogo.py')) {\n  throw new Error('Script Python não encontrado em /files/editar_catalogo.py — faça o upload do arquivo!');\n}\n\n// Verifica se a imagem existe\nif (!fs.existsSync(entrada)) {\n  throw new Error(`Imagem não encontrada: ${entrada}`);\n}\n\nlet log = '';\nlet sucesso = false;\n\ntry {\n  const cmd = `python3 /files/editar_catalogo.py \"${entrada}\" \"${codigo}\" \"${saida}\" 2>&1`;\n  log = execSync(cmd, { timeout: 120000 }).toString();\n  sucesso = fs.existsSync(saida);\n} catch(e) {\n  log = e.message;\n  sucesso = false;\n}\n\nreturn [{\n  json: {\n    codigo: codigo,\n    arquivo_original: $json.arquivo,\n    caminho_saida: saida,\n    sucesso: sucesso,\n    mensagem: sucesso ? `✅ ${codigo} salvo com sucesso` : `❌ Erro em ${codigo}: ${log}`,\n    log: log,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "node-005",
+      "name": "Executar Edição Python",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 400]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-001",
+              "leftValue": "={{ $json.sucesso }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "node-006",
+      "name": "Sucesso ou Erro?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1340, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "console.log('✅', $json.mensagem);\nreturn [{ json: { ...$json, status: 'salvo' } }];"
+      },
+      "id": "node-007",
+      "name": "Log Sucesso",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "console.error('❌ ERRO:', $json.mensagem);\nconsole.error('Log:', $json.log);\nreturn [{ json: { ...$json, status: 'erro' } }];"
+      },
+      "id": "node-008",
+      "name": "Log Erro (continua)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 500]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{ "node": "Instalar Dependências Python", "type": "main", "index": 0 }]]
+    },
+    "Instalar Dependências Python": {
+      "main": [[{ "node": "Listar Imagens + Gerar Códigos REF", "type": "main", "index": 0 }]]
+    },
+    "Listar Imagens + Gerar Códigos REF": {
+      "main": [[{ "node": "Processar 1 por vez", "type": "main", "index": 0 }]]
+    },
+    "Processar 1 por vez": {
+      "main": [[{ "node": "Executar Edição Python", "type": "main", "index": 0 }]]
+    },
+    "Executar Edição Python": {
+      "main": [[{ "node": "Sucesso ou Erro?", "type": "main", "index": 0 }]]
+    },
+    "Sucesso ou Erro?": {
+      "main": [
+        [{ "node": "Log Sucesso", "type": "main", "index": 0 }],
+        [{ "node": "Log Erro (continua)", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true
+  },
+  "staticData": null,
+  "tags": [],
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": ""
+  },
+  "active": false
+}
