@@ -218,6 +218,24 @@ netstat -tulpn
 
 ---
 
+## 🔒 REGRA DE BACKUP
+
+> **OBRIGATÓRIO:** A cada modificação em workflows N8N, configurações do site ou arquivos críticos, fazer commit e push automático para o GitHub como backup.
+
+### Regra geral:
+- Qualquer alteração em `n8n-workflows/` → commit + push imediato
+- Qualquer alteração em `supabase/` → commit + push imediato
+- Qualquer alteração em arquivos de configuração da VPS → commit + push imediato
+- O GitHub Actions roda a cada 48h como backup automático adicional
+- A VPS roda backup local diário às 03:00 via cron
+
+### Fluxo de trabalho obrigatório ao editar workflows:
+1. Exportar o workflow do n8n em JSON
+2. Salvar em `n8n-workflows/`
+3. `git add . && git commit -m "backup: [nome-do-workflow] atualizado" && git push`
+
+---
+
 ## 📌 Notas Importantes
 
 - Todos os fluxos são em **português brasileiro**

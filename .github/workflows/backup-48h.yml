@@ -1,0 +1,41 @@
+name: Backup Automático 48h
+
+on:
+  schedule:
+    - cron: "0 0 */2 * *"
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repositório
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Verificar se há mudanças
+        id: check_changes
+        run: |
+          git status --porcelain
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit e push do backup automático
+        if: steps.check_changes.outputs.has_changes == 'true'
+        run: |
+          git config --global user.name "upvia-backup-bot"
+          git config --global user.email "upvianegocios@gmail.com"
+          TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M UTC")
+          git add .
+          git commit -m "backup: automático $TIMESTAMP"
+          git push origin main
+
+      - name: Sem mudanças para commitar
+        if: steps.check_changes.outputs.has_changes == 'false'
+        run: echo "Nenhuma mudança encontrada. Backup não necessário."
