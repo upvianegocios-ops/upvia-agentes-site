@@ -1,0 +1,733 @@
+{
+  "name": "UnhaBella — Catalogação de Películas via WhatsApp",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "unhabella-catalogo",
+        "options": {}
+      },
+      "id": "15462b6f-cfe1-44ca-b19a-3d856e226faa",
+      "name": "Webhook Evolution",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-880, 112],
+      "webhookId": "unhabella-catalogo"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $json.body || $json;\nconst event = body.event || '';\nconst data = body.data || {};\nconst msg = data.message || {};\nconst key = data.key || {};\n\n// Ignorar mensagens de grupos e do próprio bot\nif (key.remoteJid && key.remoteJid.includes('@g.us')) return [];\nif (key.fromMe) return [];\nif (event !== 'messages.upsert') return [];\n\nconst remoteJid = key.remoteJid || '';\nconst tipoMensagem = msg.imageMessage ? 'foto'\n  : msg.conversation || msg.extendedTextMessage ? 'texto'\n  : 'outro';\n\nconst textoMensagem = msg.conversation \n  || (msg.extendedTextMessage && msg.extendedTextMessage.text) \n  || (msg.imageMessage && msg.imageMessage.caption)\n  || '';\n\nconst messageId = key.id || '';\n\nreturn [{ json: {\n  remoteJid,\n  tipoMensagem,\n  textoMensagem,\n  messageId,\n  mensagemCompleta: msg\n}}];"
+      },
+      "id": "33c0987f-9c93-411a-8e38-2a7afe3f2875",
+      "name": "Filtrar Mensagem",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-656, 112]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "cond-tipo",
+              "leftValue": "={{ $json.tipoMensagem }}",
+              "rightValue": "outro",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "7a276b94-ef6a-4ee2-93fd-b4b4eb9bd201",
+      "name": "É Foto ou Texto?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [-448, 112]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "cond-foto",
+              "leftValue": "={{ $json.tipoMensagem }}",
+              "rightValue": "foto",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a8aa8e3d-6ecb-43a4-b3f3-ab923a6546aa",
+      "name": "É Foto?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [-224, 112]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://evo.upviaagentes.com/chat/getBase64FromMediaMessage/unhabella",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "FC36FF7795FE-4E49-B91B-0D06A2EAF2E"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "message",
+              "value": "=={{ JSON.stringify({ \"message\": { \"key\": { \"id\": $json.messageId, \"remoteJid\": $json.remoteJid } } }) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "92d3931e-f1ef-4591-bca1-8a4b5f104433",
+      "name": "Baixar Foto (Base64)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "key": "=lote_fotos_{{ $('Filtrar Mensagem').first().json.remoteJid }}",
+        "options": {}
+      },
+      "id": "ba84b2a3-3579-4d71-9896-3dbf65878fa7",
+      "name": "Buscar Fotos no Redis",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [224, 0],
+      "credentials": {
+        "redis": {
+          "id": "5K2NbkySCax4MAWq",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const redisRaw = $json.value || '[]';\nlet fotos = [];\ntry { fotos = JSON.parse(redisRaw); } catch(e) { fotos = []; }\n\nconst base64Data = $('Baixar Foto (Base64)').first().json;\nconst base64 = base64Data.base64 || base64Data.data || '';\nconst msgId = $('Filtrar Mensagem').first().json.messageId;\n\nfotos.push({ msgId, base64, index: fotos.length + 1 });\n\nreturn [{ json: { fotos, totalFotos: fotos.length, fotosJson: JSON.stringify(fotos) } }];"
+      },
+      "id": "d00d1415-52b5-4b76-901d-dc4a1d056fbf",
+      "name": "Acumular Fotos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [448, 0]
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "=lote_fotos_{{ $('Filtrar Mensagem').first().json.remoteJid }}",
+        "value": "={{ $json.fotosJson }}",
+        "expire": true,
+        "ttl": 3600
+      },
+      "id": "16eea78d-2707-48c0-92c4-f1ad10e745d7",
+      "name": "Salvar Fotos no Redis",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [672, 0],
+      "credentials": {
+        "redis": {
+          "id": "5K2NbkySCax4MAWq",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://evo.upviaagentes.com/message/sendText/unhabella",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "FC36FF7795FE-4E49-B91B-0D06A2EAF2E"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "=numer",
+              "value": "=={{ $('Filtrar Mensagem').first().json.remoteJid }}"
+            },
+            {
+              "name": "text",
+              "value": "==📸 Foto {{ $('Acumular Fotos').first().json.totalFotos }} recebida! Pode continuar mandando. Quando terminar, mande as descrições assim:\n\nNome do produto | Qtd | Preço\nUma linha por produto, na ordem das fotos."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7c99fcfa-7b12-49a2-87cf-1a24ca0eb53b",
+      "name": "Confirmar Foto Recebida",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [880, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const texto = $json.textoMensagem || '';\nconst remoteJid = $json.remoteJid;\n\nif (texto.trim().toUpperCase() === 'CANCELAR') {\n  return [{ json: { acao: 'cancelar', remoteJid, linhas: [] } }];\n}\n\nconst linhas = texto.split('\\n')\n  .map(l => l.trim())\n  .filter(l => l.length > 0 && l.includes('|'));\n\nif (linhas.length === 0) {\n  return [{ json: { acao: 'ignorar', remoteJid, linhas: [] } }];\n}\n\nconst produtos = linhas.map((linha, idx) => {\n  const partes = linha.split('|').map(p => p.trim());\n  const nome = partes[0] || 'Película ' + (idx + 1);\n  const qtd = partes[1] || '';\n  const preco = partes[2] || '';\n  const precoPromo = partes[3] || '';\n  \n  const precoNum = parseFloat(preco.replace('R$','').replace(',','.').trim()) || 0;\n  const precoPromoNum = parseFloat(precoPromo.replace('R$','').replace(',','.').trim()) || 0;\n  const qtdNum = parseInt(qtd.replace(/[^0-9]/g, '')) || 0;\n  \n  const temPromocao = precoPromoNum > 0 && precoPromoNum < precoNum;\n  \n  return { \n    index: idx + 1, \n    nome, \n    qtd: qtdNum, \n    preco: precoNum, \n    preco_promocional: precoPromoNum,\n    em_promocao: temPromocao ? 'Sim' : 'Não'\n  };\n});\n\nreturn [{ json: { acao: 'processar', remoteJid, produtos, totalProdutos: produtos.length } }];"
+      },
+      "id": "419af91e-bee8-4cd6-8367-1fdc7f92bd04",
+      "name": "Parsear Descrições",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [0, 224]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "cond-processar",
+              "leftValue": "={{ $json.acao }}",
+              "rightValue": "processar",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c6944d91-5828-43a2-8f36-d5d8bb1bcffc",
+      "name": "Pode Processar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [224, 224]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "key": "=lote_fotos_{{ $json.remoteJid }}",
+        "options": {}
+      },
+      "id": "329c0dec-aa57-45b0-978e-8bb6fe954bcd",
+      "name": "Buscar Lote de Fotos",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [448, 192],
+      "credentials": {
+        "redis": {
+          "id": "5K2NbkySCax4MAWq",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const fotosRaw = $json.value || '[]';\nlet fotos = [];\ntry { fotos = JSON.parse(fotosRaw); } catch(e) { fotos = []; }\n\nconst produtos = $('Parsear Descrições').first().json.produtos || [];\nconst remoteJid = $('Parsear Descrições').first().json.remoteJid;\n\nif (fotos.length === 0) {\n  return [{ json: { erro: 'sem_fotos', remoteJid } }];\n}\n\nif (produtos.length !== fotos.length) {\n  return [{ json: { \n    erro: 'quantidade_diferente', \n    remoteJid,\n    totalFotos: fotos.length,\n    totalDescricoes: produtos.length\n  } }];\n}\n\n// Gerar timestamp base para códigos\nconst agora = new Date();\nconst prefixo = 'PEL';\n\nconst itens = fotos.map((foto, idx) => {\n  const produto = produtos[idx];\n  const codigo = `${prefixo}-${String(agora.getTime()).slice(-4)}${String(idx + 1).padStart(2, '0')}`;\n  return {\n    codigo,\n    nome: produto.nome,\n    quantidade: produto.qtd,\n    preco: produto.preco,\n    base64: foto.base64,\n    index: idx + 1\n  };\n});\n\nreturn [{ json: { itens, totalItens: itens.length, remoteJid, erro: null } }];"
+      },
+      "id": "c085d8fd-decb-44b4-8656-67900001844b",
+      "name": "Montar Lote Completo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [672, 192]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "cond-sem-erro",
+              "leftValue": "={{ $json.erro }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "isEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "177215b5-cf20-4c1d-906b-061f7521735d",
+      "name": "Sem Erros?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [880, 192]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Avisa erro de quantidade diferente\nconst dados = $json;\nconst remoteJid = dados.remoteJid;\nlet msg = '';\n\nif (dados.erro === 'sem_fotos') {\n  msg = '⚠️ Não encontrei fotos salvas. Manda as fotos primeiro, depois as descrições.';\n} else if (dados.erro === 'quantidade_diferente') {\n  msg = `⚠️ Você mandou *${dados.totalFotos} fotos* mas *${dados.totalDescricoes} descrições*. Precisa ser igual! Manda as descrições de novo com ${dados.totalFotos} linhas (uma por foto).`;\n}\n\nreturn [{ json: { mensagem: msg, remoteJid } }];"
+      },
+      "id": "9b80c851-1dfa-4345-a0e5-cf9d4df386a6",
+      "name": "Montar Mensagem de Erro",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1104, 304]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Separar cada item do lote em itens individuais para processar\nconst itens = $json.itens || [];\nreturn itens.map(item => ({ json: item }));"
+      },
+      "id": "924d3cc2-388d-42c0-ba8b-f035f82eb527",
+      "name": "Separar Itens do Lote",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1104, 128]
+    },
+    {
+      "parameters": {
+        "jsCode": "const { createCanvas, loadImage } = require('canvas');\n\nconst item = $input.first().json;\nconst base64 = item.base64 || '';\nconst codigo = item.codigo || 'SEM-CODIGO';\n\nif (!base64) {\n  return [{ json: { ...item } }];\n}\n\nconst imageBuffer = Buffer.from(base64, 'base64');\nconst img = await loadImage(imageBuffer);\n\nconst MAX = 800;\nlet w = img.width;\nlet h = img.height;\nif (w > MAX || h > MAX) {\n  if (w > h) {\n    h = Math.round(h * MAX / w);\n    w = MAX;\n  } else {\n    w = Math.round(w * MAX / h);\n    h = MAX;\n  }\n}\n\nconst canvas = createCanvas(w, h);\nconst ctx = canvas.getContext('2d');\nctx.drawImage(img, 0, 0, w, h);\n\nconst fontSize = 20;\nconst padding = 8;\nctx.font = `bold ${fontSize}px sans-serif`;\nconst textWidth = ctx.measureText(codigo).width;\nconst bgX = w - textWidth - padding * 2 - 10;\nconst bgY = h - fontSize - padding * 2 - 10;\nconst bgW = textWidth + padding * 2;\nconst bgH = fontSize + padding * 2;\n\nctx.fillStyle = 'rgba(0, 0, 0, 0.6)';\nctx.fillRect(bgX, bgY, bgW, bgH);\n\nctx.fillStyle = '#ffffff';\nctx.fillText(codigo, bgX + padding, bgY + fontSize + Math.floor(padding / 2));\n\nconst processedBase64 = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];\n\nreturn [{ json: { ...item, base64: processedBase64 } }];"
+      },
+      "id": "f4a1b2c3-d5e6-7890-abcd-ef1234567891",
+      "name": "Processar Imagem",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1216, 128]
+    },
+    {
+      "parameters": {
+        "name": "={{ $json.codigo + '_' + $json.nome.replace(/\\s+/g, '_') + '.jpg' }}",
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "ID_PASTA_UNHABELLA_AQUI",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "id": "796545d2-4ec3-46ff-a3e5-aa739163b21c",
+      "name": "Salvar Foto no Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [1328, 128],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "r3sysG7EBAp9qEfd",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1PkdmmCQaNlPxezCPXflY0lCMEmzp10F0DdqO5LdZAKk",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Catálogo",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "codigo": "=={{ $json.codigo }}",
+            "nome": "={{ $json.nome }}",
+            "descricao_curta": "={{ $json.nome }}",
+            "categoria": "=Películas Adesivas",
+            "tipo_pelicula": "=Adesivo comum",
+            "quantidade_por_kit": "={{ $json.quantidade }}",
+            "preco": "={{ $json.preco }}",
+            "status": "=Disponível"
+          },
+          "matchingColumns": [],
+          "schema": [
+            { "id": "codigo", "displayName": "codigo", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false },
+            { "id": "nome", "displayName": "nome", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false },
+            { "id": "descricao_curta", "displayName": "descricao_curta", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false },
+            { "id": "categoria", "displayName": "categoria", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false },
+            { "id": "tipo_pelicula", "displayName": "tipo_pelicula", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false },
+            { "id": "formato", "displayName": "formato", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false },
+            { "id": "tamanho_disponivel", "displayName": "tamanho_disponivel", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false },
+            { "id": "cor_principal", "displayName": "cor_principal", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false },
+            { "id": "acabamento", "displayName": "acabamento", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false },
+            { "id": "estampa", "displayName": "estampa", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false },
+            { "id": "durabilidade_dias", "displayName": "durabilidade_dias", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false },
+            { "id": "modo_aplicacao", "displayName": "modo_aplicacao", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false },
+            { "id": "remove_com", "displayName": "remove_com", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false },
+            { "id": "quantidade_por_kit", "displayName": "quantidade_por_kit", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false },
+            { "id": "preco", "displayName": "preco", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false },
+            { "id": "preco_promocional", "displayName": "preco_promocional", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false },
+            { "id": "estoque", "displayName": "estoque", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false },
+            { "id": "frete_gratis", "displayName": "frete_gratis", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false },
+            { "id": "prazo_entrega_dias", "displayName": "prazo_entrega_dias", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false },
+            { "id": "foto_url_1", "displayName": "foto_url_1", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false },
+            { "id": "status", "displayName": "status", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false },
+            { "id": "destaque", "displayName": "destaque", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false },
+            { "id": "observacoes", "displayName": "observacoes", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "ad63a4ca-1d87-45a5-bf27-a06de39a13fe",
+      "name": "Adicionar na Planilha",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [1552, 128],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "HKdCmshTj2i8yZlO",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Após processar todos os itens, montar confirmação final\nconst totalItens = $input.all().length;\nconst remoteJid = $('Montar Lote Completo').first().json.remoteJid;\n\nconst msg = `✅ *Lote cadastrado com sucesso!*\\n\\n`\n  + `📸 *${totalItens} películas* adicionadas na planilha.\\n`\n  + `🗂️ Fotos salvas no Google Drive.\\n\\n`\n  + `_Pode mandar o próximo lote quando quiser!_`;\n\nreturn [{ json: { mensagem: msg, remoteJid } }];"
+      },
+      "id": "5ad534e3-7fe5-4ecd-857b-5f83a806b684",
+      "name": "Montar Mensagem de Sucesso",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1760, 128]
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "=lote_fotos_{{ $('Montar Lote Completo').first().json.remoteJid }}"
+      },
+      "id": "1a40caf5-569e-45d4-b3de-5e585b29cba3",
+      "name": "Limpar Redis",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [1984, 128],
+      "credentials": {
+        "redis": {
+          "id": "5K2NbkySCax4MAWq",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://evo.upviaagentes.com/message/sendText/unhabella",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "FC36FF7795FE-4E49-B91B-0D06A2EAF2E"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "=+{{  $json.remotJid }}"
+            },
+            {
+              "name": "text",
+              "value": "={{  $json.message }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "aea71d1d-699b-4da3-aa77-19c31fd2c2d6",
+      "name": "Enviar Resposta WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2208, 208]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Evolution": {
+      "main": [
+        [
+          {
+            "node": "Filtrar Mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar Mensagem": {
+      "main": [
+        [
+          {
+            "node": "É Foto ou Texto?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "É Foto ou Texto?": {
+      "main": [
+        [
+          {
+            "node": "É Foto?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "É Foto?": {
+      "main": [
+        [
+          {
+            "node": "Baixar Foto (Base64)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Parsear Descrições",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Baixar Foto (Base64)": {
+      "main": [
+        [
+          {
+            "node": "Buscar Fotos no Redis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Fotos no Redis": {
+      "main": [
+        [
+          {
+            "node": "Acumular Fotos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Acumular Fotos": {
+      "main": [
+        [
+          {
+            "node": "Salvar Fotos no Redis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Salvar Fotos no Redis": {
+      "main": [
+        [
+          {
+            "node": "Confirmar Foto Recebida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parsear Descrições": {
+      "main": [
+        [
+          {
+            "node": "Pode Processar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pode Processar?": {
+      "main": [
+        [
+          {
+            "node": "Buscar Lote de Fotos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Lote de Fotos": {
+      "main": [
+        [
+          {
+            "node": "Montar Lote Completo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Lote Completo": {
+      "main": [
+        [
+          {
+            "node": "Sem Erros?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sem Erros?": {
+      "main": [
+        [
+          {
+            "node": "Separar Itens do Lote",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Montar Mensagem de Erro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Separar Itens do Lote": {
+      "main": [
+        [
+          {
+            "node": "Processar Imagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Processar Imagem": {
+      "main": [
+        [
+          {
+            "node": "Salvar Foto no Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Salvar Foto no Drive": {
+      "main": [
+        [
+          {
+            "node": "Adicionar na Planilha",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Adicionar na Planilha": {
+      "main": [
+        [
+          {
+            "node": "Montar Mensagem de Sucesso",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Mensagem de Sucesso": {
+      "main": [
+        [
+          {
+            "node": "Limpar Redis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpar Redis": {
+      "main": [
+        [
+          {
+            "node": "Enviar Resposta WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Mensagem de Erro": {
+      "main": [
+        [
+          {
+            "node": "Enviar Resposta WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "a2b3c4d5-e6f7-8901-bcde-f12345678902",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8d72dbf3c0d3b5a1f3a49767a5f36377274bb40c20d10df668ec20eaf034a7c3"
+  },
+  "id": "hgtaaIAwQh55JV4U",
+  "tags": []
+}
