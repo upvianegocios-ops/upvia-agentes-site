@@ -1,0 +1,593 @@
+{
+  "name": "UnhaBella — Catalogação de Películas via WhatsApp",
+  "nodes": [
+
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "unhabella-catalogo",
+        "options": {}
+      },
+      "id": "8ab7119d-5580-4ca9-a5a2-73fbf452c04f",
+      "name": "Webhook Evolution",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [10096, 3632],
+      "webhookId": "unhabella-catalogo"
+    },
+
+    {
+      "parameters": {
+        "jsCode": "const body = $json.body || $json;\nconst event = body.event || '';\nconst data = body.data || {};\nconst msg = data.message || {};\nconst key = data.key || {};\n\nif (key.remoteJid && key.remoteJid.includes('@g.us')) return [];\nif (key.fromMe) return [];\nif (event !== 'messages.upsert') return [];\n\nconst remoteJid = key.remoteJid || '';\nconst tipoMensagem = msg.imageMessage ? 'foto'\n  : msg.conversation || msg.extendedTextMessage ? 'texto'\n  : 'outro';\n\nconst textoMensagem = msg.conversation\n  || (msg.extendedTextMessage && msg.extendedTextMessage.text)\n  || (msg.imageMessage && msg.imageMessage.caption)\n  || '';\n\nconst messageId = key.id || '';\n\nreturn [{ json: { remoteJid, tipoMensagem, textoMensagem, messageId, mensagemCompleta: msg } }];"
+      },
+      "id": "7d561e90-2438-4180-ab7d-41ed9741c570",
+      "name": "Filtrar Mensagem",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [10320, 3632]
+    },
+
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "strict", "version": 1 },
+          "conditions": [
+            {
+              "id": "cond-tipo",
+              "leftValue": "={{ $json.tipoMensagem }}",
+              "rightValue": "outro",
+              "operator": { "type": "string", "operation": "notEquals" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "0b0771d2-3517-48e3-9959-1ab9eecc592d",
+      "name": "É Foto ou Texto?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [10528, 3632]
+    },
+
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "strict", "version": 1 },
+          "conditions": [
+            {
+              "id": "cond-foto",
+              "leftValue": "={{ $json.tipoMensagem }}",
+              "rightValue": "foto",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "087a556d-90b3-4780-99d9-7e9bd98b7daf",
+      "name": "É Foto?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [10752, 3632]
+    },
+
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://evo.upviaagentes.com/chat/getBase64FromMediaMessage/unhabella_cadastro",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "apikey", "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd" }]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ \"message\": { \"key\": { \"id\": $json.messageId, \"remoteJid\": $json.remoteJid } } }) }}",
+        "options": {}
+      },
+      "id": "ec8796e6-f0d7-4a71-98a1-e15bfbaa721f",
+      "name": "Baixar Foto (Base64)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [10976, 3520]
+    },
+
+    {
+      "parameters": {
+        "operation": "get",
+        "key": "=lote_fotos_{{ $('Filtrar Mensagem').first().json.remoteJid }}",
+        "options": {}
+      },
+      "id": "9757ff0b-0881-478b-95b2-0f7669c32d33",
+      "name": "Buscar Fotos no Redis",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [11200, 3520],
+      "credentials": { "redis": { "id": "5K2NbkySCax4MAWq", "name": "Redis account" } }
+    },
+
+    {
+      "parameters": {
+        "jsCode": "// Lê o array de fotos já acumuladas (Redis pode retornar em propertyName ou value)\nconst redisRaw = $json.propertyName || $json.value || '[]';\nlet fotos = [];\ntry { fotos = JSON.parse(redisRaw); } catch(e) { fotos = []; }\n\nconst base64Data = $('Baixar Foto (Base64)').first().json;\nconst base64 = base64Data.base64\n  || base64Data.data\n  || base64Data.image\n  || base64Data.mediaData\n  || base64Data.media\n  || '';\n\nif (!base64) {\n  const campos = Object.keys(base64Data).join(', ');\n  throw new Error('Base64 não encontrado. Campos disponíveis: ' + campos);\n}\n\nconst msgId = $('Filtrar Mensagem').first().json.messageId;\nfotos.push({ msgId, base64, index: fotos.length + 1 });\n\nreturn [{ json: { fotos, totalFotos: fotos.length, fotosJson: JSON.stringify(fotos) } }];"
+      },
+      "id": "b661c199-6659-4b10-bb8d-2c3e77d47427",
+      "name": "Acumular Fotos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [11424, 3520]
+    },
+
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "=lote_fotos_{{ $('Filtrar Mensagem').first().json.remoteJid }}",
+        "value": "={{ $json.fotosJson }}",
+        "expire": true,
+        "ttl": 3600
+      },
+      "id": "781a24a3-6438-47ad-bf28-7a0ae9b3bd31",
+      "name": "Salvar Fotos no Redis",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [11648, 3520],
+      "credentials": { "redis": { "id": "5K2NbkySCax4MAWq", "name": "Redis account" } }
+    },
+
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 1 },
+          "conditions": [
+            {
+              "id": "cond-5fotos",
+              "leftValue": "={{ $('Acumular Fotos').first().json.totalFotos % 5 }}",
+              "rightValue": 0,
+              "operator": { "type": "number", "operation": "equals" }
+            },
+            {
+              "id": "cond-gt0",
+              "leftValue": "={{ $('Acumular Fotos').first().json.totalFotos }}",
+              "rightValue": 0,
+              "operator": { "type": "number", "operation": "gt" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "aa11bb22-cc33-4444-5555-666677778888",
+      "name": "A cada 5 fotos?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [11872, 3520]
+    },
+
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://evo.upviaagentes.com/message/sendText/unhabella_cadastro",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "apikey", "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd" }]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ \"number\": $('Filtrar Mensagem').first().json.remoteJid, \"text\": \"📸 Recebi \" + $('Acumular Fotos').first().json.totalFotos + \" fotos até agora! Continue mandando.\\nQuando terminar, mande *pronto*.\" }) }}",
+        "options": {}
+      },
+      "id": "5d833bed-40b8-44a1-93aa-c4a9f91793d2",
+      "name": "Confirmar Foto Recebida",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [12096, 3520]
+    },
+
+    {
+      "parameters": {
+        "jsCode": "const texto = $json.textoMensagem || '';\nconst remoteJid = $json.remoteJid;\n\nif (texto.trim().toUpperCase() === 'CANCELAR') {\n  return [{ json: { acao: 'cancelar', remoteJid } }];\n}\n\n// Detecta sinalização de fim de lote\nconst textoNorm = texto.trim().toLowerCase().replace(/[!?.]/g, '');\nif (['pronto', 'ok', 'fim', 'terminei', 'terminar'].includes(textoNorm)) {\n  return [{ json: { acao: 'pronto', remoteJid } }];\n}\n\nconst linhas = texto.split('\\n')\n  .map(l => l.trim())\n  .filter(l => l.length > 0 && l.includes('|'));\n\nif (linhas.length === 0) {\n  return [{ json: { acao: 'ignorar', remoteJid } }];\n}\n\nconst produtos = linhas.map((linha, idx) => {\n  const partes = linha.split('|').map(p => p.trim());\n  const nome = partes[0] || 'Película ' + (idx + 1);\n  const qtd = partes[1] || '';\n  const preco = partes[2] || '';\n  const precoPromo = partes[3] || '';\n\n  const precoNum = parseFloat(preco.replace('R$','').replace(',','.').trim()) || 0;\n  const precoPromoNum = parseFloat(precoPromo.replace('R$','').replace(',','.').trim()) || 0;\n  const qtdNum = parseInt(qtd.replace(/[^0-9]/g, '')) || 0;\n\n  const temPromocao = precoPromoNum > 0 && precoPromoNum < precoNum;\n\n  return {\n    index: idx + 1,\n    nome,\n    qtd: qtdNum,\n    preco: precoNum,\n    preco_promocional: precoPromoNum,\n    em_promocao: temPromocao ? 'Sim' : 'Não'\n  };\n});\n\nreturn [{ json: { acao: 'processar', remoteJid, produtos, totalProdutos: produtos.length } }];"
+      },
+      "id": "053c977d-0469-48e7-8dfb-dc59560bf649",
+      "name": "Parsear Descrições",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [10976, 3744]
+    },
+
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "strict", "version": 1 },
+          "conditions": [
+            {
+              "id": "cond-pronto",
+              "leftValue": "={{ $json.acao }}",
+              "rightValue": "pronto",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "dd11ee22-ff33-4444-aaaa-bbbbccccdddd",
+      "name": "É Pronto?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [11200, 3744]
+    },
+
+    {
+      "parameters": {
+        "operation": "get",
+        "key": "=lote_fotos_{{ $json.remoteJid }}",
+        "options": {}
+      },
+      "id": "ee22ff33-0044-5555-bbbb-ccccddddeeee",
+      "name": "Buscar Total Redis",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [11424, 3904],
+      "credentials": { "redis": { "id": "5K2NbkySCax4MAWq", "name": "Redis account" } }
+    },
+
+    {
+      "parameters": {
+        "jsCode": "// Lê total de fotos acumuladas (Redis retorna em propertyName ou value)\nconst raw = $json.propertyName || $json.value || '[]';\nlet fotos = [];\ntry { fotos = JSON.parse(raw); } catch(e) { fotos = []; }\n\nconst total = fotos.length;\nconst remoteJid = $('Parsear Descrições').first().json.remoteJid;\n\nif (total === 0) {\n  const mensagem = '⚠️ Não encontrei fotos salvas. Manda as fotos primeiro!';\n  return [{ json: { mensagem, remoteJid, totalFotos: 0 } }];\n}\n\nconst plural = total !== 1 ? 'fotos' : 'foto';\nconst mensagem = `✅ Recebi ${total} ${plural}! Agora mande as descrições:\\n\\nNome do produto | Qtd | Preço | Preço promocional\\n\\nUma linha por foto, na mesma ordem.\\nSe errar alguma linha, mande tudo de novo.`;\n\nreturn [{ json: { mensagem, remoteJid, totalFotos: total } }];"
+      },
+      "id": "ff33aa44-bb55-6666-cccc-ddddeeeeffff",
+      "name": "Montar Msg Confirmação",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [11648, 3904]
+    },
+
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://evo.upviaagentes.com/message/sendText/unhabella_cadastro",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "apikey", "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd" }]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ \"number\": $json.remoteJid, \"text\": $json.mensagem }) }}",
+        "options": {}
+      },
+      "id": "aa44bb55-cc66-7777-dddd-eeeeffff0000",
+      "name": "Enviar Confirmação de Lote",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [11872, 3904]
+    },
+
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "strict", "version": 1 },
+          "conditions": [
+            {
+              "id": "cond-processar",
+              "leftValue": "={{ $json.acao }}",
+              "rightValue": "processar",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "4ef85211-2b56-4eb0-afbd-9ef847f5c73c",
+      "name": "Pode Processar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [11424, 3744]
+    },
+
+    {
+      "parameters": {
+        "operation": "get",
+        "key": "=lote_fotos_{{ $('Parsear Descrições').first().json.remoteJid }}",
+        "options": {}
+      },
+      "id": "93d05681-cc9f-4358-980e-38afae096b15",
+      "name": "Buscar Lote de Fotos",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [11648, 3744],
+      "credentials": { "redis": { "id": "5K2NbkySCax4MAWq", "name": "Redis account" } }
+    },
+
+    {
+      "parameters": {
+        "jsCode": "// Lê as fotos do Redis (propertyName ou value como fallback)\nconst fotosRaw = $json.propertyName || $json.value || '[]';\nlet fotos = [];\ntry { fotos = JSON.parse(fotosRaw); } catch(e) { fotos = []; }\n\nconst produtos = $('Parsear Descrições').first().json.produtos || [];\nconst remoteJid = $('Parsear Descrições').first().json.remoteJid;\n\nif (fotos.length === 0) {\n  return [{ json: { erro: 'sem_fotos', remoteJid } }];\n}\n\nif (produtos.length !== fotos.length) {\n  return [{ json: {\n    erro: 'quantidade_diferente',\n    remoteJid,\n    totalFotos: fotos.length,\n    totalDescricoes: produtos.length\n  } }];\n}\n\nconst agora = new Date();\nconst prefixo = 'PEL';\n\nconst itens = fotos.map((foto, idx) => {\n  const produto = produtos[idx];\n  const codigo = `${prefixo}-${String(agora.getTime()).slice(-4)}${String(idx + 1).padStart(2, '0')}`;\n  return {\n    codigo,\n    nome: produto.nome,\n    qtd: produto.qtd,\n    preco: produto.preco,\n    preco_promocional: produto.preco_promocional,\n    em_promocao: produto.em_promocao,\n    base64: foto.base64,\n    index: idx + 1\n  };\n});\n\nreturn [{ json: { itens, totalItens: itens.length, remoteJid, erro: null } }];"
+      },
+      "id": "040cc590-1bc4-4376-8fd7-b054bca43a38",
+      "name": "Montar Lote Completo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [11872, 3744]
+    },
+
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 1 },
+          "conditions": [
+            {
+              "id": "cond-sem-erro",
+              "leftValue": "={{ $json.erro }}",
+              "rightValue": "",
+              "operator": { "type": "string", "operation": "isEmpty" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "5ae6ccef-ecf4-4697-87fb-22d5bf60ab85",
+      "name": "Sem Erros?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [12096, 3744]
+    },
+
+    {
+      "parameters": {
+        "jsCode": "const dados = $json;\nconst remoteJid = dados.remoteJid;\nlet mensagem = '';\n\nif (dados.erro === 'sem_fotos') {\n  mensagem = '⚠️ Não encontrei fotos salvas. Manda as fotos primeiro, depois as descrições.';\n} else if (dados.erro === 'quantidade_diferente') {\n  mensagem = `⚠️ Você mandou *${dados.totalFotos} fotos* mas *${dados.totalDescricoes} descrições*. Precisa ser igual! Manda as descrições de novo com ${dados.totalFotos} linhas (uma por foto).`;\n}\n\nreturn [{ json: { mensagem, remoteJid } }];"
+      },
+      "id": "614cb6e5-d960-4791-827e-a1ee8e5aec28",
+      "name": "Montar Mensagem de Erro",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [12320, 3856]
+    },
+
+    {
+      "parameters": {
+        "jsCode": "const itens = $json.itens || [];\nreturn itens.map(item => ({ json: item }));"
+      },
+      "id": "5835cad6-2ce6-4d58-a0af-c550d9c00779",
+      "name": "Separar Itens do Lote",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [12320, 3648]
+    },
+
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nconst base64 = item.base64 || '';\nconst codigo = item.codigo || 'SEM-CODIGO';\nconst nomeSeguro = (item.nome || 'pelicula').replace(/[^a-zA-Z0-9_\\-\\u00C0-\\u017E]/g, '_');\nconst nomeArquivo = `${codigo}_${nomeSeguro}.jpg`;\nconst buffer = Buffer.from(base64, 'base64');\n\nreturn [{\n  json: { ...item, nomeArquivo },\n  binary: {\n    data: {\n      data: base64,\n      mimeType: 'image/jpeg',\n      fileName: nomeArquivo,\n      fileSize: buffer.length\n    }\n  }\n}];"
+      },
+      "id": "48df5678-05b6-4de4-94f0-4cb191dcbd93",
+      "name": "Processar Imagem",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [12544, 3648]
+    },
+
+    {
+      "parameters": {
+        "operation": "upload",
+        "name": "={{ $json.nomeArquivo }}",
+        "driveId": { "__rl": true, "value": "My Drive", "mode": "list" },
+        "folderId": { "__rl": true, "value": "1OTha4rROQKfRj5KAPo9iCuPZrMHYGUa6", "mode": "id" },
+        "binaryPropertyName": "data",
+        "options": {}
+      },
+      "id": "5f80c2a4-3305-4855-b146-573dd57cc074",
+      "name": "Salvar Foto no Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [12768, 3648],
+      "credentials": { "googleDriveOAuth2Api": { "id": "r3sysG7EBAp9qEfd", "name": "Google Drive account" } }
+    },
+
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": { "__rl": true, "value": "1PkdmmCQaNlPxezCPXflY0lCMEmzp10F0DdqO5LdZAKk", "mode": "id" },
+        "sheetName": { "__rl": true, "value": "Catálogo", "mode": "name" },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "codigo":             "={{ $('Separar Itens do Lote').item.json.codigo }}",
+            "nome":               "={{ $('Separar Itens do Lote').item.json.nome }}",
+            "descricao_curta":    "={{ $('Separar Itens do Lote').item.json.nome }}",
+            "categoria":          "Películas Adesivas",
+            "tipo_pelicula":      "Adesivo comum",
+            "quantidade_por_kit": "={{ $('Separar Itens do Lote').item.json.qtd }}",
+            "preco":              "={{ $('Separar Itens do Lote').item.json.preco }}",
+            "preco_promocional":  "={{ $('Separar Itens do Lote').item.json.preco_promocional }}",
+            "destaque":           "={{ $('Separar Itens do Lote').item.json.em_promocao }}",
+            "foto_url_1":         "=https://drive.google.com/uc?id={{ $('Salvar Foto no Drive').item.json.id }}",
+            "status":             "Disponível"
+          },
+          "matchingColumns": ["codigo"],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "f46ac3d0-67fc-4c5d-9a92-5dd347bd44a1",
+      "name": "Adicionar na Planilha",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [12992, 3648],
+      "credentials": { "googleSheetsOAuth2Api": { "id": "HKdCmshTj2i8yZlO", "name": "Google Sheets account" } }
+    },
+
+    {
+      "parameters": {
+        "jsCode": "const totalItens = $input.all().length;\nconst remoteJid = $('Montar Lote Completo').first().json.remoteJid;\n\nconst mensagem = `✅ *Lote cadastrado com sucesso!*\\n\\n📸 *${totalItens} película${totalItens !== 1 ? 's' : ''}* adicionada${totalItens !== 1 ? 's' : ''} na planilha.\\n🗂️ Fotos salvas no Google Drive.\\n\\n_Pode mandar o próximo lote quando quiser!_`;\n\nreturn [{ json: { mensagem, remoteJid } }];"
+      },
+      "id": "9d0ab50b-b87e-4d4f-812a-1e51aa927aab",
+      "name": "Montar Mensagem de Sucesso",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [13216, 3648]
+    },
+
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://evo.upviaagentes.com/message/sendText/unhabella_cadastro",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "apikey", "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd" }]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ \"number\": $json.remoteJid, \"text\": $json.mensagem }) }}",
+        "options": {}
+      },
+      "id": "f49a399d-2a81-400c-8af3-e59942983732",
+      "name": "Enviar Resposta WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [13440, 3744]
+    },
+
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "=lote_fotos_{{ $json.remoteJid }}"
+      },
+      "id": "1ebd2d04-c072-4671-aa54-a453112470bb",
+      "name": "Limpar Redis",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [13440, 3552],
+      "credentials": { "redis": { "id": "5K2NbkySCax4MAWq", "name": "Redis account" } }
+    }
+
+  ],
+
+  "pinData": {},
+
+  "connections": {
+
+    "Webhook Evolution": {
+      "main": [[{ "node": "Filtrar Mensagem", "type": "main", "index": 0 }]]
+    },
+
+    "Filtrar Mensagem": {
+      "main": [[{ "node": "É Foto ou Texto?", "type": "main", "index": 0 }]]
+    },
+
+    "É Foto ou Texto?": {
+      "main": [[{ "node": "É Foto?", "type": "main", "index": 0 }]]
+    },
+
+    "É Foto?": {
+      "main": [
+        [{ "node": "Baixar Foto (Base64)", "type": "main", "index": 0 }],
+        [{ "node": "Parsear Descrições",   "type": "main", "index": 0 }]
+      ]
+    },
+
+    "Baixar Foto (Base64)": {
+      "main": [[{ "node": "Buscar Fotos no Redis", "type": "main", "index": 0 }]]
+    },
+
+    "Buscar Fotos no Redis": {
+      "main": [[{ "node": "Acumular Fotos", "type": "main", "index": 0 }]]
+    },
+
+    "Acumular Fotos": {
+      "main": [[{ "node": "Salvar Fotos no Redis", "type": "main", "index": 0 }]]
+    },
+
+    "Salvar Fotos no Redis": {
+      "main": [[{ "node": "A cada 5 fotos?", "type": "main", "index": 0 }]]
+    },
+
+    "A cada 5 fotos?": {
+      "main": [
+        [{ "node": "Confirmar Foto Recebida", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+
+    "Parsear Descrições": {
+      "main": [[{ "node": "É Pronto?", "type": "main", "index": 0 }]]
+    },
+
+    "É Pronto?": {
+      "main": [
+        [{ "node": "Buscar Total Redis",  "type": "main", "index": 0 }],
+        [{ "node": "Pode Processar?",     "type": "main", "index": 0 }]
+      ]
+    },
+
+    "Buscar Total Redis": {
+      "main": [[{ "node": "Montar Msg Confirmação", "type": "main", "index": 0 }]]
+    },
+
+    "Montar Msg Confirmação": {
+      "main": [[{ "node": "Enviar Confirmação de Lote", "type": "main", "index": 0 }]]
+    },
+
+    "Pode Processar?": {
+      "main": [
+        [{ "node": "Buscar Lote de Fotos", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+
+    "Buscar Lote de Fotos": {
+      "main": [[{ "node": "Montar Lote Completo", "type": "main", "index": 0 }]]
+    },
+
+    "Montar Lote Completo": {
+      "main": [[{ "node": "Sem Erros?", "type": "main", "index": 0 }]]
+    },
+
+    "Sem Erros?": {
+      "main": [
+        [{ "node": "Separar Itens do Lote",   "type": "main", "index": 0 }],
+        [{ "node": "Montar Mensagem de Erro",  "type": "main", "index": 0 }]
+      ]
+    },
+
+    "Separar Itens do Lote": {
+      "main": [[{ "node": "Processar Imagem", "type": "main", "index": 0 }]]
+    },
+
+    "Processar Imagem": {
+      "main": [[{ "node": "Salvar Foto no Drive", "type": "main", "index": 0 }]]
+    },
+
+    "Salvar Foto no Drive": {
+      "main": [[{ "node": "Adicionar na Planilha", "type": "main", "index": 0 }]]
+    },
+
+    "Adicionar na Planilha": {
+      "main": [[{ "node": "Montar Mensagem de Sucesso", "type": "main", "index": 0 }]]
+    },
+
+    "Montar Mensagem de Sucesso": {
+      "main": [[
+        { "node": "Enviar Resposta WhatsApp", "type": "main", "index": 0 },
+        { "node": "Limpar Redis",             "type": "main", "index": 0 }
+      ]]
+    },
+
+    "Montar Mensagem de Erro": {
+      "main": [[{ "node": "Enviar Resposta WhatsApp", "type": "main", "index": 0 }]]
+    }
+
+  },
+
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "final-001-unhabella-catalogacao",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8d72dbf3c0d3b5a1f3a49767a5f36377274bb40c20d10df668ec20eaf034a7c3"
+  },
+  "id": "hgtaaIAwQh55JV4U",
+  "tags": []
+}
