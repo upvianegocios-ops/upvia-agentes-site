@@ -316,7 +316,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const { createCanvas, loadImage } = require('canvas');\n\nconst item = $input.first().json;\nconst base64 = item.base64 || '';\nconst codigo = item.codigo || 'SEM-CODIGO';\n\nif (!base64) {\n  return [{ json: { ...item } }];\n}\n\nconst imageBuffer = Buffer.from(base64, 'base64');\nconst img = await loadImage(imageBuffer);\n\nconst MAX = 800;\nlet w = img.width;\nlet h = img.height;\nif (w > MAX || h > MAX) {\n  if (w > h) {\n    h = Math.round(h * MAX / w);\n    w = MAX;\n  } else {\n    w = Math.round(w * MAX / h);\n    h = MAX;\n  }\n}\n\nconst canvas = createCanvas(w, h);\nconst ctx = canvas.getContext('2d');\nctx.drawImage(img, 0, 0, w, h);\n\nconst fontSize = 20;\nconst padding = 8;\nctx.font = `bold ${fontSize}px sans-serif`;\nconst textWidth = ctx.measureText(codigo).width;\nconst bgX = w - textWidth - padding * 2 - 10;\nconst bgY = h - fontSize - padding * 2 - 10;\nconst bgW = textWidth + padding * 2;\nconst bgH = fontSize + padding * 2;\n\nctx.fillStyle = 'rgba(0, 0, 0, 0.6)';\nctx.fillRect(bgX, bgY, bgW, bgH);\n\nctx.fillStyle = '#ffffff';\nctx.fillText(codigo, bgX + padding, bgY + fontSize + Math.floor(padding / 2));\n\nconst processedBase64 = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];\n\nreturn [{ json: { ...item, base64: processedBase64 } }];"
+        "jsCode": "const item = $input.first().json;\nconst base64 = item.base64 || '';\nconst codigo = item.codigo || 'SEM-CODIGO';\nconst nomeSeguro = (item.nome || 'pelicula').replace(/[^a-zA-Z0-9_\\-\\u00C0-\\u017E]/g, '_');\n\n// Nome do arquivo com código do produto embutido para identificação\nconst nomeArquivo = `${codigo}_${nomeSeguro}.jpg`;\n\nreturn [{ json: { ...item, base64, nomeArquivo } }];"
       },
       "id": "f4a1b2c3-d5e6-7890-abcd-ef1234567891",
       "name": "Processar Imagem",
@@ -326,7 +326,7 @@
     },
     {
       "parameters": {
-        "name": "={{ $json.codigo + '_' + $json.nome.replace(/\\s+/g, '_') + '.jpg' }}",
+        "name": "={{ $json.nomeArquivo }}",
         "driveId": {
           "__rl": true,
           "value": "My Drive",
