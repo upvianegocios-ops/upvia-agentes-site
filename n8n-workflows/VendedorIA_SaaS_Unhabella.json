@@ -1,5 +1,5 @@
 ﻿{
-    "updatedAt":  "2026-06-03T02:12:15.954Z",
+    "updatedAt":  "2026-06-03T02:23:19.895Z",
     "createdAt":  "2026-05-29T23:15:23.769Z",
     "id":  "Jkt0vu99AsQnEs6a",
     "name":  "VendedorIA SaaS - Unhabella",
@@ -174,7 +174,7 @@
                                                               },
                                          "sendBody":  true,
                                          "specifyBody":  "json",
-                                         "jsonBody":  "={\n  \"number\": \"{{ $(\u0027Montar Contexto Dinamico\u0027).first().json.remoteJid }}\",\n  \"text\": {{ JSON.stringify($json.output || $json.text || \u0027\u0027) }}\n}",
+                                         "jsonBody":  "={\n  \"number\": \"{{ $(\u0027Montar Contexto Dinamico\u0027).first().json.remoteJid }}\",\n  \"text\": {{ JSON.stringify(($json.output || $json.text || \u0027\u0027).replace(/https?:\\/\\/drive\\.google\\.com\\/drive\\/folders\\/[^\\s]*/g, \u0027\u0027).replace(/\\s{2,}/g, \u0027 \u0027).trim()) }}\n}",
                                          "options":  {
 
                                                      }
@@ -1390,7 +1390,7 @@
                                                             "conditions":  [
                                                                                {
                                                                                    "id":  "drv1",
-                                                                                   "leftValue":  "={{ $json.output || \u0027\u0027 }}",
+                                                                                   "leftValue":  "={{ $(\u0027Vendedor IA\u0027).first().json.output || \u0027\u0027 }}",
                                                                                    "rightValue":  "drive.google.com/drive/folders/",
                                                                                    "operator":  {
                                                                                                     "type":  "string",
@@ -1415,7 +1415,7 @@
                   },
                   {
                       "parameters":  {
-                                         "jsCode":  "const texto = $json.output || \u0027\u0027;\nconst m = texto.match(/drive\\.google\\.com\\/drive\\/folders\\/([a-zA-Z0-9_-]+)/);\nconst fid = m ? m[1] : \u0027\u0027;\nconst cat = {\u00271VFPtj62RnZEymFnu40BKxPTYG7vL0u7p\u0027:\u0027Artesanal Luxo 15 pares\u0027,\u00271A9r9fWed1ZWuC7sMQQgDPkRYdldn6bXC\u0027:\u0027Artesanal 5 pares\u0027,\u00271200bA34Qcu3mV2Bcp8nfSrMNXHnSFHpT\u0027:\u0027Kits atacado/revenda\u0027,\u00271ExfLDKoYYoMvwaLfbx_qmGLM6-S3NxGN\u0027:\u0027Joias de Unha\u0027,\u00271bXs-MYZBWLXqtt-QywggAifgnQdMJ4w0\u0027:\u00273D Cartelas 30 pares\u0027};\nif (!fid) return [];\nreturn [{ json: { folder_id: fid, categoria: cat[fid] || \u0027Catalogo Unhabella\u0027 } }];"
+                                         "jsCode":  "const texto = $(\u0027Vendedor IA\u0027).first().json.output || \u0027\u0027;\nconst match = texto.match(/drive\\.google\\.com\\/drive\\/folders\\/([a-zA-Z0-9_-]+)/);\nconst folderId = match ? match[1] : \u0027\u0027;\nconst cat = {\n  \u00271VFPtj62RnZEymFnu40BKxPTYG7vL0u7p\u0027: \u0027Artesanal Luxo 15 pares\u0027,\n  \u00271A9r9fWed1ZWuC7sMQQgDPkRYdldn6bXC\u0027: \u0027Artesanal 5 pares\u0027,\n  \u00271200bA34Qcu3mV2Bcp8nfSrMNXHnSFHpT\u0027: \u0027Kits atacado/revenda\u0027,\n  \u00271ExfLDKoYYoMvwaLfbx_qmGLM6-S3NxGN\u0027: \u0027Joias de Unha\u0027,\n  \u00271bXs-MYZBWLXqtt-QywggAifgnQdMJ4w0\u0027: \u00273D Cartelas 30 pares\u0027\n};\nif (!folderId) return [];\nreturn [{ json: { folder_id: folderId, categoria: cat[folderId] || \u0027Catalogo Unhabella\u0027 } }];"
                                      },
                       "id":  "code-extr-folder",
                       "name":  "Code: Extrair Folder ID",
@@ -2273,9 +2273,9 @@
     "pinData":  {
 
                 },
-    "versionId":  "311746df-cb75-4a17-be08-0975449f0c77",
-    "activeVersionId":  "311746df-cb75-4a17-be08-0975449f0c77",
-    "versionCounter":  293,
+    "versionId":  "fbd3b5ac-c949-4e18-8db9-8326b0c4b8f7",
+    "activeVersionId":  "fbd3b5ac-c949-4e18-8db9-8326b0c4b8f7",
+    "versionCounter":  296,
     "triggerCount":  5,
     "shared":  [
                    {
@@ -2300,9 +2300,9 @@
 
              ],
     "activeVersion":  {
-                          "updatedAt":  "2026-06-03T02:12:15.956Z",
-                          "createdAt":  "2026-06-03T02:12:15.956Z",
-                          "versionId":  "311746df-cb75-4a17-be08-0975449f0c77",
+                          "updatedAt":  "2026-06-03T02:23:19.897Z",
+                          "createdAt":  "2026-06-03T02:23:19.897Z",
+                          "versionId":  "fbd3b5ac-c949-4e18-8db9-8326b0c4b8f7",
                           "workflowId":  "Jkt0vu99AsQnEs6a",
                           "nodes":  [
                                         {
@@ -2472,7 +2472,7 @@
                                                                                     },
                                                                "sendBody":  true,
                                                                "specifyBody":  "json",
-                                                               "jsonBody":  "={\n  \"number\": \"{{ $(\u0027Montar Contexto Dinamico\u0027).first().json.remoteJid }}\",\n  \"text\": {{ JSON.stringify($json.output || $json.text || \u0027\u0027) }}\n}",
+                                                               "jsonBody":  "={\n  \"number\": \"{{ $(\u0027Montar Contexto Dinamico\u0027).first().json.remoteJid }}\",\n  \"text\": {{ JSON.stringify(($json.output || $json.text || \u0027\u0027).replace(/https?:\\/\\/drive\\.google\\.com\\/drive\\/folders\\/[^\\s]*/g, \u0027\u0027).replace(/\\s{2,}/g, \u0027 \u0027).trim()) }}\n}",
                                                                "options":  {
 
                                                                            }
@@ -3688,7 +3688,7 @@
                                                                                   "conditions":  [
                                                                                                      {
                                                                                                          "id":  "drv1",
-                                                                                                         "leftValue":  "={{ $json.output || \u0027\u0027 }}",
+                                                                                                         "leftValue":  "={{ $(\u0027Vendedor IA\u0027).first().json.output || \u0027\u0027 }}",
                                                                                                          "rightValue":  "drive.google.com/drive/folders/",
                                                                                                          "operator":  {
                                                                                                                           "type":  "string",
@@ -3713,7 +3713,7 @@
                                         },
                                         {
                                             "parameters":  {
-                                                               "jsCode":  "const texto = $json.output || \u0027\u0027;\nconst m = texto.match(/drive\\.google\\.com\\/drive\\/folders\\/([a-zA-Z0-9_-]+)/);\nconst fid = m ? m[1] : \u0027\u0027;\nconst cat = {\u00271VFPtj62RnZEymFnu40BKxPTYG7vL0u7p\u0027:\u0027Artesanal Luxo 15 pares\u0027,\u00271A9r9fWed1ZWuC7sMQQgDPkRYdldn6bXC\u0027:\u0027Artesanal 5 pares\u0027,\u00271200bA34Qcu3mV2Bcp8nfSrMNXHnSFHpT\u0027:\u0027Kits atacado/revenda\u0027,\u00271ExfLDKoYYoMvwaLfbx_qmGLM6-S3NxGN\u0027:\u0027Joias de Unha\u0027,\u00271bXs-MYZBWLXqtt-QywggAifgnQdMJ4w0\u0027:\u00273D Cartelas 30 pares\u0027};\nif (!fid) return [];\nreturn [{ json: { folder_id: fid, categoria: cat[fid] || \u0027Catalogo Unhabella\u0027 } }];"
+                                                               "jsCode":  "const texto = $(\u0027Vendedor IA\u0027).first().json.output || \u0027\u0027;\nconst match = texto.match(/drive\\.google\\.com\\/drive\\/folders\\/([a-zA-Z0-9_-]+)/);\nconst folderId = match ? match[1] : \u0027\u0027;\nconst cat = {\n  \u00271VFPtj62RnZEymFnu40BKxPTYG7vL0u7p\u0027: \u0027Artesanal Luxo 15 pares\u0027,\n  \u00271A9r9fWed1ZWuC7sMQQgDPkRYdldn6bXC\u0027: \u0027Artesanal 5 pares\u0027,\n  \u00271200bA34Qcu3mV2Bcp8nfSrMNXHnSFHpT\u0027: \u0027Kits atacado/revenda\u0027,\n  \u00271ExfLDKoYYoMvwaLfbx_qmGLM6-S3NxGN\u0027: \u0027Joias de Unha\u0027,\n  \u00271bXs-MYZBWLXqtt-QywggAifgnQdMJ4w0\u0027: \u00273D Cartelas 30 pares\u0027\n};\nif (!folderId) return [];\nreturn [{ json: { folder_id: folderId, categoria: cat[folderId] || \u0027Catalogo Unhabella\u0027 } }];"
                                                            },
                                             "id":  "code-extr-folder",
                                             "name":  "Code: Extrair Folder ID",
@@ -4483,18 +4483,18 @@
                           "autosaved":  false,
                           "workflowPublishHistory":  [
                                                          {
-                                                             "createdAt":  "2026-06-03T02:12:16.078Z",
-                                                             "id":  318,
+                                                             "createdAt":  "2026-06-03T02:23:19.998Z",
+                                                             "id":  320,
                                                              "workflowId":  "Jkt0vu99AsQnEs6a",
-                                                             "versionId":  "311746df-cb75-4a17-be08-0975449f0c77",
+                                                             "versionId":  "fbd3b5ac-c949-4e18-8db9-8326b0c4b8f7",
                                                              "event":  "activated",
                                                              "userId":  "63b6bda0-d1aa-4abc-beaa-0fbb599f2288"
                                                          },
                                                          {
-                                                             "createdAt":  "2026-06-03T02:12:16.027Z",
-                                                             "id":  317,
+                                                             "createdAt":  "2026-06-03T02:23:19.957Z",
+                                                             "id":  319,
                                                              "workflowId":  "Jkt0vu99AsQnEs6a",
-                                                             "versionId":  "311746df-cb75-4a17-be08-0975449f0c77",
+                                                             "versionId":  "fbd3b5ac-c949-4e18-8db9-8326b0c4b8f7",
                                                              "event":  "deactivated",
                                                              "userId":  "63b6bda0-d1aa-4abc-beaa-0fbb599f2288"
                                                          }
