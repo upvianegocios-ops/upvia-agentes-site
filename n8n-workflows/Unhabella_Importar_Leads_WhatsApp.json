@@ -1,0 +1,422 @@
+{
+  "name": "Unhabella - Importar Leads WhatsApp",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "a1b2c3d4-0001-4000-8000-000000000001",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://evo.upviaagentes.com/chat/findChats/unhabella_cadastro",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0002-4000-8000-000000000002",
+      "name": "Buscar Todos os Chats",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [340, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const chats = $input.first().json;\nconst chatArray = Array.isArray(chats) ? chats : (chats.data || []);\nconst ADMIN_NUMBER = '5553[SEU_NUMERO]@s.whatsapp.net';\nconst contatos = [];\nconst seen = new Set();\n\nfor (const chat of chatArray) {\n  const remoteJid = chat.remoteJid || chat.id || '';\n  if (remoteJid.includes('@g.us')) continue;\n  if (remoteJid === 'status@broadcast') continue;\n  if (remoteJid === ADMIN_NUMBER) continue;\n  if (!remoteJid.includes('@s.whatsapp.net')) continue;\n  if (seen.has(remoteJid)) continue;\n  seen.add(remoteJid);\n  contatos.push({\n    whatsapp: remoteJid,\n    nome: chat.name || chat.pushName || remoteJid.split('@')[0]\n  });\n}\n\nreturn contatos.map(c => ({ json: c }));"
+      },
+      "id": "a1b2c3d4-0003-4000-8000-000000000003",
+      "name": "Filtrar Contatos Válidos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [580, 300]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "a1b2c3d4-0004-4000-8000-000000000004",
+      "name": "SplitInBatches",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [820, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://evo.upviaagentes.com/chat/findMessages/unhabella_cadastro",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "remoteJid",
+              "value": "={{ $json.whatsapp }}"
+            },
+            {
+              "name": "limit",
+              "value": "20"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0005-4000-8000-000000000005",
+      "name": "Buscar Mensagens do Contato",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1060, 300],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const mensagensInput = $input.first().json;\nconst mensagens = Array.isArray(mensagensInput)\n  ? mensagensInput\n  : (mensagensInput.messages || mensagensInput.data || []);\n\nconst contactData = $('SplitInBatches').item.json;\nconst whatsapp = contactData.whatsapp || '';\nconst nome = contactData.nome || '';\n\nconst linhas = [];\nfor (const msg of mensagens) {\n  const ts = msg.messageTimestamp || msg.timestamp;\n  const data = ts ? new Date(ts * 1000).toISOString().split('T')[0] : '?';\n  const texto = (msg.message && msg.message.conversation)\n    || (msg.message && msg.message.extendedTextMessage && msg.message.extendedTextMessage.text)\n    || (msg.message && msg.message.imageMessage && msg.message.imageMessage.caption)\n    || '[mídia]';\n  const quem = (msg.key && msg.key.fromMe) ? 'Eu' : 'Contato';\n  linhas.push('[' + data + '] ' + quem + ': ' + texto);\n}\n\nlet contexto = linhas.join('\\n');\nif (contexto.length > 1500) {\n  contexto = contexto.substring(contexto.length - 1500);\n}\n\nreturn [{ json: { whatsapp, nome, contexto: contexto || '(sem mensagens)' } }];"
+      },
+      "id": "a1b2c3d4-0006-4000-8000-000000000006",
+      "name": "Montar Contexto",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1300, 300]
+    },
+    {
+      "parameters": {
+        "resource": "text",
+        "operation": "message",
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Você analisa conversas de WhatsApp de uma loja de películas de unha chamada Unhabella. Retorne SOMENTE JSON válido, sem markdown:\n{\n  \"temperatura\": \"quente|morno|frio|inativo\",\n  \"ja_comprou\": true,\n  \"resumo\": \"máximo 2 frases sobre interesse da pessoa\",\n  \"origem\": \"facebook_ads|instagram|indicacao|desconhecido\",\n  \"ultima_interacao\": \"YYYY-MM-DD\"\n}\nCritérios:\n- quente: comprou OU pediu preço/prazo recentemente\n- morno: demonstrou interesse mas não fechou\n- frio: não respondeu ou só visualizou\n- inativo: pediu pra parar ou não trabalha mais com unhas",
+              "role": "system"
+            },
+            {
+              "content": "={{ $json.contexto }}",
+              "role": "user"
+            }
+          ]
+        },
+        "simplifyOutput": true,
+        "options": {
+          "temperature": 0
+        }
+      },
+      "id": "a1b2c3d4-0007-4000-8000-000000000007",
+      "name": "Classificar Lead",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.6,
+      "position": [1540, 300],
+      "credentials": {
+        "openAiApi": {
+          "id": "sjemA3sd4BGEaIHJ",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const aiData = $input.first().json;\nconst contactData = $('SplitInBatches').item.json;\nconst whatsapp = contactData.whatsapp || '';\nconst nome = contactData.nome || '';\n\nconst rawContent = aiData.text || aiData.content || aiData.message || '{}';\n\nlet parsed;\ntry {\n  const jsonMatch = rawContent.match(/\\{[\\s\\S]*\\}/);\n  parsed = JSON.parse(jsonMatch ? jsonMatch[0] : rawContent);\n} catch (e) {\n  parsed = {\n    temperatura: 'frio',\n    ja_comprou: false,\n    resumo: 'Erro ao classificar',\n    origem: 'desconhecido',\n    ultima_interacao: new Date().toISOString().split('T')[0]\n  };\n}\n\nconst telefone = whatsapp.replace('@s.whatsapp.net', '');\n\nreturn [{\n  json: {\n    nome,\n    whatsapp,\n    telefone,\n    temperatura: parsed.temperatura || 'frio',\n    ja_comprou: parsed.ja_comprou === true || parsed.ja_comprou === 'true',\n    resumo_conversa: parsed.resumo || '',\n    origem: parsed.origem || 'desconhecido',\n    ultima_interacao: parsed.ultima_interacao || new Date().toISOString().split('T')[0],\n    status: 'ativo'\n  }\n}];"
+      },
+      "id": "a1b2c3d4-0008-4000-8000-000000000008",
+      "name": "Parsear Resposta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1780, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://qzgokcxvyasftuqgqonn.supabase.co/rest/v1/unhabella_leads",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "[SUPABASE_SERVICE_ROLE_KEY]"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer [SUPABASE_SERVICE_ROLE_KEY]"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0009-4000-8000-000000000009",
+      "name": "Upsert Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2020, 300],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "resume": "timeInterval",
+        "unit": "seconds",
+        "amount": 2
+      },
+      "id": "a1b2c3d4-0010-4000-8000-000000000010",
+      "name": "Wait 2s",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [2260, 300],
+      "webhookId": "a1b2c3d4-wait-0010"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://qzgokcxvyasftuqgqonn.supabase.co/rest/v1/unhabella_leads",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "select",
+              "value": "temperatura"
+            },
+            {
+              "name": "status",
+              "value": "eq.ativo"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "[SUPABASE_SERVICE_ROLE_KEY]"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer [SUPABASE_SERVICE_ROLE_KEY]"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0011-4000-8000-000000000011",
+      "name": "Buscar Counts Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [820, 540]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nlet quente = 0, morno = 0, frio = 0, inativo = 0;\n\nfor (const item of items) {\n  const temp = item.json.temperatura;\n  if (temp === 'quente') quente++;\n  else if (temp === 'morno') morno++;\n  else if (temp === 'frio') frio++;\n  else if (temp === 'inativo') inativo++;\n}\n\nreturn [{ json: { total: items.length, quente, morno, frio, inativo } }];"
+      },
+      "id": "a1b2c3d4-0012-4000-8000-000000000012",
+      "name": "Contar Leads",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1060, 540]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://evo.upviaagentes.com/message/sendText/unhabella_cadastro",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ \"number\": \"5553[SEU_NUMERO]@s.whatsapp.net\", \"text\": \"✅ Importação concluída!\\nTotal processado: \" + $json.total + \" leads\\n🔥 Quentes: \" + $json.quente + \"\\n🟡 Mornos: \" + $json.morno + \"\\n🔵 Frios: \" + $json.frio + \"\\n⚫ Inativos: \" + $json.inativo }) }}",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0013-4000-8000-000000000013",
+      "name": "Relatório Final para Admin",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1300, 540]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Buscar Todos os Chats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Todos os Chats": {
+      "main": [
+        [
+          {
+            "node": "Filtrar Contatos Válidos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar Contatos Válidos": {
+      "main": [
+        [
+          {
+            "node": "SplitInBatches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SplitInBatches": {
+      "main": [
+        [
+          {
+            "node": "Buscar Mensagens do Contato",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Buscar Counts Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Mensagens do Contato": {
+      "main": [
+        [
+          {
+            "node": "Montar Contexto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Contexto": {
+      "main": [
+        [
+          {
+            "node": "Classificar Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classificar Lead": {
+      "main": [
+        [
+          {
+            "node": "Parsear Resposta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parsear Resposta": {
+      "main": [
+        [
+          {
+            "node": "Upsert Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Supabase": {
+      "main": [
+        [
+          {
+            "node": "Wait 2s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 2s": {
+      "main": [
+        [
+          {
+            "node": "SplitInBatches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Counts Supabase": {
+      "main": [
+        [
+          {
+            "node": "Contar Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contar Leads": {
+      "main": [
+        [
+          {
+            "node": "Relatório Final para Admin",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a1b2c3d4-vers-4000-8000-000000000099",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "unhabella-import-leads-v1",
+  "tags": []
+}
