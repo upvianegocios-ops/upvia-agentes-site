@@ -32,7 +32,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const chats = $input.first().json;\nconst chatArray = Array.isArray(chats) ? chats : (chats.data || []);\nconst ADMIN_NUMBER = '5553[SEU_NUMERO]@s.whatsapp.net';\nconst contatos = [];\nconst seen = new Set();\n\nfor (const chat of chatArray) {\n  const remoteJid = chat.remoteJid || chat.id || '';\n  if (remoteJid.includes('@g.us')) continue;\n  if (remoteJid === 'status@broadcast') continue;\n  if (remoteJid === ADMIN_NUMBER) continue;\n  if (!remoteJid.includes('@s.whatsapp.net')) continue;\n  if (seen.has(remoteJid)) continue;\n  seen.add(remoteJid);\n  contatos.push({\n    whatsapp: remoteJid,\n    nome: chat.name || chat.pushName || remoteJid.split('@')[0]\n  });\n}\n\nreturn contatos.map(c => ({ json: c }));"
+        "jsCode": "const chats = $input.first().json;\nconst chatArray = Array.isArray(chats) ? chats : (chats.data || []);\nconst ADMIN_NUMBER = '5553984014271@s.whatsapp.net';\nconst contatos = [];\nconst seen = new Set();\n\nfor (const chat of chatArray) {\n  const remoteJid = chat.remoteJid || chat.id || '';\n  if (remoteJid.includes('@g.us')) continue;\n  if (remoteJid === 'status@broadcast') continue;\n  if (remoteJid === ADMIN_NUMBER) continue;\n  if (!remoteJid.includes('@s.whatsapp.net')) continue;\n  if (seen.has(remoteJid)) continue;\n  seen.add(remoteJid);\n  contatos.push({\n    whatsapp: remoteJid,\n    nome: chat.name || chat.pushName || remoteJid.split('@')[0]\n  });\n}\n\nreturn contatos.map(c => ({ json: c }));"
       },
       "id": "a1b2c3d4-0003-4000-8000-000000000003",
       "name": "Filtrar Contatos Válidos",
@@ -148,7 +148,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://qzgokcxvyasftuqgqonn.supabase.co/rest/v1/unhabella_leads",
+        "url": "https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/unhabella_leads",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -198,7 +198,7 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "https://qzgokcxvyasftuqgqonn.supabase.co/rest/v1/unhabella_leads",
+        "url": "https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/unhabella_leads",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
@@ -258,7 +258,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ \"number\": \"5553[SEU_NUMERO]@s.whatsapp.net\", \"text\": \"✅ Importação concluída!\\nTotal processado: \" + $json.total + \" leads\\n🔥 Quentes: \" + $json.quente + \"\\n🟡 Mornos: \" + $json.morno + \"\\n🔵 Frios: \" + $json.frio + \"\\n⚫ Inativos: \" + $json.inativo }) }}",
+        "jsonBody": "={{ JSON.stringify({ \"number\": \"5553984014271@s.whatsapp.net\", \"text\": \"✅ Importação concluída!\\nTotal processado: \" + $json.total + \" leads\\n🔥 Quentes: \" + $json.quente + \"\\n🟡 Mornos: \" + $json.morno + \"\\n🔵 Frios: \" + $json.frio + \"\\n⚫ Inativos: \" + $json.inativo }) }}",
         "options": {}
       },
       "id": "a1b2c3d4-0013-4000-8000-000000000013",
