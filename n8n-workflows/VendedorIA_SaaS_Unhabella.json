@@ -1,5 +1,5 @@
 ﻿{
-    "updatedAt":  "2026-06-03T00:47:56.842Z",
+    "updatedAt":  "2026-06-03T02:12:15.954Z",
     "createdAt":  "2026-05-29T23:15:23.769Z",
     "id":  "Jkt0vu99AsQnEs6a",
     "name":  "VendedorIA SaaS - Unhabella",
@@ -1177,7 +1177,7 @@
                   },
                   {
                       "parameters":  {
-                                         "jsCode":  "const filtroData = $(\u0027Filtro + Extrair\u0027).first().json;\nconst negocio = $(\u0027Carregar Dados Negocio\u0027).first().json;\nconst tel = (negocio.telefone || \u0027\u0027).replace(/\\D/g, \u0027\u0027);\nreturn [{ json: { instancia: filtroData.instance || \u0027\u0027, session_id: `\\_\\`, remoteJid: filtroData.remoteJid, telefone: filtroData.telefone || \u0027\u0027, pushName: filtroData.pushName || \u0027\u0027, fromMe: filtroData.fromMe || false, text: filtroData.text || \u0027\u0027, messageId: filtroData.messageId || \u0027\u0027, cliente_id: negocio.cliente_id || \u0027\u0027, nome_empresa: negocio.nome_empresa || \u0027\u0027, nome_proprietario: negocio.nome_proprietario || \u0027\u0027, telefone_proprietario: tel, nome_atendente_ia: negocio.nome_atendente_ia || \u0027Bia\u0027, horario_funcionamento: negocio.horario_funcionamento || \u0027\u0027, formas_pagamento: negocio.formas_pagamento || \u0027\u0027, informacoes_extras: negocio.informacoes_extras || \u0027\u0027, evo_api_url: negocio.evo_api_url || \u0027https://evo.upviaagentes.com\u0027, evo_api_key: negocio.evo_api_key || \u0027\u0027, instancia_evo: negocio.instancia_whatsapp || \u0027\u0027, catalogo_sheets_id: negocio.catalogo_sheets_id || \u0027\u0027, google_sheet_id: negocio.google_sheet_id || \u0027\u0027, tipo_produto: negocio.tipo_produto || \u0027fisico\u0027, link_vendas: negocio.link_vendas || \u0027\u0027, chave_pix: negocio.chave_pix || \u0027\u0027, tipo_chave_pix: negocio.tipo_chave_pix || \u0027cpf\u0027, nome_titular_pix: negocio.nome_titular_pix || \u0027\u0027, banco_pix: negocio.banco_pix || \u0027\u0027, aceita_cartao: negocio.aceita_cartao || false, link_checkout: negocio.link_checkout || \u0027\u0027, msg_pos_venda: negocio.msg_pos_venda || \u0027\u0027, plano: negocio.plano || \u0027\u0027 } }];"
+                                         "jsCode":  "const filtroData = $(\u0027Filtro + Extrair\u0027).first().json;\nconst negocio = $(\u0027Carregar Dados Negocio\u0027).first().json;\nconst tel = (negocio.telefone || \u0027\u0027).replace(/\\D/g, \u0027\u0027);\n\nreturn [{ json: {\n  instancia: filtroData.instance || \u0027\u0027,\n  session_id: `\\`_\\``,\n  remoteJid: filtroData.remoteJid,\n  telefone: filtroData.telefone || \u0027\u0027,\n  pushName: filtroData.pushName || \u0027\u0027,\n  fromMe: filtroData.fromMe || false,\n  text: filtroData.text || \u0027\u0027,\n  messageId: filtroData.messageId || \u0027\u0027,\n  cliente_id: negocio.cliente_id || \u0027\u0027,\n  nome_empresa: negocio.nome_empresa || \u0027\u0027,\n  nome_proprietario: negocio.nome_proprietario || \u0027\u0027,\n  telefone_proprietario: tel,\n  nome_atendente_ia: negocio.nome_atendente_ia || \u0027Bela\u0027,\n  horario_funcionamento: negocio.horario_funcionamento || \u0027\u0027,\n  formas_pagamento: negocio.formas_pagamento || \u0027\u0027,\n  informacoes_extras: negocio.informacoes_extras || \u0027\u0027,\n  evo_api_url: negocio.evo_api_url || \u0027https://evo.upviaagentes.com\u0027,\n  evo_api_key: negocio.evo_api_key || \u0027\u0027,\n  instancia_evo: negocio.instancia_whatsapp || \u0027\u0027,\n  catalogo_sheets_id: negocio.catalogo_sheets_id || \u0027\u0027,\n  google_sheet_id: negocio.google_sheet_id || \u0027\u0027\n}}];"
                                      },
                       "id":  "ccbf80f6-ddd4-4264-8b72-89caa3fb7dff",
                       "name":  "Montar Contexto Dinamico",
@@ -1261,10 +1261,11 @@
                                                                                {
                                                                                    "id":  "deb-check-1",
                                                                                    "leftValue":  "={{ $json.value }}",
-                                                                                   "rightValue":  "={{ $(\u0027Filtro + Extrair\u0027).first().json.messageId }}",
+                                                                                   "rightValue":  "=",
                                                                                    "operator":  {
                                                                                                     "type":  "string",
-                                                                                                    "operation":  "equals"
+                                                                                                    "operation":  "empty",
+                                                                                                    "singleValue":  true
                                                                                                 }
                                                                                }
                                                                            ],
@@ -1334,7 +1335,7 @@
                                                               },
                                          "sendBody":  true,
                                          "specifyBody":  "json",
-                                         "jsonBody":  "={\n  \"number\": \"{{ $(\u0027Montar Contexto Dinamico\u0027).first().json.remoteJid }}\",\n  \"mediatype\": \"image\",\n  \"media\": \"{{ $json.foto_url }}\",\n  \"caption\": \"{{ $json.caption }}\"\n}",
+                                         "jsonBody":  "={\\n  \"number\": \"{{ $(\u0027Montar Contexto Dinamico\u0027).first().json.remoteJid }}\",\\n  \"mediatype\": \"image\",\\n  \"media\": \"{{ $json.foto_base64 }}\",\\n  \"caption\": \"{{ $json.caption }}\"\\n}",
                                          "options":  {
 
                                                      }
@@ -1343,8 +1344,8 @@
                       "name":  "Enviar Foto ao Cliente1",
                       "type":  "n8n-nodes-base.httpRequest",
                       "position":  [
-                                       35760,
-                                       13000
+                                       36480,
+                                       12880
                                    ],
                       "typeVersion":  4.2
                   },
@@ -1378,14 +1379,6 @@
                       "typeVersion":  4.2
                   },
                   {
-                      "id":  "if-drive-lnk",
-                      "name":  "IF Contem Link Drive?",
-                      "type":  "n8n-nodes-base.if",
-                      "typeVersion":  2.2,
-                      "position":  [
-                                       34560,
-                                       13000
-                                   ],
                       "parameters":  {
                                          "conditions":  {
                                                             "options":  {
@@ -1410,9 +1403,20 @@
                                          "options":  {
 
                                                      }
-                                     }
+                                     },
+                      "id":  "if-drive-lnk",
+                      "name":  "IF Contem Link Drive?",
+                      "type":  "n8n-nodes-base.if",
+                      "typeVersion":  2.2,
+                      "position":  [
+                                       34560,
+                                       13008
+                                   ]
                   },
                   {
+                      "parameters":  {
+                                         "jsCode":  "const texto = $json.output || \u0027\u0027;\nconst m = texto.match(/drive\\.google\\.com\\/drive\\/folders\\/([a-zA-Z0-9_-]+)/);\nconst fid = m ? m[1] : \u0027\u0027;\nconst cat = {\u00271VFPtj62RnZEymFnu40BKxPTYG7vL0u7p\u0027:\u0027Artesanal Luxo 15 pares\u0027,\u00271A9r9fWed1ZWuC7sMQQgDPkRYdldn6bXC\u0027:\u0027Artesanal 5 pares\u0027,\u00271200bA34Qcu3mV2Bcp8nfSrMNXHnSFHpT\u0027:\u0027Kits atacado/revenda\u0027,\u00271ExfLDKoYYoMvwaLfbx_qmGLM6-S3NxGN\u0027:\u0027Joias de Unha\u0027,\u00271bXs-MYZBWLXqtt-QywggAifgnQdMJ4w0\u0027:\u00273D Cartelas 30 pares\u0027};\nif (!fid) return [];\nreturn [{ json: { folder_id: fid, categoria: cat[fid] || \u0027Catalogo Unhabella\u0027 } }];"
+                                     },
                       "id":  "code-extr-folder",
                       "name":  "Code: Extrair Folder ID",
                       "type":  "n8n-nodes-base.code",
@@ -1420,22 +1424,10 @@
                       "position":  [
                                        34800,
                                        12880
-                                   ],
-                      "parameters":  {
-                                         "jsCode":  "const texto = $json.output || \u0027\u0027;\nconst m = texto.match(/drive\\.google\\.com\\/drive\\/folders\\/([a-zA-Z0-9_-]+)/);\nconst fid = m ? m[1] : \u0027\u0027;\nconst cat = {\u00271VFPtj62RnZEymFnu40BKxPTYG7vL0u7p\u0027:\u0027Artesanal Luxo 15 pares\u0027,\u00271A9r9fWed1ZWuC7sMQQgDPkRYdldn6bXC\u0027:\u0027Artesanal 5 pares\u0027,\u00271200bA34Qcu3mV2Bcp8nfSrMNXHnSFHpT\u0027:\u0027Kits atacado/revenda\u0027,\u00271ExfLDKoYYoMvwaLfbx_qmGLM6-S3NxGN\u0027:\u0027Joias de Unha\u0027,\u00271bXs-MYZBWLXqtt-QywggAifgnQdMJ4w0\u0027:\u00273D Cartelas 30 pares\u0027};\nif (!fid) return [];\nreturn [{ json: { folder_id: fid, categoria: cat[fid] || \u0027Catalogo Unhabella\u0027 } }];"
-                                     }
+                                   ]
                   },
                   {
-                      "id":  "http-list-drive",
-                      "name":  "HTTP: Listar Fotos Drive",
-                      "type":  "n8n-nodes-base.httpRequest",
-                      "typeVersion":  4.2,
-                      "position":  [
-                                       35040,
-                                       12880
-                                   ],
                       "parameters":  {
-                                         "method":  "GET",
                                          "url":  "https://www.googleapis.com/drive/v3/files",
                                          "authentication":  "predefinedCredentialType",
                                          "nodeCredentialType":  "googleDriveOAuth2Api",
@@ -1460,6 +1452,14 @@
 
                                                      }
                                      },
+                      "id":  "http-list-drive",
+                      "name":  "HTTP: Listar Fotos Drive",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.2,
+                      "position":  [
+                                       35040,
+                                       12880
+                                   ],
                       "credentials":  {
                                           "googleDriveOAuth2Api":  {
                                                                        "id":  "r3sysG7EBAp9qEfd",
@@ -1468,6 +1468,9 @@
                                       }
                   },
                   {
+                      "parameters":  {
+                                         "jsCode":  "const resp = $input.first().json;\nconst files = resp.files || [];\nconst cat = $(\u0027Code: Extrair Folder ID\u0027).first().json.categoria || \u0027Catalogo Unhabella\u0027;\nconst imagens = files.filter(f =\u003e f.mimeType \u0026\u0026 f.mimeType.startsWith(\u0027image/\u0027));\nif (imagens.length === 0) return [];\nreturn imagens.map(f =\u003e ({ json: {\n  file_id: f.id,\n  file_name: f.name,\n  mime_type: f.mimeType || \u0027image/jpeg\u0027,\n  caption: `\\ — \\`} }));"
+                                     },
                       "id":  "code-prep-urls",
                       "name":  "Code: Preparar URLs Fotos",
                       "type":  "n8n-nodes-base.code",
@@ -1475,25 +1478,65 @@
                       "position":  [
                                        35280,
                                        12880
-                                   ],
-                      "parameters":  {
-                                         "jsCode":  "const resp = $input.first().json;\nconst files = resp.files || [];\nconst cat = $(\u0027Code: Extrair Folder ID\u0027).first().json.categoria || \u0027Catalogo Unhabella\u0027;\nconst imagens = files.filter(f =\u003e f.mimeType \u0026\u0026 f.mimeType.startsWith(\u0027image/\u0027));\nif (imagens.length === 0) return [];\nreturn imagens.map(f =\u003e ({ json: {\n  foto_url: `https://drive.google.com/uc?export=download\u0026id=\\`,\n  caption: `\\ - \\`,\n  file_id: f.id, file_name: f.name\n} }));"
-                                     }
+                                   ]
                   },
                   {
+                      "parameters":  {
+                                         "batchSize":  1,
+                                         "options":  {
+
+                                                     }
+                                     },
                       "id":  "split-fotos-5",
-                      "name":  "Split Fotos em 5",
+                      "name":  "Split Fotos (1 por vez)",
                       "type":  "n8n-nodes-base.splitInBatches",
                       "typeVersion":  3,
                       "position":  [
                                        35520,
                                        12880
+                                   ]
+                  },
+                  {
+                      "id":  "http-dl-foto-drive",
+                      "name":  "HTTP: Download Foto Drive",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.2,
+                      "position":  [
+                                       35760,
+                                       12880
                                    ],
                       "parameters":  {
-                                         "batchSize":  5,
+                                         "method":  "GET",
+                                         "url":  "=https://www.googleapis.com/drive/v3/files/{{ $json.file_id }}?alt=media",
+                                         "authentication":  "predefinedCredentialType",
+                                         "nodeCredentialType":  "googleDriveOAuth2Api",
                                          "options":  {
-
+                                                         "response":  {
+                                                                          "response":  {
+                                                                                           "responseFormat":  "file",
+                                                                                           "outputPropertyName":  "data"
+                                                                                       }
+                                                                      }
                                                      }
+                                     },
+                      "credentials":  {
+                                          "googleDriveOAuth2Api":  {
+                                                                       "id":  "r3sysG7EBAp9qEfd",
+                                                                       "name":  "Google Drive account"
+                                                                   }
+                                      }
+                  },
+                  {
+                      "id":  "code-montar-b64",
+                      "name":  "Code: Montar Base64",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       36000,
+                                       12880
+                                   ],
+                      "parameters":  {
+                                         "jsCode":  "const item = $input.item;\nconst binaryData = item.binary || {};\nconst keys = Object.keys(binaryData);\nif (keys.length === 0) {\n  return [{ json: { foto_base64: \u0027\u0027, caption: \u0027\u0027, erro: \u0027sem binary\u0027 } }];\n}\nconst key = keys[0];\nconst base64 = binaryData[key].data || \u0027\u0027;\nconst mimeType = binaryData[key].mimeType || \u0027image/jpeg\u0027;\nlet caption = \u0027\u0027;\ntry { caption = $(\u0027Code: Preparar URLs Fotos\u0027).item.json.caption || \u0027\u0027; } catch(e) {}\nreturn [{\n  json: {\n    foto_base64: \u0027data:\u0027 + mimeType + \u0027;base64,\u0027 + base64,\n    mime_type: mimeType,\n    caption: caption\n  }\n}];"
                                      }
                   }
               ],
@@ -2095,24 +2138,46 @@
                                                           "main":  [
                                                                        [
                                                                            {
-                                                                               "node":  "Split Fotos em 5",
+                                                                               "node":  "Split Fotos (1 por vez)",
                                                                                "type":  "main",
                                                                                "index":  0
                                                                            }
                                                                        ]
                                                                    ]
                                                       },
-                        "Split Fotos em 5":  {
-                                                 "main":  [
-                                                              [
-                                                                  {
-                                                                      "node":  "Enviar Foto ao Cliente1",
-                                                                      "type":  "main",
-                                                                      "index":  0
-                                                                  }
-                                                              ]
-                                                          ]
-                                             }
+                        "Split Fotos (1 por vez)":  {
+                                                        "main":  [
+                                                                     [
+                                                                         {
+                                                                             "node":  "HTTP: Download Foto Drive",
+                                                                             "type":  "main",
+                                                                             "index":  0
+                                                                         }
+                                                                     ]
+                                                                 ]
+                                                    },
+                        "HTTP: Download Foto Drive":  {
+                                                          "main":  [
+                                                                       [
+                                                                           {
+                                                                               "node":  "Code: Montar Base64",
+                                                                               "type":  "main",
+                                                                               "index":  0
+                                                                           }
+                                                                       ]
+                                                                   ]
+                                                      },
+                        "Code: Montar Base64":  {
+                                                    "main":  [
+                                                                 [
+                                                                     {
+                                                                         "node":  "Enviar Foto ao Cliente1",
+                                                                         "type":  "main",
+                                                                         "index":  0
+                                                                     }
+                                                                 ]
+                                                             ]
+                                                }
                     },
     "settings":  {
                      "executionOrder":  "v1",
@@ -2208,9 +2273,9 @@
     "pinData":  {
 
                 },
-    "versionId":  "36ee3d80-e5cf-4ece-9e0e-92f9d0e8af04",
-    "activeVersionId":  "36ee3d80-e5cf-4ece-9e0e-92f9d0e8af04",
-    "versionCounter":  278,
+    "versionId":  "311746df-cb75-4a17-be08-0975449f0c77",
+    "activeVersionId":  "311746df-cb75-4a17-be08-0975449f0c77",
+    "versionCounter":  293,
     "triggerCount":  5,
     "shared":  [
                    {
@@ -2235,9 +2300,9 @@
 
              ],
     "activeVersion":  {
-                          "updatedAt":  "2026-06-03T00:47:56.845Z",
-                          "createdAt":  "2026-06-03T00:47:56.845Z",
-                          "versionId":  "36ee3d80-e5cf-4ece-9e0e-92f9d0e8af04",
+                          "updatedAt":  "2026-06-03T02:12:15.956Z",
+                          "createdAt":  "2026-06-03T02:12:15.956Z",
+                          "versionId":  "311746df-cb75-4a17-be08-0975449f0c77",
                           "workflowId":  "Jkt0vu99AsQnEs6a",
                           "nodes":  [
                                         {
@@ -3410,7 +3475,7 @@
                                         },
                                         {
                                             "parameters":  {
-                                                               "jsCode":  "const filtroData = $(\u0027Filtro + Extrair\u0027).first().json;\nconst negocio = $(\u0027Carregar Dados Negocio\u0027).first().json;\nconst tel = (negocio.telefone || \u0027\u0027).replace(/\\D/g, \u0027\u0027);\nreturn [{ json: { instancia: filtroData.instance || \u0027\u0027, session_id: `\\_\\`, remoteJid: filtroData.remoteJid, telefone: filtroData.telefone || \u0027\u0027, pushName: filtroData.pushName || \u0027\u0027, fromMe: filtroData.fromMe || false, text: filtroData.text || \u0027\u0027, messageId: filtroData.messageId || \u0027\u0027, cliente_id: negocio.cliente_id || \u0027\u0027, nome_empresa: negocio.nome_empresa || \u0027\u0027, nome_proprietario: negocio.nome_proprietario || \u0027\u0027, telefone_proprietario: tel, nome_atendente_ia: negocio.nome_atendente_ia || \u0027Bia\u0027, horario_funcionamento: negocio.horario_funcionamento || \u0027\u0027, formas_pagamento: negocio.formas_pagamento || \u0027\u0027, informacoes_extras: negocio.informacoes_extras || \u0027\u0027, evo_api_url: negocio.evo_api_url || \u0027https://evo.upviaagentes.com\u0027, evo_api_key: negocio.evo_api_key || \u0027\u0027, instancia_evo: negocio.instancia_whatsapp || \u0027\u0027, catalogo_sheets_id: negocio.catalogo_sheets_id || \u0027\u0027, google_sheet_id: negocio.google_sheet_id || \u0027\u0027, tipo_produto: negocio.tipo_produto || \u0027fisico\u0027, link_vendas: negocio.link_vendas || \u0027\u0027, chave_pix: negocio.chave_pix || \u0027\u0027, tipo_chave_pix: negocio.tipo_chave_pix || \u0027cpf\u0027, nome_titular_pix: negocio.nome_titular_pix || \u0027\u0027, banco_pix: negocio.banco_pix || \u0027\u0027, aceita_cartao: negocio.aceita_cartao || false, link_checkout: negocio.link_checkout || \u0027\u0027, msg_pos_venda: negocio.msg_pos_venda || \u0027\u0027, plano: negocio.plano || \u0027\u0027 } }];"
+                                                               "jsCode":  "const filtroData = $(\u0027Filtro + Extrair\u0027).first().json;\nconst negocio = $(\u0027Carregar Dados Negocio\u0027).first().json;\nconst tel = (negocio.telefone || \u0027\u0027).replace(/\\D/g, \u0027\u0027);\n\nreturn [{ json: {\n  instancia: filtroData.instance || \u0027\u0027,\n  session_id: `\\`_\\``,\n  remoteJid: filtroData.remoteJid,\n  telefone: filtroData.telefone || \u0027\u0027,\n  pushName: filtroData.pushName || \u0027\u0027,\n  fromMe: filtroData.fromMe || false,\n  text: filtroData.text || \u0027\u0027,\n  messageId: filtroData.messageId || \u0027\u0027,\n  cliente_id: negocio.cliente_id || \u0027\u0027,\n  nome_empresa: negocio.nome_empresa || \u0027\u0027,\n  nome_proprietario: negocio.nome_proprietario || \u0027\u0027,\n  telefone_proprietario: tel,\n  nome_atendente_ia: negocio.nome_atendente_ia || \u0027Bela\u0027,\n  horario_funcionamento: negocio.horario_funcionamento || \u0027\u0027,\n  formas_pagamento: negocio.formas_pagamento || \u0027\u0027,\n  informacoes_extras: negocio.informacoes_extras || \u0027\u0027,\n  evo_api_url: negocio.evo_api_url || \u0027https://evo.upviaagentes.com\u0027,\n  evo_api_key: negocio.evo_api_key || \u0027\u0027,\n  instancia_evo: negocio.instancia_whatsapp || \u0027\u0027,\n  catalogo_sheets_id: negocio.catalogo_sheets_id || \u0027\u0027,\n  google_sheet_id: negocio.google_sheet_id || \u0027\u0027\n}}];"
                                                            },
                                             "id":  "ccbf80f6-ddd4-4264-8b72-89caa3fb7dff",
                                             "name":  "Montar Contexto Dinamico",
@@ -3494,10 +3559,11 @@
                                                                                                      {
                                                                                                          "id":  "deb-check-1",
                                                                                                          "leftValue":  "={{ $json.value }}",
-                                                                                                         "rightValue":  "={{ $(\u0027Filtro + Extrair\u0027).first().json.messageId }}",
+                                                                                                         "rightValue":  "=",
                                                                                                          "operator":  {
                                                                                                                           "type":  "string",
-                                                                                                                          "operation":  "equals"
+                                                                                                                          "operation":  "empty",
+                                                                                                                          "singleValue":  true
                                                                                                                       }
                                                                                                      }
                                                                                                  ],
@@ -3567,7 +3633,7 @@
                                                                                     },
                                                                "sendBody":  true,
                                                                "specifyBody":  "json",
-                                                               "jsonBody":  "={\n  \"number\": \"{{ $(\u0027Montar Contexto Dinamico\u0027).first().json.remoteJid }}\",\n  \"mediatype\": \"image\",\n  \"media\": \"{{ $json.foto_url }}\",\n  \"caption\": \"{{ $json.caption }}\"\n}",
+                                                               "jsonBody":  "={\\n  \"number\": \"{{ $(\u0027Montar Contexto Dinamico\u0027).first().json.remoteJid }}\",\\n  \"mediatype\": \"image\",\\n  \"media\": \"{{ $json.foto_base64 }}\",\\n  \"caption\": \"{{ $json.caption }}\"\\n}",
                                                                "options":  {
 
                                                                            }
@@ -3576,8 +3642,8 @@
                                             "name":  "Enviar Foto ao Cliente1",
                                             "type":  "n8n-nodes-base.httpRequest",
                                             "position":  [
-                                                             35760,
-                                                             13000
+                                                             36480,
+                                                             12880
                                                          ],
                                             "typeVersion":  4.2
                                         },
@@ -3611,14 +3677,6 @@
                                             "typeVersion":  4.2
                                         },
                                         {
-                                            "id":  "if-drive-lnk",
-                                            "name":  "IF Contem Link Drive?",
-                                            "type":  "n8n-nodes-base.if",
-                                            "typeVersion":  2.2,
-                                            "position":  [
-                                                             34560,
-                                                             13000
-                                                         ],
                                             "parameters":  {
                                                                "conditions":  {
                                                                                   "options":  {
@@ -3643,9 +3701,20 @@
                                                                "options":  {
 
                                                                            }
-                                                           }
+                                                           },
+                                            "id":  "if-drive-lnk",
+                                            "name":  "IF Contem Link Drive?",
+                                            "type":  "n8n-nodes-base.if",
+                                            "typeVersion":  2.2,
+                                            "position":  [
+                                                             34560,
+                                                             13008
+                                                         ]
                                         },
                                         {
+                                            "parameters":  {
+                                                               "jsCode":  "const texto = $json.output || \u0027\u0027;\nconst m = texto.match(/drive\\.google\\.com\\/drive\\/folders\\/([a-zA-Z0-9_-]+)/);\nconst fid = m ? m[1] : \u0027\u0027;\nconst cat = {\u00271VFPtj62RnZEymFnu40BKxPTYG7vL0u7p\u0027:\u0027Artesanal Luxo 15 pares\u0027,\u00271A9r9fWed1ZWuC7sMQQgDPkRYdldn6bXC\u0027:\u0027Artesanal 5 pares\u0027,\u00271200bA34Qcu3mV2Bcp8nfSrMNXHnSFHpT\u0027:\u0027Kits atacado/revenda\u0027,\u00271ExfLDKoYYoMvwaLfbx_qmGLM6-S3NxGN\u0027:\u0027Joias de Unha\u0027,\u00271bXs-MYZBWLXqtt-QywggAifgnQdMJ4w0\u0027:\u00273D Cartelas 30 pares\u0027};\nif (!fid) return [];\nreturn [{ json: { folder_id: fid, categoria: cat[fid] || \u0027Catalogo Unhabella\u0027 } }];"
+                                                           },
                                             "id":  "code-extr-folder",
                                             "name":  "Code: Extrair Folder ID",
                                             "type":  "n8n-nodes-base.code",
@@ -3653,22 +3722,10 @@
                                             "position":  [
                                                              34800,
                                                              12880
-                                                         ],
-                                            "parameters":  {
-                                                               "jsCode":  "const texto = $json.output || \u0027\u0027;\nconst m = texto.match(/drive\\.google\\.com\\/drive\\/folders\\/([a-zA-Z0-9_-]+)/);\nconst fid = m ? m[1] : \u0027\u0027;\nconst cat = {\u00271VFPtj62RnZEymFnu40BKxPTYG7vL0u7p\u0027:\u0027Artesanal Luxo 15 pares\u0027,\u00271A9r9fWed1ZWuC7sMQQgDPkRYdldn6bXC\u0027:\u0027Artesanal 5 pares\u0027,\u00271200bA34Qcu3mV2Bcp8nfSrMNXHnSFHpT\u0027:\u0027Kits atacado/revenda\u0027,\u00271ExfLDKoYYoMvwaLfbx_qmGLM6-S3NxGN\u0027:\u0027Joias de Unha\u0027,\u00271bXs-MYZBWLXqtt-QywggAifgnQdMJ4w0\u0027:\u00273D Cartelas 30 pares\u0027};\nif (!fid) return [];\nreturn [{ json: { folder_id: fid, categoria: cat[fid] || \u0027Catalogo Unhabella\u0027 } }];"
-                                                           }
+                                                         ]
                                         },
                                         {
-                                            "id":  "http-list-drive",
-                                            "name":  "HTTP: Listar Fotos Drive",
-                                            "type":  "n8n-nodes-base.httpRequest",
-                                            "typeVersion":  4.2,
-                                            "position":  [
-                                                             35040,
-                                                             12880
-                                                         ],
                                             "parameters":  {
-                                                               "method":  "GET",
                                                                "url":  "https://www.googleapis.com/drive/v3/files",
                                                                "authentication":  "predefinedCredentialType",
                                                                "nodeCredentialType":  "googleDriveOAuth2Api",
@@ -3693,6 +3750,14 @@
 
                                                                            }
                                                            },
+                                            "id":  "http-list-drive",
+                                            "name":  "HTTP: Listar Fotos Drive",
+                                            "type":  "n8n-nodes-base.httpRequest",
+                                            "typeVersion":  4.2,
+                                            "position":  [
+                                                             35040,
+                                                             12880
+                                                         ],
                                             "credentials":  {
                                                                 "googleDriveOAuth2Api":  {
                                                                                              "id":  "r3sysG7EBAp9qEfd",
@@ -3701,6 +3766,9 @@
                                                             }
                                         },
                                         {
+                                            "parameters":  {
+                                                               "jsCode":  "const resp = $input.first().json;\nconst files = resp.files || [];\nconst cat = $(\u0027Code: Extrair Folder ID\u0027).first().json.categoria || \u0027Catalogo Unhabella\u0027;\nconst imagens = files.filter(f =\u003e f.mimeType \u0026\u0026 f.mimeType.startsWith(\u0027image/\u0027));\nif (imagens.length === 0) return [];\nreturn imagens.map(f =\u003e ({ json: {\n  file_id: f.id,\n  file_name: f.name,\n  mime_type: f.mimeType || \u0027image/jpeg\u0027,\n  caption: `\\ — \\`} }));"
+                                                           },
                                             "id":  "code-prep-urls",
                                             "name":  "Code: Preparar URLs Fotos",
                                             "type":  "n8n-nodes-base.code",
@@ -3708,25 +3776,65 @@
                                             "position":  [
                                                              35280,
                                                              12880
-                                                         ],
-                                            "parameters":  {
-                                                               "jsCode":  "const resp = $input.first().json;\nconst files = resp.files || [];\nconst cat = $(\u0027Code: Extrair Folder ID\u0027).first().json.categoria || \u0027Catalogo Unhabella\u0027;\nconst imagens = files.filter(f =\u003e f.mimeType \u0026\u0026 f.mimeType.startsWith(\u0027image/\u0027));\nif (imagens.length === 0) return [];\nreturn imagens.map(f =\u003e ({ json: {\n  foto_url: `https://drive.google.com/uc?export=download\u0026id=\\`,\n  caption: `\\ - \\`,\n  file_id: f.id, file_name: f.name\n} }));"
-                                                           }
+                                                         ]
                                         },
                                         {
+                                            "parameters":  {
+                                                               "batchSize":  1,
+                                                               "options":  {
+
+                                                                           }
+                                                           },
                                             "id":  "split-fotos-5",
-                                            "name":  "Split Fotos em 5",
+                                            "name":  "Split Fotos (1 por vez)",
                                             "type":  "n8n-nodes-base.splitInBatches",
                                             "typeVersion":  3,
                                             "position":  [
                                                              35520,
                                                              12880
+                                                         ]
+                                        },
+                                        {
+                                            "id":  "http-dl-foto-drive",
+                                            "name":  "HTTP: Download Foto Drive",
+                                            "type":  "n8n-nodes-base.httpRequest",
+                                            "typeVersion":  4.2,
+                                            "position":  [
+                                                             35760,
+                                                             12880
                                                          ],
                                             "parameters":  {
-                                                               "batchSize":  5,
+                                                               "method":  "GET",
+                                                               "url":  "=https://www.googleapis.com/drive/v3/files/{{ $json.file_id }}?alt=media",
+                                                               "authentication":  "predefinedCredentialType",
+                                                               "nodeCredentialType":  "googleDriveOAuth2Api",
                                                                "options":  {
-
+                                                                               "response":  {
+                                                                                                "response":  {
+                                                                                                                 "responseFormat":  "file",
+                                                                                                                 "outputPropertyName":  "data"
+                                                                                                             }
+                                                                                            }
                                                                            }
+                                                           },
+                                            "credentials":  {
+                                                                "googleDriveOAuth2Api":  {
+                                                                                             "id":  "r3sysG7EBAp9qEfd",
+                                                                                             "name":  "Google Drive account"
+                                                                                         }
+                                                            }
+                                        },
+                                        {
+                                            "id":  "code-montar-b64",
+                                            "name":  "Code: Montar Base64",
+                                            "type":  "n8n-nodes-base.code",
+                                            "typeVersion":  2,
+                                            "position":  [
+                                                             36000,
+                                                             12880
+                                                         ],
+                                            "parameters":  {
+                                                               "jsCode":  "const item = $input.item;\nconst binaryData = item.binary || {};\nconst keys = Object.keys(binaryData);\nif (keys.length === 0) {\n  return [{ json: { foto_base64: \u0027\u0027, caption: \u0027\u0027, erro: \u0027sem binary\u0027 } }];\n}\nconst key = keys[0];\nconst base64 = binaryData[key].data || \u0027\u0027;\nconst mimeType = binaryData[key].mimeType || \u0027image/jpeg\u0027;\nlet caption = \u0027\u0027;\ntry { caption = $(\u0027Code: Preparar URLs Fotos\u0027).item.json.caption || \u0027\u0027; } catch(e) {}\nreturn [{\n  json: {\n    foto_base64: \u0027data:\u0027 + mimeType + \u0027;base64,\u0027 + base64,\n    mime_type: mimeType,\n    caption: caption\n  }\n}];"
                                                            }
                                         }
                                     ],
@@ -4328,24 +4436,46 @@
                                                                                 "main":  [
                                                                                              [
                                                                                                  {
-                                                                                                     "node":  "Split Fotos em 5",
+                                                                                                     "node":  "Split Fotos (1 por vez)",
                                                                                                      "type":  "main",
                                                                                                      "index":  0
                                                                                                  }
                                                                                              ]
                                                                                          ]
                                                                             },
-                                              "Split Fotos em 5":  {
-                                                                       "main":  [
-                                                                                    [
-                                                                                        {
-                                                                                            "node":  "Enviar Foto ao Cliente1",
-                                                                                            "type":  "main",
-                                                                                            "index":  0
-                                                                                        }
-                                                                                    ]
-                                                                                ]
-                                                                   }
+                                              "Split Fotos (1 por vez)":  {
+                                                                              "main":  [
+                                                                                           [
+                                                                                               {
+                                                                                                   "node":  "HTTP: Download Foto Drive",
+                                                                                                   "type":  "main",
+                                                                                                   "index":  0
+                                                                                               }
+                                                                                           ]
+                                                                                       ]
+                                                                          },
+                                              "HTTP: Download Foto Drive":  {
+                                                                                "main":  [
+                                                                                             [
+                                                                                                 {
+                                                                                                     "node":  "Code: Montar Base64",
+                                                                                                     "type":  "main",
+                                                                                                     "index":  0
+                                                                                                 }
+                                                                                             ]
+                                                                                         ]
+                                                                            },
+                                              "Code: Montar Base64":  {
+                                                                          "main":  [
+                                                                                       [
+                                                                                           {
+                                                                                               "node":  "Enviar Foto ao Cliente1",
+                                                                                               "type":  "main",
+                                                                                               "index":  0
+                                                                                           }
+                                                                                       ]
+                                                                                   ]
+                                                                      }
                                           },
                           "authors":  "Elisa Silveira de Moura Andrade",
                           "name":  null,
@@ -4353,18 +4483,18 @@
                           "autosaved":  false,
                           "workflowPublishHistory":  [
                                                          {
-                                                             "createdAt":  "2026-06-03T00:47:56.968Z",
-                                                             "id":  310,
+                                                             "createdAt":  "2026-06-03T02:12:16.078Z",
+                                                             "id":  318,
                                                              "workflowId":  "Jkt0vu99AsQnEs6a",
-                                                             "versionId":  "36ee3d80-e5cf-4ece-9e0e-92f9d0e8af04",
+                                                             "versionId":  "311746df-cb75-4a17-be08-0975449f0c77",
                                                              "event":  "activated",
                                                              "userId":  "63b6bda0-d1aa-4abc-beaa-0fbb599f2288"
                                                          },
                                                          {
-                                                             "createdAt":  "2026-06-03T00:47:56.930Z",
-                                                             "id":  309,
+                                                             "createdAt":  "2026-06-03T02:12:16.027Z",
+                                                             "id":  317,
                                                              "workflowId":  "Jkt0vu99AsQnEs6a",
-                                                             "versionId":  "36ee3d80-e5cf-4ece-9e0e-92f9d0e8af04",
+                                                             "versionId":  "311746df-cb75-4a17-be08-0975449f0c77",
                                                              "event":  "deactivated",
                                                              "userId":  "63b6bda0-d1aa-4abc-beaa-0fbb599f2288"
                                                          }
