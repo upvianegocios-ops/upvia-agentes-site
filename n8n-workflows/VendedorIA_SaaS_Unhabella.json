@@ -1,5 +1,5 @@
 ﻿{
-    "updatedAt":  "2026-06-03T02:23:19.895Z",
+    "updatedAt":  "2026-06-03T02:35:33.395Z",
     "createdAt":  "2026-05-29T23:15:23.769Z",
     "id":  "Jkt0vu99AsQnEs6a",
     "name":  "VendedorIA SaaS - Unhabella",
@@ -174,7 +174,7 @@
                                                               },
                                          "sendBody":  true,
                                          "specifyBody":  "json",
-                                         "jsonBody":  "={\n  \"number\": \"{{ $(\u0027Montar Contexto Dinamico\u0027).first().json.remoteJid }}\",\n  \"text\": {{ JSON.stringify(($json.output || $json.text || \u0027\u0027).replace(/https?:\\/\\/drive\\.google\\.com\\/drive\\/folders\\/[^\\s]*/g, \u0027\u0027).replace(/\\s{2,}/g, \u0027 \u0027).trim()) }}\n}",
+                                         "jsonBody":  "={\\n  \"number\": \"{{ $(\u0027Montar Contexto Dinamico\u0027).first().json.remoteJid }}\",\\n  \"text\": {{ JSON.stringify($json.output || $json.text || \u0027\u0027) }}\\n}",
                                          "options":  {
 
                                                      }
@@ -1347,7 +1347,8 @@
                                        36480,
                                        12880
                                    ],
-                      "typeVersion":  4.2
+                      "typeVersion":  4.2,
+                      "onError":  "continueRegularOutput"
                   },
                   {
                       "parameters":  {
@@ -1465,11 +1466,12 @@
                                                                        "id":  "r3sysG7EBAp9qEfd",
                                                                        "name":  "Google Drive account"
                                                                    }
-                                      }
+                                      },
+                      "onError":  "continueRegularOutput"
                   },
                   {
                       "parameters":  {
-                                         "jsCode":  "const resp = $input.first().json;\nconst files = resp.files || [];\nconst cat = $(\u0027Code: Extrair Folder ID\u0027).first().json.categoria || \u0027Catalogo Unhabella\u0027;\nconst imagens = files.filter(f =\u003e f.mimeType \u0026\u0026 f.mimeType.startsWith(\u0027image/\u0027));\nif (imagens.length === 0) return [];\nreturn imagens.map(f =\u003e ({ json: {\n  file_id: f.id,\n  file_name: f.name,\n  mime_type: f.mimeType || \u0027image/jpeg\u0027,\n  caption: `\\ — \\`} }));"
+                                         "jsCode":  "const resp = $input.first().json;\nconst files = resp.files || [];\nconst cat = $(\u0027Code: Extrair Folder ID\u0027).first().json.categoria || \u0027Catalogo Unhabella\u0027;\nconst imagens = files.filter(function(f){ return f.mimeType \u0026\u0026 f.mimeType.startsWith(\u0027image/\u0027); });\nif (imagens.length === 0) return [];\nreturn imagens.map(function(f){\n  var nome = (f.name || \u0027\u0027).replace(/\\.[^.]+$/, \u0027\u0027);\n  return { json: { file_id: f.id, file_name: f.name, mime_type: f.mimeType || \u0027image/jpeg\u0027, caption: cat + \u0027 — \u0027 + nome } };\n});"
                                      },
                       "id":  "code-prep-urls",
                       "name":  "Code: Preparar URLs Fotos",
@@ -1478,17 +1480,18 @@
                       "position":  [
                                        35280,
                                        12880
-                                   ]
+                                   ],
+                      "onError":  "continueRegularOutput"
                   },
                   {
                       "parameters":  {
-                                         "batchSize":  1,
+                                         "batchSize":  10,
                                          "options":  {
 
                                                      }
                                      },
                       "id":  "split-fotos-5",
-                      "name":  "Split Fotos (1 por vez)",
+                      "name":  "Split Fotos (10 por vez)",
                       "type":  "n8n-nodes-base.splitInBatches",
                       "typeVersion":  3,
                       "position":  [
@@ -1524,7 +1527,8 @@
                                                                        "id":  "r3sysG7EBAp9qEfd",
                                                                        "name":  "Google Drive account"
                                                                    }
-                                      }
+                                      },
+                      "onError":  "continueRegularOutput"
                   },
                   {
                       "id":  "code-montar-b64",
@@ -1536,8 +1540,23 @@
                                        12880
                                    ],
                       "parameters":  {
-                                         "jsCode":  "const item = $input.item;\nconst binaryData = item.binary || {};\nconst keys = Object.keys(binaryData);\nif (keys.length === 0) {\n  return [{ json: { foto_base64: \u0027\u0027, caption: \u0027\u0027, erro: \u0027sem binary\u0027 } }];\n}\nconst key = keys[0];\nconst base64 = binaryData[key].data || \u0027\u0027;\nconst mimeType = binaryData[key].mimeType || \u0027image/jpeg\u0027;\nlet caption = \u0027\u0027;\ntry { caption = $(\u0027Code: Preparar URLs Fotos\u0027).item.json.caption || \u0027\u0027; } catch(e) {}\nreturn [{\n  json: {\n    foto_base64: \u0027data:\u0027 + mimeType + \u0027;base64,\u0027 + base64,\n    mime_type: mimeType,\n    caption: caption\n  }\n}];"
-                                     }
+                                         "jsCode":  "const item = $input.item;\nconst binaryData = item.binary || {};\nconst keys = Object.keys(binaryData);\nif (keys.length === 0) { return [{ json: { foto_base64: \u0027\u0027, caption: \u0027\u0027, erro: \u0027sem binary\u0027 } }]; }\nconst key = keys[0];\nconst base64 = binaryData[key].data || \u0027\u0027;\nconst mimeType = binaryData[key].mimeType || \u0027image/jpeg\u0027;\nlet caption = \u0027\u0027;\ntry { caption = $(\u0027Code: Preparar URLs Fotos\u0027).item.json.caption || \u0027\u0027; } catch(e) {}\nreturn [{ json: { foto_base64: \u0027data:\u0027 + mimeType + \u0027;base64,\u0027 + base64, mime_type: mimeType, caption: caption } }];"
+                                     },
+                      "onError":  "continueRegularOutput"
+                  },
+                  {
+                      "id":  "code-limpar-texto-ia",
+                      "name":  "Code: Limpar Texto IA",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       4928,
+                                       752
+                                   ],
+                      "parameters":  {
+                                         "jsCode":  "const texto = $json.output || $json.text || \u0027\u0027;\nconst textoLimpo = texto\n  .replace(/https?:\\/\\/drive\\.google\\.com\\/drive\\/folders\\/[a-zA-Z0-9_-]+/g, \u0027\u0027)\n  .replace(/[ \\t]{2,}/g, \u0027 \u0027)\n  .replace(/\\n{3,}/g, \u0027\\n\\n\u0027)\n  .trim();\nreturn [{ json: { output: textoLimpo, output_original: texto } }];"
+                                     },
+                      "onError":  "continueRegularOutput"
                   }
               ],
     "connections":  {
@@ -1738,13 +1757,24 @@
                                             "main":  [
                                                          [
                                                              {
-                                                                 "node":  "Resposta ao Cliente",
+                                                                 "node":  "Code: Limpar Texto IA",
                                                                  "type":  "main",
                                                                  "index":  0
                                                              }
                                                          ]
                                                      ]
                                         },
+                        "Code: Limpar Texto IA":  {
+                                                      "main":  [
+                                                                   [
+                                                                       {
+                                                                           "node":  "Resposta ao Cliente",
+                                                                           "type":  "main",
+                                                                           "index":  0
+                                                                       }
+                                                                   ]
+                                                               ]
+                                                  },
                         "Resposta ao Cliente":  {
                                                     "main":  [
                                                                  [
@@ -2138,24 +2168,24 @@
                                                           "main":  [
                                                                        [
                                                                            {
-                                                                               "node":  "Split Fotos (1 por vez)",
+                                                                               "node":  "Split Fotos (10 por vez)",
                                                                                "type":  "main",
                                                                                "index":  0
                                                                            }
                                                                        ]
                                                                    ]
                                                       },
-                        "Split Fotos (1 por vez)":  {
-                                                        "main":  [
-                                                                     [
-                                                                         {
-                                                                             "node":  "HTTP: Download Foto Drive",
-                                                                             "type":  "main",
-                                                                             "index":  0
-                                                                         }
-                                                                     ]
-                                                                 ]
-                                                    },
+                        "Split Fotos (10 por vez)":  {
+                                                         "main":  [
+                                                                      [
+                                                                          {
+                                                                              "node":  "HTTP: Download Foto Drive",
+                                                                              "type":  "main",
+                                                                              "index":  0
+                                                                          }
+                                                                      ]
+                                                                  ]
+                                                     },
                         "HTTP: Download Foto Drive":  {
                                                           "main":  [
                                                                        [
@@ -2273,9 +2303,9 @@
     "pinData":  {
 
                 },
-    "versionId":  "fbd3b5ac-c949-4e18-8db9-8326b0c4b8f7",
-    "activeVersionId":  "fbd3b5ac-c949-4e18-8db9-8326b0c4b8f7",
-    "versionCounter":  296,
+    "versionId":  "ec7f0ecf-3596-47a9-8e52-b499aa699186",
+    "activeVersionId":  "ec7f0ecf-3596-47a9-8e52-b499aa699186",
+    "versionCounter":  299,
     "triggerCount":  5,
     "shared":  [
                    {
@@ -2300,9 +2330,9 @@
 
              ],
     "activeVersion":  {
-                          "updatedAt":  "2026-06-03T02:23:19.897Z",
-                          "createdAt":  "2026-06-03T02:23:19.897Z",
-                          "versionId":  "fbd3b5ac-c949-4e18-8db9-8326b0c4b8f7",
+                          "updatedAt":  "2026-06-03T02:35:33.399Z",
+                          "createdAt":  "2026-06-03T02:35:33.399Z",
+                          "versionId":  "ec7f0ecf-3596-47a9-8e52-b499aa699186",
                           "workflowId":  "Jkt0vu99AsQnEs6a",
                           "nodes":  [
                                         {
@@ -2472,7 +2502,7 @@
                                                                                     },
                                                                "sendBody":  true,
                                                                "specifyBody":  "json",
-                                                               "jsonBody":  "={\n  \"number\": \"{{ $(\u0027Montar Contexto Dinamico\u0027).first().json.remoteJid }}\",\n  \"text\": {{ JSON.stringify(($json.output || $json.text || \u0027\u0027).replace(/https?:\\/\\/drive\\.google\\.com\\/drive\\/folders\\/[^\\s]*/g, \u0027\u0027).replace(/\\s{2,}/g, \u0027 \u0027).trim()) }}\n}",
+                                                               "jsonBody":  "={\\n  \"number\": \"{{ $(\u0027Montar Contexto Dinamico\u0027).first().json.remoteJid }}\",\\n  \"text\": {{ JSON.stringify($json.output || $json.text || \u0027\u0027) }}\\n}",
                                                                "options":  {
 
                                                                            }
@@ -3645,7 +3675,8 @@
                                                              36480,
                                                              12880
                                                          ],
-                                            "typeVersion":  4.2
+                                            "typeVersion":  4.2,
+                                            "onError":  "continueRegularOutput"
                                         },
                                         {
                                             "parameters":  {
@@ -3763,11 +3794,12 @@
                                                                                              "id":  "r3sysG7EBAp9qEfd",
                                                                                              "name":  "Google Drive account"
                                                                                          }
-                                                            }
+                                                            },
+                                            "onError":  "continueRegularOutput"
                                         },
                                         {
                                             "parameters":  {
-                                                               "jsCode":  "const resp = $input.first().json;\nconst files = resp.files || [];\nconst cat = $(\u0027Code: Extrair Folder ID\u0027).first().json.categoria || \u0027Catalogo Unhabella\u0027;\nconst imagens = files.filter(f =\u003e f.mimeType \u0026\u0026 f.mimeType.startsWith(\u0027image/\u0027));\nif (imagens.length === 0) return [];\nreturn imagens.map(f =\u003e ({ json: {\n  file_id: f.id,\n  file_name: f.name,\n  mime_type: f.mimeType || \u0027image/jpeg\u0027,\n  caption: `\\ — \\`} }));"
+                                                               "jsCode":  "const resp = $input.first().json;\nconst files = resp.files || [];\nconst cat = $(\u0027Code: Extrair Folder ID\u0027).first().json.categoria || \u0027Catalogo Unhabella\u0027;\nconst imagens = files.filter(function(f){ return f.mimeType \u0026\u0026 f.mimeType.startsWith(\u0027image/\u0027); });\nif (imagens.length === 0) return [];\nreturn imagens.map(function(f){\n  var nome = (f.name || \u0027\u0027).replace(/\\.[^.]+$/, \u0027\u0027);\n  return { json: { file_id: f.id, file_name: f.name, mime_type: f.mimeType || \u0027image/jpeg\u0027, caption: cat + \u0027 — \u0027 + nome } };\n});"
                                                            },
                                             "id":  "code-prep-urls",
                                             "name":  "Code: Preparar URLs Fotos",
@@ -3776,17 +3808,18 @@
                                             "position":  [
                                                              35280,
                                                              12880
-                                                         ]
+                                                         ],
+                                            "onError":  "continueRegularOutput"
                                         },
                                         {
                                             "parameters":  {
-                                                               "batchSize":  1,
+                                                               "batchSize":  10,
                                                                "options":  {
 
                                                                            }
                                                            },
                                             "id":  "split-fotos-5",
-                                            "name":  "Split Fotos (1 por vez)",
+                                            "name":  "Split Fotos (10 por vez)",
                                             "type":  "n8n-nodes-base.splitInBatches",
                                             "typeVersion":  3,
                                             "position":  [
@@ -3822,7 +3855,8 @@
                                                                                              "id":  "r3sysG7EBAp9qEfd",
                                                                                              "name":  "Google Drive account"
                                                                                          }
-                                                            }
+                                                            },
+                                            "onError":  "continueRegularOutput"
                                         },
                                         {
                                             "id":  "code-montar-b64",
@@ -3834,8 +3868,23 @@
                                                              12880
                                                          ],
                                             "parameters":  {
-                                                               "jsCode":  "const item = $input.item;\nconst binaryData = item.binary || {};\nconst keys = Object.keys(binaryData);\nif (keys.length === 0) {\n  return [{ json: { foto_base64: \u0027\u0027, caption: \u0027\u0027, erro: \u0027sem binary\u0027 } }];\n}\nconst key = keys[0];\nconst base64 = binaryData[key].data || \u0027\u0027;\nconst mimeType = binaryData[key].mimeType || \u0027image/jpeg\u0027;\nlet caption = \u0027\u0027;\ntry { caption = $(\u0027Code: Preparar URLs Fotos\u0027).item.json.caption || \u0027\u0027; } catch(e) {}\nreturn [{\n  json: {\n    foto_base64: \u0027data:\u0027 + mimeType + \u0027;base64,\u0027 + base64,\n    mime_type: mimeType,\n    caption: caption\n  }\n}];"
-                                                           }
+                                                               "jsCode":  "const item = $input.item;\nconst binaryData = item.binary || {};\nconst keys = Object.keys(binaryData);\nif (keys.length === 0) { return [{ json: { foto_base64: \u0027\u0027, caption: \u0027\u0027, erro: \u0027sem binary\u0027 } }]; }\nconst key = keys[0];\nconst base64 = binaryData[key].data || \u0027\u0027;\nconst mimeType = binaryData[key].mimeType || \u0027image/jpeg\u0027;\nlet caption = \u0027\u0027;\ntry { caption = $(\u0027Code: Preparar URLs Fotos\u0027).item.json.caption || \u0027\u0027; } catch(e) {}\nreturn [{ json: { foto_base64: \u0027data:\u0027 + mimeType + \u0027;base64,\u0027 + base64, mime_type: mimeType, caption: caption } }];"
+                                                           },
+                                            "onError":  "continueRegularOutput"
+                                        },
+                                        {
+                                            "id":  "code-limpar-texto-ia",
+                                            "name":  "Code: Limpar Texto IA",
+                                            "type":  "n8n-nodes-base.code",
+                                            "typeVersion":  2,
+                                            "position":  [
+                                                             4928,
+                                                             752
+                                                         ],
+                                            "parameters":  {
+                                                               "jsCode":  "const texto = $json.output || $json.text || \u0027\u0027;\nconst textoLimpo = texto\n  .replace(/https?:\\/\\/drive\\.google\\.com\\/drive\\/folders\\/[a-zA-Z0-9_-]+/g, \u0027\u0027)\n  .replace(/[ \\t]{2,}/g, \u0027 \u0027)\n  .replace(/\\n{3,}/g, \u0027\\n\\n\u0027)\n  .trim();\nreturn [{ json: { output: textoLimpo, output_original: texto } }];"
+                                                           },
+                                            "onError":  "continueRegularOutput"
                                         }
                                     ],
                           "connections":  {
@@ -4036,13 +4085,24 @@
                                                                   "main":  [
                                                                                [
                                                                                    {
-                                                                                       "node":  "Resposta ao Cliente",
+                                                                                       "node":  "Code: Limpar Texto IA",
                                                                                        "type":  "main",
                                                                                        "index":  0
                                                                                    }
                                                                                ]
                                                                            ]
                                                               },
+                                              "Code: Limpar Texto IA":  {
+                                                                            "main":  [
+                                                                                         [
+                                                                                             {
+                                                                                                 "node":  "Resposta ao Cliente",
+                                                                                                 "type":  "main",
+                                                                                                 "index":  0
+                                                                                             }
+                                                                                         ]
+                                                                                     ]
+                                                                        },
                                               "Resposta ao Cliente":  {
                                                                           "main":  [
                                                                                        [
@@ -4436,24 +4496,24 @@
                                                                                 "main":  [
                                                                                              [
                                                                                                  {
-                                                                                                     "node":  "Split Fotos (1 por vez)",
+                                                                                                     "node":  "Split Fotos (10 por vez)",
                                                                                                      "type":  "main",
                                                                                                      "index":  0
                                                                                                  }
                                                                                              ]
                                                                                          ]
                                                                             },
-                                              "Split Fotos (1 por vez)":  {
-                                                                              "main":  [
-                                                                                           [
-                                                                                               {
-                                                                                                   "node":  "HTTP: Download Foto Drive",
-                                                                                                   "type":  "main",
-                                                                                                   "index":  0
-                                                                                               }
-                                                                                           ]
-                                                                                       ]
-                                                                          },
+                                              "Split Fotos (10 por vez)":  {
+                                                                               "main":  [
+                                                                                            [
+                                                                                                {
+                                                                                                    "node":  "HTTP: Download Foto Drive",
+                                                                                                    "type":  "main",
+                                                                                                    "index":  0
+                                                                                                }
+                                                                                            ]
+                                                                                        ]
+                                                                           },
                                               "HTTP: Download Foto Drive":  {
                                                                                 "main":  [
                                                                                              [
@@ -4483,18 +4543,18 @@
                           "autosaved":  false,
                           "workflowPublishHistory":  [
                                                          {
-                                                             "createdAt":  "2026-06-03T02:23:19.998Z",
-                                                             "id":  320,
+                                                             "createdAt":  "2026-06-03T02:35:33.531Z",
+                                                             "id":  322,
                                                              "workflowId":  "Jkt0vu99AsQnEs6a",
-                                                             "versionId":  "fbd3b5ac-c949-4e18-8db9-8326b0c4b8f7",
+                                                             "versionId":  "ec7f0ecf-3596-47a9-8e52-b499aa699186",
                                                              "event":  "activated",
                                                              "userId":  "63b6bda0-d1aa-4abc-beaa-0fbb599f2288"
                                                          },
                                                          {
-                                                             "createdAt":  "2026-06-03T02:23:19.957Z",
-                                                             "id":  319,
+                                                             "createdAt":  "2026-06-03T02:35:33.485Z",
+                                                             "id":  321,
                                                              "workflowId":  "Jkt0vu99AsQnEs6a",
-                                                             "versionId":  "fbd3b5ac-c949-4e18-8db9-8326b0c4b8f7",
+                                                             "versionId":  "ec7f0ecf-3596-47a9-8e52-b499aa699186",
                                                              "event":  "deactivated",
                                                              "userId":  "63b6bda0-d1aa-4abc-beaa-0fbb599f2288"
                                                          }
