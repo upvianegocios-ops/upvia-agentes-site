@@ -1,0 +1,446 @@
+{
+  "name": "AtendentIA — Pós-venda e Retorno Automático",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 📱 SUB-FLUXO 1 — PÓS-VENDA AUTOMÁTICO\n\n**Trigger:** A cada 30 min varre `registros_agenda`\nbuscando `status_evento = 'concluido'`\n+ `posvenda_enviado = false`\n+ `data_fim <= NOW() - 2 horas`\n\n**Regras:**\n- Filtra `humano_assumiu = false` via JOIN com `dados_cliente`\n- Usa `informacoes_extras` do tenant para mensagem customizada\n  (chave: `mensagem_posvenda: Oi {nome}...`)\n- Delay aleatório 1–3s entre envios (anti-spam)\n- Multi-tenant: cada item já carrega evo_api_url/key do tenant\n\n**Branch Retorno (mesmo item):**\nApós marcar pós-venda, calcula e salva\n`data_retorno_prevista` se `ativo_followup = true` no serviço.\nSalva apenas se `data_retorno_prevista` ainda for NULL.",
+        "height": 460,
+        "width": 660,
+        "color": 6
+      },
+      "id": "a1b2c300-0000-4000-a000-000000000001",
+      "name": "Nota Pós-venda",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [-320, 0],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 📅 SUB-FLUXO 2 — RETORNO AUTOMÁTICO\n\n**Trigger:** Diariamente às 10h varre `registros_agenda`\nbuscando `data_retorno_prevista = HOJE`\n+ `followup_enviado = false`\n\n**Regras:**\n- Filtra `humano_assumiu = false` via JOIN com `dados_cliente`\n- Usa `mensagem_retorno` de `itens_servico`\n  Placeholders: `{nome}`, `{servico}`, `{dias}`\n- Fallback: \"Oi {nome}! Já faz {dias} dias desde seu {servico}...\"\n- Delay aleatório 1–3s entre envios (anti-spam)\n- Multi-tenant: cada item já carrega evo_api_url/key do tenant\n\n**Origem do data_retorno_prevista:**\nCalculado automaticamente pelo Sub-fluxo 1 após cada\natendimento concluído, com base em `itens_servico.intervalo_retorno_dias`.",
+        "height": 380,
+        "width": 660,
+        "color": 4
+      },
+      "id": "a1b2c300-0000-4000-a000-000000000002",
+      "name": "Nota Retorno",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [-320, 560],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 30
+            }
+          ]
+        }
+      },
+      "id": "a1b2c300-0000-4000-a000-000000000003",
+      "name": "PV - Trigger 30min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [0, 240],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  ra.id AS agenda_id,\n  ra.id_estabelecimento,\n  ra.data_fim,\n  COALESCE(co.nome, 'Cliente') AS nome_cliente,\n  co.telefone AS telefone_cliente,\n  COALESCE(its.nome, 'o serviço') AS servico_nome,\n  its.intervalo_retorno_dias,\n  its.mensagem_retorno,\n  COALESCE(its.ativo_followup, false) AS ativo_followup,\n  cs.evo_api_url,\n  cs.evo_api_key,\n  cs.instancia_whatsapp,\n  COALESCE(cs.informacoes_extras, '') AS informacoes_extras\nFROM registros_agenda ra\nJOIN clientes_sistema cs\n  ON cs.id = ra.id_estabelecimento\n  AND cs.status = 'ativo'\nLEFT JOIN contatos co\n  ON co.id = ra.id_contato\n  AND co.id_estabelecimento = ra.id_estabelecimento\nLEFT JOIN itens_servico its\n  ON its.id = ra.id_servico\n  AND its.id_estabelecimento = ra.id_estabelecimento\nLEFT JOIN dados_cliente dc\n  ON dc.instancia_whatsapp = cs.instancia_whatsapp\n  AND dc.telefone = co.telefone\nWHERE ra.status_evento = 'concluido'\n  AND COALESCE(ra.posvenda_enviado, false) = false\n  AND ra.data_fim <= NOW() - INTERVAL '2 hours'\n  AND COALESCE(dc.humano_assumiu, false) = false\n  AND COALESCE(co.telefone, '') != ''\nLIMIT 50;",
+        "options": {}
+      },
+      "id": "a1b2c300-0000-4000-a000-000000000004",
+      "name": "PV - Buscar Pendentes",
+      "type": "n8n-nodes-base.postgres",
+      "position": [240, 240],
+      "typeVersion": 2.5,
+      "credentials": {
+        "postgres": {
+          "id": "XacLWxUqPbF4XOCs",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "a1b2c300-0000-4000-a000-000000000005",
+      "name": "PV - Loop Atendimentos",
+      "type": "n8n-nodes-base.splitInBatches",
+      "position": [480, 240],
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.first().json;\n\n// Pega primeiro nome para mensagem mais humanizada\nconst nome = (d.nome_cliente || 'querida').split(' ')[0];\nconst srv = d.servico_nome || 'o serviço';\nconst extras = d.informacoes_extras || '';\n\n// Busca mensagem customizada em informacoes_extras do tenant\n// Formato esperado: mensagem_posvenda: Oi {nome}! Texto da mensagem\nlet msg_pv;\nconst m = extras.match(/mensagem_posvenda:\\s*(.+?)(?:\\n|$)/i);\nif (m) {\n  msg_pv = m[1]\n    .replace(/{nome}/g, nome)\n    .replace(/{servico}/g, srv);\n} else {\n  msg_pv = 'Oi ' + nome + '! Tudo bem? Passando pra saber como foi o atendimento hoje 😊 Ficou satisfeita com ' + srv + '? Qualquer coisa estou por aqui!';\n}\n\n// Calcula data de retorno se serviço tiver intervalo configurado\nlet calcular_retorno = false;\nlet data_retorno_prevista = '';\nconst intervalo = parseInt(d.intervalo_retorno_dias || 0);\n\nif (intervalo > 0 && d.ativo_followup === true) {\n  const base = d.data_fim ? new Date(d.data_fim) : new Date();\n  const retorno = new Date(base.getTime() + (intervalo * 86400000));\n  data_retorno_prevista = retorno.toISOString().split('T')[0]; // YYYY-MM-DD\n  calcular_retorno = true;\n}\n\n// Delay aleatório anti-spam (1 a 3 segundos)\nconst delaySeconds = parseFloat((1 + Math.random() * 2).toFixed(1));\n\nreturn [{\n  json: {\n    ...d,\n    msg_pv,\n    calcular_retorno: String(calcular_retorno),\n    data_retorno_prevista,\n    delaySeconds\n  }\n}];"
+      },
+      "id": "a1b2c300-0000-4000-a000-000000000006",
+      "name": "PV - Preparar",
+      "type": "n8n-nodes-base.code",
+      "position": [720, 240],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "amount": "={{ $json.delaySeconds }}"
+      },
+      "id": "a1b2c300-0000-4000-a000-000000000007",
+      "name": "PV - Delay Anti-Spam",
+      "type": "n8n-nodes-base.wait",
+      "position": [960, 240],
+      "typeVersion": 1.1,
+      "webhookId": "b2000000-0000-4000-a000-000000000001"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.evo_api_url || 'https://evo.upviaagentes.com' }}/message/sendText/{{ $json.instancia_whatsapp }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $json.evo_api_key || '3gl0eq56t0ahsh3m5lx7ruv8i764qcvd' }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"number\":\"{{ $json.telefone_cliente }}\",\"text\":{{ JSON.stringify($json.msg_pv) }}}",
+        "options": {}
+      },
+      "id": "a1b2c300-0000-4000-a000-000000000008",
+      "name": "PV - Enviar Pos-venda WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1200, 240],
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE registros_agenda\nSET\n  posvenda_enviado = true,\n  posvenda_enviado_em = NOW()\nWHERE id = '{{ $json.agenda_id }}'\n  AND id_estabelecimento = '{{ $json.id_estabelecimento }}';",
+        "options": {}
+      },
+      "id": "a1b2c300-0000-4000-a000-000000000009",
+      "name": "PV - Marcar Pos-venda Enviado",
+      "type": "n8n-nodes-base.postgres",
+      "position": [1440, 240],
+      "typeVersion": 2.5,
+      "credentials": {
+        "postgres": {
+          "id": "XacLWxUqPbF4XOCs",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE registros_agenda\nSET\n  data_retorno_prevista = CASE\n    WHEN '{{ $json.calcular_retorno }}' = 'true'\n     AND '{{ $json.data_retorno_prevista }}' != ''\n    THEN '{{ $json.data_retorno_prevista }}'::date\n    ELSE data_retorno_prevista\n  END,\n  followup_etapa = CASE\n    WHEN '{{ $json.calcular_retorno }}' = 'true'\n    THEN 1\n    ELSE COALESCE(followup_etapa, 0)\n  END\nWHERE id = '{{ $json.agenda_id }}'\n  AND id_estabelecimento = '{{ $json.id_estabelecimento }}'\n  AND (data_retorno_prevista IS NULL OR '{{ $json.calcular_retorno }}' != 'true');",
+        "options": {}
+      },
+      "id": "a1b2c300-0000-4000-a000-000000000010",
+      "name": "RT - Salvar Calculo Retorno",
+      "type": "n8n-nodes-base.postgres",
+      "position": [1680, 240],
+      "typeVersion": 2.5,
+      "credentials": {
+        "postgres": {
+          "id": "XacLWxUqPbF4XOCs",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 10 * * *"
+            }
+          ]
+        }
+      },
+      "id": "a1b2c300-0000-4000-a000-000000000011",
+      "name": "RT - Trigger Diario Retorno",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [0, 720],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  ra.id AS agenda_id,\n  ra.id_estabelecimento,\n  ra.data_retorno_prevista,\n  COALESCE(co.nome, 'Cliente') AS nome_cliente,\n  co.telefone AS telefone_cliente,\n  COALESCE(its.nome, 'o serviço') AS servico_nome,\n  COALESCE(its.mensagem_retorno, '') AS mensagem_retorno,\n  COALESCE(its.intervalo_retorno_dias, 30) AS intervalo_retorno_dias,\n  cs.evo_api_url,\n  cs.evo_api_key,\n  cs.instancia_whatsapp\nFROM registros_agenda ra\nJOIN clientes_sistema cs\n  ON cs.id = ra.id_estabelecimento\n  AND cs.status = 'ativo'\nLEFT JOIN contatos co\n  ON co.id = ra.id_contato\n  AND co.id_estabelecimento = ra.id_estabelecimento\nLEFT JOIN itens_servico its\n  ON its.id = ra.id_servico\n  AND its.id_estabelecimento = ra.id_estabelecimento\nLEFT JOIN dados_cliente dc\n  ON dc.instancia_whatsapp = cs.instancia_whatsapp\n  AND dc.telefone = co.telefone\nWHERE ra.data_retorno_prevista = CURRENT_DATE\n  AND COALESCE(ra.followup_enviado, false) = false\n  AND COALESCE(dc.humano_assumiu, false) = false\n  AND COALESCE(co.telefone, '') != ''\nLIMIT 50;",
+        "options": {}
+      },
+      "id": "a1b2c300-0000-4000-a000-000000000012",
+      "name": "RT - Buscar Retornos Hoje",
+      "type": "n8n-nodes-base.postgres",
+      "position": [240, 720],
+      "typeVersion": 2.5,
+      "credentials": {
+        "postgres": {
+          "id": "XacLWxUqPbF4XOCs",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "a1b2c300-0000-4000-a000-000000000013",
+      "name": "RT - Loop Retornos",
+      "type": "n8n-nodes-base.splitInBatches",
+      "position": [480, 720],
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.first().json;\n\n// Pega primeiro nome\nconst nome = (d.nome_cliente || 'querida').split(' ')[0];\nconst srv = d.servico_nome || 'o serviço';\nconst intervalo = parseInt(d.intervalo_retorno_dias || 30);\n\n// Usa mensagem customizada do serviço, ou template padrão\nlet mensagem;\nif (d.mensagem_retorno && d.mensagem_retorno.trim() !== '') {\n  mensagem = d.mensagem_retorno\n    .replace(/{nome}/g, nome)\n    .replace(/{servico}/g, srv)\n    .replace(/{dias}/g, String(intervalo));\n} else {\n  mensagem = 'Oi ' + nome + '! Já faz ' + intervalo + ' dias desde seu ' + srv + ' 💅 Que tal renovar? Posso verificar um horário disponível pra você essa semana!';\n}\n\n// Delay aleatório anti-spam (1 a 3 segundos)\nconst delaySeconds = parseFloat((1 + Math.random() * 2).toFixed(1));\n\nreturn [{\n  json: {\n    ...d,\n    mensagem,\n    delaySeconds\n  }\n}];"
+      },
+      "id": "a1b2c300-0000-4000-a000-000000000014",
+      "name": "RT - Preparar Mensagem Retorno",
+      "type": "n8n-nodes-base.code",
+      "position": [720, 720],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "amount": "={{ $json.delaySeconds }}"
+      },
+      "id": "a1b2c300-0000-4000-a000-000000000015",
+      "name": "RT - Delay Retorno",
+      "type": "n8n-nodes-base.wait",
+      "position": [960, 720],
+      "typeVersion": 1.1,
+      "webhookId": "b2000000-0000-4000-a000-000000000002"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.evo_api_url || 'https://evo.upviaagentes.com' }}/message/sendText/{{ $json.instancia_whatsapp }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $json.evo_api_key || '3gl0eq56t0ahsh3m5lx7ruv8i764qcvd' }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"number\":\"{{ $json.telefone_cliente }}\",\"text\":{{ JSON.stringify($json.mensagem) }}}",
+        "options": {}
+      },
+      "id": "a1b2c300-0000-4000-a000-000000000016",
+      "name": "RT - Enviar Retorno WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1200, 720],
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE registros_agenda\nSET\n  followup_enviado = true,\n  followup_enviado_em = NOW(),\n  followup_etapa = COALESCE(followup_etapa, 0) + 1\nWHERE id = '{{ $json.agenda_id }}'\n  AND id_estabelecimento = '{{ $json.id_estabelecimento }}';",
+        "options": {}
+      },
+      "id": "a1b2c300-0000-4000-a000-000000000017",
+      "name": "RT - Marcar Followup Enviado",
+      "type": "n8n-nodes-base.postgres",
+      "position": [1440, 720],
+      "typeVersion": 2.5,
+      "credentials": {
+        "postgres": {
+          "id": "XacLWxUqPbF4XOCs",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "PV - Trigger 30min": {
+      "main": [
+        [
+          {
+            "node": "PV - Buscar Pendentes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PV - Buscar Pendentes": {
+      "main": [
+        [
+          {
+            "node": "PV - Loop Atendimentos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PV - Loop Atendimentos": {
+      "main": [
+        [
+          {
+            "node": "PV - Preparar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "PV - Preparar": {
+      "main": [
+        [
+          {
+            "node": "PV - Delay Anti-Spam",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PV - Delay Anti-Spam": {
+      "main": [
+        [
+          {
+            "node": "PV - Enviar Pos-venda WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PV - Enviar Pos-venda WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "PV - Marcar Pos-venda Enviado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PV - Marcar Pos-venda Enviado": {
+      "main": [
+        [
+          {
+            "node": "RT - Salvar Calculo Retorno",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RT - Salvar Calculo Retorno": {
+      "main": [
+        [
+          {
+            "node": "PV - Loop Atendimentos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RT - Trigger Diario Retorno": {
+      "main": [
+        [
+          {
+            "node": "RT - Buscar Retornos Hoje",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RT - Buscar Retornos Hoje": {
+      "main": [
+        [
+          {
+            "node": "RT - Loop Retornos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RT - Loop Retornos": {
+      "main": [
+        [
+          {
+            "node": "RT - Preparar Mensagem Retorno",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "RT - Preparar Mensagem Retorno": {
+      "main": [
+        [
+          {
+            "node": "RT - Delay Retorno",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RT - Delay Retorno": {
+      "main": [
+        [
+          {
+            "node": "RT - Enviar Retorno WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RT - Enviar Retorno WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "RT - Marcar Followup Enviado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RT - Marcar Followup Enviado": {
+      "main": [
+        [
+          {
+            "node": "RT - Loop Retornos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c3d00000-0000-4000-a000-000000000001",
+  "meta": {
+    "instanceId": ""
+  },
+  "tags": []
+}
