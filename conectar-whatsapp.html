@@ -138,7 +138,7 @@ textarea{resize:vertical;min-height:96px;line-height:1.6}
 .dyn-item{background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px}
 .dyn-row{display:grid;gap:8px;align-items:center}
 .dyn-row-svc{grid-template-columns:2fr 90px 100px 32px}
-.dyn-row-stf{grid-template-columns:1fr 1fr 32px}
+.dyn-row-stf{grid-template-columns:1fr 1fr 1fr 32px}
 .dyn-row input{padding:9px 12px;font-size:13px}
 .btn-rm{width:28px;height:28px;border-radius:50%;border:1px solid rgba(255,107,107,.3);
   background:rgba(255,107,107,.07);color:var(--danger);font-size:16px;cursor:pointer;
@@ -255,6 +255,9 @@ textarea{resize:vertical;min-height:96px;line-height:1.6}
   .grid-2{grid-template-columns:1fr}
   .dyn-row-svc{grid-template-columns:1fr 32px}
   .dyn-row-svc input:nth-child(2),.dyn-row-svc input:nth-child(3){display:none}
+  .dyn-row-stf{grid-template-columns:1fr 32px;grid-template-rows:auto auto auto}
+  .dyn-row-stf input{grid-column:1}
+  .dyn-row-stf .btn-rm{grid-column:2;grid-row:1}
   .s-label{display:none}
   .s-circle{width:32px;height:32px;font-size:12px}
 }
@@ -955,6 +958,7 @@ function addStf() {
   el.innerHTML = `<div class="dyn-row dyn-row-stf">
     <input type="text" placeholder="Nome do profissional" data-tn>
     <input type="text" placeholder="Especialidade / função" data-tc>
+    <input type="email" placeholder="Email Gmail (Google Calendar)" data-te required>
     <button class="btn-rm" onclick="rmItem('${id}')" title="Remover">×</button>
   </div>`;
   document.getElementById('stf-list').appendChild(el);
@@ -1034,7 +1038,7 @@ function collectData() {
   const profs = [];
   document.querySelectorAll('#stf-list .dyn-item').forEach(it => {
     const n = it.querySelector('[data-tn]')?.value.trim();
-    if (n) profs.push({nome:n, cargo:it.querySelector('[data-tc]')?.value.trim()||''});
+    if (n) profs.push({nome:n, cargo:it.querySelector('[data-tc]')?.value.trim()||'', gmail_email:it.querySelector('[data-te]')?.value.trim()||''});
   });
 
   const diasAtend = nichoData.dias_atendimento || '';
@@ -1095,6 +1099,14 @@ async function submitForm() {
   btn.disabled=true; txt.textContent='Enviando...'; spn.classList.add('show');
 
   const data = collectData();
+
+  const profSemEmail = data.profissionais.find(p => !p.gmail_email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p.gmail_email));
+  if (profSemEmail) {
+    btn.disabled=false; txt.textContent='Criar minha atendente ✨'; spn.classList.remove('show');
+    showErr('Informe um email Gmail válido para o profissional "' + profSemEmail.nome + '".');
+    return;
+  }
+
   localStorage.setItem('upvia_trial_inicio',    new Date().toISOString());
   localStorage.setItem('upvia_trial_expiracao', new Date(Date.now() + 7*24*60*60*1000).toISOString());
   localStorage.setItem('upvia_negocio',         data.nome_negocio);
