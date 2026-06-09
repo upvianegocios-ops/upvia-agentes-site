@@ -1,5 +1,5 @@
 ﻿{
-    "updatedAt":  "2026-06-09T20:49:38.242Z",
+    "updatedAt":  "2026-06-09T22:39:33.331Z",
     "createdAt":  "2026-05-23T23:17:18.887Z",
     "id":  "uOuyvdMlSdMUSFZr",
     "name":  "AtendentIA Multi-Atendimento SaaS",
@@ -3434,7 +3434,7 @@
                                                                                {
                                                                                    "id":  "a2f7807f-d553-463a-b382-c9fc477739ce",
                                                                                    "leftValue":  "=={{ $(\u0027Mensagem\u0027).item.json.telefone.replace(\u0027@s.whatsapp.net\u0027, \u0027\u0027).replace(/\\D/g, \u0027\u0027) }}",
-                                                                                   "rightValue":  "=={{ ($(\u0027Montar Contexto Din?mico\u0027).first().json.telefone_proprietario || \u0027\u0027).replace(\u0027@s.whatsapp.net\u0027, \u0027\u0027).replace(/\\D/g, \u0027\u0027) }}",
+                                                                                   "rightValue":  "=={{ ($(\u0027Montar Contexto Dinamico\u0027).first().json.telefone_proprietario || \u0027\u0027).replace(\u0027@s.whatsapp.net\u0027, \u0027\u0027).replace(/\\D/g, \u0027\u0027) }}",
                                                                                    "operator":  {
                                                                                                     "type":  "string",
                                                                                                     "operation":  "equals"
@@ -3457,7 +3457,7 @@
                                                      }
                                      },
                       "id":  "8fba6c86-6d6b-4ffd-81f9-aa8577be925d",
-                      "name":  "Comando proprietario?",
+                      "name":  "Comando proprietario",
                       "type":  "n8n-nodes-base.filter",
                       "position":  [
                                        17328,
@@ -3470,7 +3470,7 @@
                                          "promptType":  "define",
                                          "text":  "={{ $(\u0027Mensagem\u0027).item.json.text }}",
                                          "options":  {
-                                                         "systemMessage":  "=Data: {{ $now.weekdayLong }}, {{ $now.format(\u0027dd/MM/yyyy\u0027) }} {{ $now.hour.toString().padStart(2, \u00270\u0027) }}:{{ $now.minute.toString().padStart(2, \u00270\u0027) }}\n\nVoc? ? assistente de {{ $(\u0027Montar Contexto Din?mico\u0027).first().json.nome_proprietario }}, propriet?rio(a) de {{ $(\u0027Montar Contexto Din?mico\u0027).first().json.nome_empresa }}. Comandos via WhatsApp para gerenciar a agenda.\n\nPROFISSIONAIS: {{ $(\u0027Montar Contexto Din?mico\u0027).first().json.profissionais_lista }}\nSERVI?OS: {{ $(\u0027Montar Contexto Din?mico\u0027).first().json.servicos_lista }}\nHOR?RIO: {{ $(\u0027Montar Contexto Din?mico\u0027).first().json.horario_funcionamento }}\n\nCALENDAR: Para todos os tools de calendar (criar_eventos1, buscar_eventos1, deletar_eventos1), preencha calendar_id com o gmail_email do profissional, visivel em PROFISSIONAIS apos | calendar:. Se nao houver profissional especifico, use o default_calendar.\n\n## COMANDOS DISPON?VEIS\n\n**#agendar** ou **#agenda** seguido de instru??o - Criar agendamento\nExemplo cliente: #agenda marque pra Maria Melo as 18h ter?a feira 19/05, m?o esmalta??o em gel, telefone 53984014801\nExemplo propriet?rio: #agenda reuni?o com Elisa Andrade segunda feira ?s 17h, dura??o 2 horas\nA??o: Use criar_eventos1. Confirme com ?\n\n**#cancelar** - Cancelar agendamento\nExemplo: #cancelar Maria Melo - 19/05/2026\nA??o: Use buscar_eventos1 para encontrar o evento, depois deletar_eventos1 para remover. Confirme com ?\n\n**#remarcar** - Reagendar cliente\nExemplo: #remarcar Maria Melo - 20/05/2026 - 15:00\nA??o: Use buscar_eventos1 para achar, deletar_eventos1 para remover o antigo, criar_eventos1 para criar o novo.\n\n**#agenda** (sozinho ou com data) - Ver agenda do dia\nExemplo: #agenda ou #agenda 19/05/2026\nA??o: Use buscar_eventos1 com hor?rio 00:00 at? 23:59 do dia. Liste os agendamentos.\n\n**#relatorio** ou **#relat?rio** - Relat?rio de agendamentos por per?odo\nExemplo: #relatorio semana ou #relatorio 01/06/2026 at? 30/06/2026\nA??o: Use buscar_eventos1 para o per?odo solicitado e liste todos os agendamentos com nome, servi?o e hor?rio.\n\n**#balanco** ou **#balan?o** - Balan?o mensal de servi?os e faturamento\nExemplo: #balanco maio ou #balanco\nA??o: Use buscar_eventos1 do dia 01 at? o ?ltimo dia do m?s solicitado (ou m?s atual se n?o informado). \nAgrupe por servi?o, conte quantidade de cada um, calcule valor total usando os pre?os dos SERVI?OS listados acima.\nApresente em formato resumido:\n- Total de agendamentos realizados\n- Servi?os mais vendidos (ranking)\n- Faturamento estimado total via automa??o\n- Faturamento por servi?o\n\n**#crm** - Consulta livre de dados de clientes e hist?rico\nExemplo: #crm quantas vezes a Maria Melo veio esse m?s\nExemplo: #crm clientes que n?o aparecem h? mais de 30 dias\nExemplo: #crm ?ltimo servi?o da Ana Silva\nA??o: Use buscar_eventos1 com os filtros necess?rios para responder a pergunta espec?fica do propriet?rio. Interprete livremente o que foi pedido e retorne os dados de forma organizad"
+                                                         "systemMessage":  "=Data: {{ $now.weekdayLong }}, {{ $now.format(\u0027dd/MM/yyyy\u0027) }} {{ $now.hour.toString().padStart(2, \u00270\u0027) }}:{{ $now.minute.toString().padStart(2, \u00270\u0027) }}\n\nVoc? ? assistente de {{ $(\u0027Montar Contexto Dinamico\u0027).first().json.nome_proprietario }}, propriet?rio(a) de {{ $(\u0027Montar Contexto Dinamico\u0027).first().json.nome_empresa }}. Comandos via WhatsApp para gerenciar a agenda.\n\nPROFISSIONAIS: {{ $(\u0027Montar Contexto Dinamico\u0027).first().json.profissionais_lista }}\nSERVI?OS: {{ $(\u0027Montar Contexto Dinamico\u0027).first().json.servicos_lista }}\nHOR?RIO: {{ $(\u0027Montar Contexto Dinamico\u0027).first().json.horario_funcionamento }}\n\nCALENDAR: Para todos os tools de calendar (criar_eventos1, buscar_eventos1, deletar_eventos1), preencha calendar_id com o gmail_email do profissional, visivel em PROFISSIONAIS apos | calendar:. Se nao houver profissional especifico, use o default_calendar.\n\n## COMANDOS DISPON?VEIS\n\n**#agendar** ou **#agenda** seguido de instru??o - Criar agendamento\nExemplo cliente: #agenda marque pra Maria Melo as 18h ter?a feira 19/05, m?o esmalta??o em gel, telefone 53984014801\nExemplo propriet?rio: #agenda reuni?o com Elisa Andrade segunda feira ?s 17h, dura??o 2 horas\nA??o: Use criar_eventos1. Confirme com ?\n\n**#cancelar** - Cancelar agendamento\nExemplo: #cancelar Maria Melo - 19/05/2026\nA??o: Use buscar_eventos1 para encontrar o evento, depois deletar_eventos1 para remover. Confirme com ?\n\n**#remarcar** - Reagendar cliente\nExemplo: #remarcar Maria Melo - 20/05/2026 - 15:00\nA??o: Use buscar_eventos1 para achar, deletar_eventos1 para remover o antigo, criar_eventos1 para criar o novo.\n\n**#agenda** (sozinho ou com data) - Ver agenda do dia\nExemplo: #agenda ou #agenda 19/05/2026\nA??o: Use buscar_eventos1 com hor?rio 00:00 at? 23:59 do dia. Liste os agendamentos.\n\n**#relatorio** ou **#relat?rio** - Relat?rio de agendamentos por per?odo\nExemplo: #relatorio semana ou #relatorio 01/06/2026 at? 30/06/2026\nA??o: Use buscar_eventos1 para o per?odo solicitado e liste todos os agendamentos com nome, servi?o e hor?rio.\n\n**#balanco** ou **#balan?o** - Balan?o mensal de servi?os e faturamento\nExemplo: #balanco maio ou #balanco\nA??o: Use buscar_eventos1 do dia 01 at? o ?ltimo dia do m?s solicitado (ou m?s atual se n?o informado). \nAgrupe por servi?o, conte quantidade de cada um, calcule valor total usando os pre?os dos SERVI?OS listados acima.\nApresente em formato resumido:\n- Total de agendamentos realizados\n- Servi?os mais vendidos (ranking)\n- Faturamento estimado total via automa??o\n- Faturamento por servi?o\n\n**#crm** - Consulta livre de dados de clientes e hist?rico\nExemplo: #crm quantas vezes a Maria Melo veio esse m?s\nExemplo: #crm clientes que n?o aparecem h? mais de 30 dias\nExemplo: #crm ?ltimo servi?o da Ana Silva\nA??o: Use buscar_eventos1 com os filtros necess?rios para responder a pergunta espec?fica do propriet?rio. Interprete livremente o que foi pedido e retorne os dados de forma organizad"
                                                      }
                                      },
                       "id":  "58fdd50e-a6a0-41a4-8a09-64b1de035cbe",
@@ -5066,7 +5066,7 @@
                                                               "index":  0
                                                           },
                                                           {
-                                                              "node":  "Comando proprietario?",
+                                                              "node":  "Comando proprietario",
                                                               "type":  "main",
                                                               "index":  0
                                                           },
@@ -5376,17 +5376,17 @@
                                                                     ]
                                                                 ]
                                                    },
-                        "Comando proprietario?":  {
-                                                      "main":  [
-                                                                   [
-                                                                       {
-                                                                           "node":  "Agente  de comandos1",
-                                                                           "type":  "main",
-                                                                           "index":  0
-                                                                       }
-                                                                   ]
-                                                               ]
-                                                  },
+                        "Comando proprietario":  {
+                                                     "main":  [
+                                                                  [
+                                                                      {
+                                                                          "node":  "Agente  de comandos1",
+                                                                          "type":  "main",
+                                                                          "index":  0
+                                                                      }
+                                                                  ]
+                                                              ]
+                                                 },
                         "Agente  de comandos1":  {
                                                      "main":  [
                                                                   [
@@ -5930,10 +5930,10 @@
                                                                                ]
                                                        },
                        "node:Arquivo Criado":  {
-                                                   "lastTimeChecked":  "2026-06-09T20:49:38Z"
+                                                   "lastTimeChecked":  "2026-06-09T22:39:33Z"
                                                },
                        "node:Arquivo Alterado":  {
-                                                     "lastTimeChecked":  "2026-06-09T20:49:39Z"
+                                                     "lastTimeChecked":  "2026-06-09T22:39:34Z"
                                                  },
                        "node:Trigger Reativacao Diario":  {
                                                               "recurrenceRules":  [
@@ -6008,9 +6008,9 @@
     "pinData":  {
 
                 },
-    "versionId":  "dc264a3c-de65-426d-9823-5b281e6d4c0a",
-    "activeVersionId":  "dc264a3c-de65-426d-9823-5b281e6d4c0a",
-    "versionCounter":  1916,
+    "versionId":  "d4b2bfc6-a369-4339-bdc0-817c90042203",
+    "activeVersionId":  "d4b2bfc6-a369-4339-bdc0-817c90042203",
+    "versionCounter":  1924,
     "triggerCount":  9,
     "shared":  [
                    {
@@ -6046,9 +6046,9 @@
                  }
              ],
     "activeVersion":  {
-                          "updatedAt":  "2026-06-09T20:49:38.250Z",
-                          "createdAt":  "2026-06-09T20:49:38.250Z",
-                          "versionId":  "dc264a3c-de65-426d-9823-5b281e6d4c0a",
+                          "updatedAt":  "2026-06-09T22:39:33.334Z",
+                          "createdAt":  "2026-06-09T22:39:33.334Z",
+                          "versionId":  "d4b2bfc6-a369-4339-bdc0-817c90042203",
                           "workflowId":  "uOuyvdMlSdMUSFZr",
                           "nodes":  [
                                         {
@@ -9478,7 +9478,7 @@
                                                                                                      {
                                                                                                          "id":  "a2f7807f-d553-463a-b382-c9fc477739ce",
                                                                                                          "leftValue":  "=={{ $(\u0027Mensagem\u0027).item.json.telefone.replace(\u0027@s.whatsapp.net\u0027, \u0027\u0027).replace(/\\D/g, \u0027\u0027) }}",
-                                                                                                         "rightValue":  "=={{ ($(\u0027Montar Contexto Din?mico\u0027).first().json.telefone_proprietario || \u0027\u0027).replace(\u0027@s.whatsapp.net\u0027, \u0027\u0027).replace(/\\D/g, \u0027\u0027) }}",
+                                                                                                         "rightValue":  "=={{ ($(\u0027Montar Contexto Dinamico\u0027).first().json.telefone_proprietario || \u0027\u0027).replace(\u0027@s.whatsapp.net\u0027, \u0027\u0027).replace(/\\D/g, \u0027\u0027) }}",
                                                                                                          "operator":  {
                                                                                                                           "type":  "string",
                                                                                                                           "operation":  "equals"
@@ -9501,7 +9501,7 @@
                                                                            }
                                                            },
                                             "id":  "8fba6c86-6d6b-4ffd-81f9-aa8577be925d",
-                                            "name":  "Comando proprietario?",
+                                            "name":  "Comando proprietario",
                                             "type":  "n8n-nodes-base.filter",
                                             "position":  [
                                                              17328,
@@ -9514,7 +9514,7 @@
                                                                "promptType":  "define",
                                                                "text":  "={{ $(\u0027Mensagem\u0027).item.json.text }}",
                                                                "options":  {
-                                                                               "systemMessage":  "=Data: {{ $now.weekdayLong }}, {{ $now.format(\u0027dd/MM/yyyy\u0027) }} {{ $now.hour.toString().padStart(2, \u00270\u0027) }}:{{ $now.minute.toString().padStart(2, \u00270\u0027) }}\n\nVoc? ? assistente de {{ $(\u0027Montar Contexto Din?mico\u0027).first().json.nome_proprietario }}, propriet?rio(a) de {{ $(\u0027Montar Contexto Din?mico\u0027).first().json.nome_empresa }}. Comandos via WhatsApp para gerenciar a agenda.\n\nPROFISSIONAIS: {{ $(\u0027Montar Contexto Din?mico\u0027).first().json.profissionais_lista }}\nSERVI?OS: {{ $(\u0027Montar Contexto Din?mico\u0027).first().json.servicos_lista }}\nHOR?RIO: {{ $(\u0027Montar Contexto Din?mico\u0027).first().json.horario_funcionamento }}\n\nCALENDAR: Para todos os tools de calendar (criar_eventos1, buscar_eventos1, deletar_eventos1), preencha calendar_id com o gmail_email do profissional, visivel em PROFISSIONAIS apos | calendar:. Se nao houver profissional especifico, use o default_calendar.\n\n## COMANDOS DISPON?VEIS\n\n**#agendar** ou **#agenda** seguido de instru??o - Criar agendamento\nExemplo cliente: #agenda marque pra Maria Melo as 18h ter?a feira 19/05, m?o esmalta??o em gel, telefone 53984014801\nExemplo propriet?rio: #agenda reuni?o com Elisa Andrade segunda feira ?s 17h, dura??o 2 horas\nA??o: Use criar_eventos1. Confirme com ?\n\n**#cancelar** - Cancelar agendamento\nExemplo: #cancelar Maria Melo - 19/05/2026\nA??o: Use buscar_eventos1 para encontrar o evento, depois deletar_eventos1 para remover. Confirme com ?\n\n**#remarcar** - Reagendar cliente\nExemplo: #remarcar Maria Melo - 20/05/2026 - 15:00\nA??o: Use buscar_eventos1 para achar, deletar_eventos1 para remover o antigo, criar_eventos1 para criar o novo.\n\n**#agenda** (sozinho ou com data) - Ver agenda do dia\nExemplo: #agenda ou #agenda 19/05/2026\nA??o: Use buscar_eventos1 com hor?rio 00:00 at? 23:59 do dia. Liste os agendamentos.\n\n**#relatorio** ou **#relat?rio** - Relat?rio de agendamentos por per?odo\nExemplo: #relatorio semana ou #relatorio 01/06/2026 at? 30/06/2026\nA??o: Use buscar_eventos1 para o per?odo solicitado e liste todos os agendamentos com nome, servi?o e hor?rio.\n\n**#balanco** ou **#balan?o** - Balan?o mensal de servi?os e faturamento\nExemplo: #balanco maio ou #balanco\nA??o: Use buscar_eventos1 do dia 01 at? o ?ltimo dia do m?s solicitado (ou m?s atual se n?o informado). \nAgrupe por servi?o, conte quantidade de cada um, calcule valor total usando os pre?os dos SERVI?OS listados acima.\nApresente em formato resumido:\n- Total de agendamentos realizados\n- Servi?os mais vendidos (ranking)\n- Faturamento estimado total via automa??o\n- Faturamento por servi?o\n\n**#crm** - Consulta livre de dados de clientes e hist?rico\nExemplo: #crm quantas vezes a Maria Melo veio esse m?s\nExemplo: #crm clientes que n?o aparecem h? mais de 30 dias\nExemplo: #crm ?ltimo servi?o da Ana Silva\nA??o: Use buscar_eventos1 com os filtros necess?rios para responder a pergunta espec?fica do propriet?rio. Interprete livremente o que foi pedido e retorne os dados de forma organizad"
+                                                                               "systemMessage":  "=Data: {{ $now.weekdayLong }}, {{ $now.format(\u0027dd/MM/yyyy\u0027) }} {{ $now.hour.toString().padStart(2, \u00270\u0027) }}:{{ $now.minute.toString().padStart(2, \u00270\u0027) }}\n\nVoc? ? assistente de {{ $(\u0027Montar Contexto Dinamico\u0027).first().json.nome_proprietario }}, propriet?rio(a) de {{ $(\u0027Montar Contexto Dinamico\u0027).first().json.nome_empresa }}. Comandos via WhatsApp para gerenciar a agenda.\n\nPROFISSIONAIS: {{ $(\u0027Montar Contexto Dinamico\u0027).first().json.profissionais_lista }}\nSERVI?OS: {{ $(\u0027Montar Contexto Dinamico\u0027).first().json.servicos_lista }}\nHOR?RIO: {{ $(\u0027Montar Contexto Dinamico\u0027).first().json.horario_funcionamento }}\n\nCALENDAR: Para todos os tools de calendar (criar_eventos1, buscar_eventos1, deletar_eventos1), preencha calendar_id com o gmail_email do profissional, visivel em PROFISSIONAIS apos | calendar:. Se nao houver profissional especifico, use o default_calendar.\n\n## COMANDOS DISPON?VEIS\n\n**#agendar** ou **#agenda** seguido de instru??o - Criar agendamento\nExemplo cliente: #agenda marque pra Maria Melo as 18h ter?a feira 19/05, m?o esmalta??o em gel, telefone 53984014801\nExemplo propriet?rio: #agenda reuni?o com Elisa Andrade segunda feira ?s 17h, dura??o 2 horas\nA??o: Use criar_eventos1. Confirme com ?\n\n**#cancelar** - Cancelar agendamento\nExemplo: #cancelar Maria Melo - 19/05/2026\nA??o: Use buscar_eventos1 para encontrar o evento, depois deletar_eventos1 para remover. Confirme com ?\n\n**#remarcar** - Reagendar cliente\nExemplo: #remarcar Maria Melo - 20/05/2026 - 15:00\nA??o: Use buscar_eventos1 para achar, deletar_eventos1 para remover o antigo, criar_eventos1 para criar o novo.\n\n**#agenda** (sozinho ou com data) - Ver agenda do dia\nExemplo: #agenda ou #agenda 19/05/2026\nA??o: Use buscar_eventos1 com hor?rio 00:00 at? 23:59 do dia. Liste os agendamentos.\n\n**#relatorio** ou **#relat?rio** - Relat?rio de agendamentos por per?odo\nExemplo: #relatorio semana ou #relatorio 01/06/2026 at? 30/06/2026\nA??o: Use buscar_eventos1 para o per?odo solicitado e liste todos os agendamentos com nome, servi?o e hor?rio.\n\n**#balanco** ou **#balan?o** - Balan?o mensal de servi?os e faturamento\nExemplo: #balanco maio ou #balanco\nA??o: Use buscar_eventos1 do dia 01 at? o ?ltimo dia do m?s solicitado (ou m?s atual se n?o informado). \nAgrupe por servi?o, conte quantidade de cada um, calcule valor total usando os pre?os dos SERVI?OS listados acima.\nApresente em formato resumido:\n- Total de agendamentos realizados\n- Servi?os mais vendidos (ranking)\n- Faturamento estimado total via automa??o\n- Faturamento por servi?o\n\n**#crm** - Consulta livre de dados de clientes e hist?rico\nExemplo: #crm quantas vezes a Maria Melo veio esse m?s\nExemplo: #crm clientes que n?o aparecem h? mais de 30 dias\nExemplo: #crm ?ltimo servi?o da Ana Silva\nA??o: Use buscar_eventos1 com os filtros necess?rios para responder a pergunta espec?fica do propriet?rio. Interprete livremente o que foi pedido e retorne os dados de forma organizad"
                                                                            }
                                                            },
                                             "id":  "58fdd50e-a6a0-41a4-8a09-64b1de035cbe",
@@ -11110,7 +11110,7 @@
                                                                                     "index":  0
                                                                                 },
                                                                                 {
-                                                                                    "node":  "Comando proprietario?",
+                                                                                    "node":  "Comando proprietario",
                                                                                     "type":  "main",
                                                                                     "index":  0
                                                                                 },
@@ -11420,17 +11420,17 @@
                                                                                           ]
                                                                                       ]
                                                                          },
-                                              "Comando proprietario?":  {
-                                                                            "main":  [
-                                                                                         [
-                                                                                             {
-                                                                                                 "node":  "Agente  de comandos1",
-                                                                                                 "type":  "main",
-                                                                                                 "index":  0
-                                                                                             }
-                                                                                         ]
-                                                                                     ]
-                                                                        },
+                                              "Comando proprietario":  {
+                                                                           "main":  [
+                                                                                        [
+                                                                                            {
+                                                                                                "node":  "Agente  de comandos1",
+                                                                                                "type":  "main",
+                                                                                                "index":  0
+                                                                                            }
+                                                                                        ]
+                                                                                    ]
+                                                                       },
                                               "Agente  de comandos1":  {
                                                                            "main":  [
                                                                                         [
@@ -11945,18 +11945,18 @@
                           "autosaved":  false,
                           "workflowPublishHistory":  [
                                                          {
-                                                             "createdAt":  "2026-06-09T20:49:39.822Z",
-                                                             "id":  458,
+                                                             "createdAt":  "2026-06-09T22:39:34.881Z",
+                                                             "id":  460,
                                                              "workflowId":  "uOuyvdMlSdMUSFZr",
-                                                             "versionId":  "dc264a3c-de65-426d-9823-5b281e6d4c0a",
+                                                             "versionId":  "d4b2bfc6-a369-4339-bdc0-817c90042203",
                                                              "event":  "activated",
                                                              "userId":  "63b6bda0-d1aa-4abc-beaa-0fbb599f2288"
                                                          },
                                                          {
-                                                             "createdAt":  "2026-06-09T20:49:38.383Z",
-                                                             "id":  457,
+                                                             "createdAt":  "2026-06-09T22:39:33.452Z",
+                                                             "id":  459,
                                                              "workflowId":  "uOuyvdMlSdMUSFZr",
-                                                             "versionId":  "dc264a3c-de65-426d-9823-5b281e6d4c0a",
+                                                             "versionId":  "d4b2bfc6-a369-4339-bdc0-817c90042203",
                                                              "event":  "deactivated",
                                                              "userId":  "63b6bda0-d1aa-4abc-beaa-0fbb599f2288"
                                                          }
