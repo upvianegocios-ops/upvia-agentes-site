@@ -27,3 +27,10 @@ desktop.ini
 senhas.txt
 C:\Temp/
 acess.md
+
+# Tokens e credenciais — nunca versionar
+n8n-workflows/meta-adlibrary-token.txt
+*-token.txt
+
+# Backups brutos de workflows (podem conter segredos hardcoded de outros nodes)
+n8n-workflows/backups/
