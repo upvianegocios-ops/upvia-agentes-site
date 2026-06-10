@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-06-10T20:34:29.354Z",
+  "updatedAt": "2026-06-10T21:56:02.968Z",
   "createdAt": "2026-06-02T18:36:51.410Z",
   "id": "D7J9eVxwj1i43rgh",
   "name": "Vendedor _upvia_jean",
@@ -15,12 +15,12 @@
           "rawBody": true
         }
       },
-      "id": "5436a3d6-eaa2-423b-8117-f07bf1cafe4f",
+      "id": "d4a3adce-2600-4d33-80c6-aaf115c99182",
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
       "position": [
-        2464,
-        912
+        -4512,
+        -496
       ],
       "typeVersion": 2,
       "webhookId": "vendedor-ia-saas"
@@ -29,12 +29,12 @@
       "parameters": {
         "jsCode": "const raw = $input.first().json;\nconst body = raw.body || raw;\n\nconst evento = (body?.event || '').toLowerCase();\nconst fromMe = body?.data?.key?.fromMe ?? false;\nconst remoteJid = body?.data?.key?.remoteJid || '';\nconst messageId = body?.data?.key?.id || '';\nconst instance = body?.instance || body?.instanceName || '';\n\nconst msg = body?.data?.message || {};\nconst text = msg.conversation || msg.extendedTextMessage?.text || '';\nconst hasContent = !!(text || msg.audioMessage || msg.imageMessage);\nconst pushName = body?.data?.pushName || '';\n\nconst isMessage = evento.includes('messages');\nconst isGroup = remoteJid.endsWith('@g.us');\n\nif (!isMessage || isGroup || !hasContent || (fromMe && !text.trim().startsWith('#'))) {\n  return [];\n}\n\nreturn [{\n  json: {\n    instance: String(instance),\n    remoteJid,\n    telefone: remoteJid.replace(/@s\\.whatsapp\\.net$/, ''),\n    text,\n    pushName,\n    fromMe,\n    evento,\n    messageId,\n    body\n  }\n}];"
       },
-      "id": "e716b9f2-9ad3-4bf5-a337-186d9b9b9c16",
+      "id": "fa8961b3-70eb-422d-b81d-e293e657a595",
       "name": "Filtro + Extrair",
       "type": "n8n-nodes-base.code",
       "position": [
-        2688,
-        912
+        -4288,
+        -496
       ],
       "typeVersion": 2
     },
@@ -63,12 +63,12 @@
         },
         "options": {}
       },
-      "id": "5dd4d190-e40d-4685-aa1b-382f2b56c6bb",
+      "id": "11937a8e-04f5-40ce-b1e3-074eb32c904b",
       "name": "Guard Erro Contexto",
       "type": "n8n-nodes-base.if",
       "position": [
-        4192,
-        880
+        -2784,
+        -528
       ],
       "typeVersion": 2.2
     },
@@ -78,12 +78,12 @@
         "combineBy": "combineByPosition",
         "options": {}
       },
-      "id": "1ee4a92d-56b6-441a-8485-54006faf616c",
+      "id": "a47102bf-4d8e-4944-8bc7-0fd2c290cd29",
       "name": "Merge Dados",
       "type": "n8n-nodes-base.merge",
       "position": [
-        4704,
-        752
+        -2272,
+        -656
       ],
       "typeVersion": 3
     },
@@ -95,12 +95,12 @@
           "systemMessage": "=Hoje: {{ $now.weekdayLong }}, {{ $now.format('dd/MM/yyyy') }} {{ $now.hour.toString().padStart(2, '0') }}:{{ $now.minute.toString().padStart(2, '0') }}\n\n# IDENTIDADE\nVoce e Bia, consultora virtual especialista em automacao de atendimento da UpvIA Agentes.\nVoce representa o Jean Andrade, fundador da UpvIA.\nTom: simpatica, confiante, estrategica, conversa natural de WhatsApp.\nNunca diga que e inteligencia artificial.\nNunca parecas robotica.\nNunca transfira para o Jean sem motivo valido.\n\n# SOBRE O PRODUTO\nA UpvIA Agentes cria a AtendentIA - uma funcionaria virtual especialista no negocio do cliente.\nNao e um chatbot. E uma profissional virtual treinada para o nicho especifico do cliente, que aprende o vocabulario do negocio, guarda o historico de cada cliente e age com foco em fechar agenda e trazer lucro.\n\nO DIFERENCIAL PRINCIPAL:\nMenos de 10% do custo de uma funcionaria - com 100% de disponibilidade, sem ferias, sem 13o, sem encargos.\n\n# O QUE A ATENDENTIA FAZ NA PRATICA\n- Responde e agenda automaticamente no WhatsApp 24h por dia\n- Entende texto, audio E imagem - nao precisa digitar nada\n- Verifica a agenda e oferece os horarios disponiveis\n- Confirma o agendamento e envia para o Google Calendar automaticamente\n- Envia lembrete automatico antes do horario (reduz faltas em ate 40%)\n- Recupera clientes inativos com mensagens personalizadas no momento certo\n- Lembra o historico completo de cada cliente e age como uma vendedora treinada\n- Faz relatorio de balanco mensal automaticamente\n- CRM completo com historico de cada cliente\n\n# COMANDOS QUE O DONO USA DIRETO NO WHATSAPP\nSem precisar de nenhum outro aplicativo - tudo pelo proprio WhatsApp:\n- #agenda - solicita um novo agendamento\n- #cancela - cancela um agendamento existente\n- #remarca - remarca para outra data ou horario\n- #promocao - dispara promocao para clientes inativos\n- #relatorio-crm - gera relatorio completo de CRM (exclusivo Plano Premium)\n\n# NICHOS ATENDIDOS\nSalao de Beleza, Barbearia, Manicure/Nail Designer, Banho e Tosa/Pet Shop, Fotografo(a), Clinica Estetica, Psicologa/Terapeuta, Personal Trainer/Pilates, Escritorio de Arquitetura, Clinica Odontologica, Escritorio de Advocacia, Imobiliaria/Corretor de Imoveis, e qualquer negocio com agenda.\n\n# PLANOS E PRECOS ATUALIZADOS\n\nPLANO ESSENCIAL - R$297/mes\nPara pequenos negocios com 1 profissional\nIdeal para: Barbearia, Salao individual, Manicure/Nail Designer, Banho e Tosa, Fotografo(a)\nResolve: WhatsApp lotado sem tempo pra responder, agenda desorganizada, clientes que somem sem retorno.\nInclui:\n- IA personalizada pro seu nicho\n- Atendimento 24/7\n- Agendamento automatico\n- Google Calendar integrado\n- CRM basico\n\nPLANO PRO - R$497/mes\nPara negocios em crescimento com ate 5 profissionais\nIdeal para: Clinica Estetica, Psicologa/Terapeuta, Personal Trainer/Pilates, Escritorio de Arquitetura\nResolve: Multiplas agendas, clientes que precisam de follow-up, promocoes que precisam ser disparadas na hora certa.\nInclui tudo do Essencial mais:\n- Follow-up inteligente de inativos\n- Disparo de promocoes para a base\n- CRM completo com historico\n- Multiplas agendas independentes\n\nPLANO PREMIUM - R$897/mes\nPara empresas com alto volume de mensagens e ate 10 profissionais\nIdeal para: Clinica Odontologica, Escritorio de Advocacia, Imobiliaria/Corretor de Imoveis\nResolve: Grande volume de mensagens diarias, varios profissionais com agendas independentes, CRM completo.\nInclui tudo do Pro mais:\n- CRM avancado com upsell automatico\n- Relatorios de atendimento\n- Escala total de mensagens\n- Suporte prioritario\n- CRM completo com funil de qualificacao\n- Relatorio em WhatsApp ou Excel incluido\n- Funil automatico com 5 estagios (Lead, Interessado, Agendou, Frequente, VIP)\n- Score VIP automatico para clientes com 6+ agendamentos\n- Campanhas segmentadas por estagio\n- Deteccao de clientes em risco com reativacao automatica\n\nIMPORTANTE: Todos os planos incluem 7 DIAS COMPLETAMENTE GRATUITOS.\nSem cartao de credito. Sem compromisso. Sem cobranca. Zero.\nA pessoa so paga se gostar depois de testar.\n\n# LINK PARA COMECAR O TESTE GRATIS\nhttps://www.upviaagentes.com.br/conectar-whatsapp.html\n\n# FLUXO OBRIGATORIO DE VENDAS\n\nETAPA 1 - QUALIFICACAO (primeira mensagem sempre):\n\"Ola! Tudo bem? Sou a Bia, da UpvIA Agentes.\nQue otimo que voce quer conhecer a AtendentIA!\nMe conta rapidinho: qual e o seu tipo de negocio e quantos profissionais voce tem?\"\nAguarde a resposta.\n\nETAPA 2 - IDENTIFICAR A DOR PRINCIPAL:\nCom base no negocio, pergunte naturalmente UMA dessas:\n- \"Voce perde clientes por nao conseguir atender no WhatsApp fora do horario?\"\n- \"Ja teve situacao de cliente marcar e nao aparecer sem avisar?\"\n- \"Voce passa muito tempo respondendo mensagens manualmente todos os dias?\"\n- \"Tem clientes que some e voce nao sabe como reconquistar?\"\nObjetivo: descobrir a dor real para apresentar a solucao certa.\n\nETAPA 3 - APRESENTAR A SOLUCAO focada na dor identificada:\n\nSe perde clientes fora do horario:\n\"Imagina seu WhatsApp atendendo, agendando e confirmando automaticamente as 23h enquanto voce dorme. Com a AtendentIA isso acontece todo dia.\"\n\nSe tem muita falta:\n\"Nossa IA envia lembretes automaticos antes de cada horario. Nossos clientes reduziram as faltas em ate 40%. Cada furo evitado e dinheiro que fica no seu bolso.\"\n\nSe perde tempo respondendo:\n\"A IA assume todo o atendimento - texto, audio e ate imagem. Voce so entra quando realmente precisa. Libera horas do seu dia todo dia.\"\n\nSe clientes somem:\n\"A IA detecta automaticamente quem parou de vir e dispara campanhas personalizadas de reativacao no momento certo. Voce recupera clientes sem fazer nada.\"\n\nETAPA 4 - APRESENTAR O DIFERENCIAL CHAVE:\n\"E o melhor: ela nao e um chatbot generico.\nE uma funcionaria virtual treinada especificamente para o seu [tipo de negocio].\nEla aprende o vocabulario do seu negocio, lembra o historico de cada cliente e age como uma vendedora treinada por voce.\nTudo pelo WhatsApp - sem precisar de nenhum outro aplicativo.\"\n\nETAPA 5 - SUGERIR O PLANO IDEAL:\n1 profissional ? Essencial (R$297/mes)\n2-5 profissionais ? Pro (R$497/mes)\n6-10 profissionais ou alto volume ? Premium (R$897/mes)\n\nETAPA 6 - FECHAR COM TESTE GRATIS (mais importante):\n\"E o melhor de tudo: voce pode testar COMPLETAMENTE GRATIS por 7 dias.\nSem colocar cartao. Sem compromisso. Sem cobranca nenhuma.\nVoce usa, ve funcionando no seu negocio, e so decide se quer continuar depois.\nE so acessar agora: https://www.upviaagentes.com.br/conectar-whatsapp.html\nEm menos de 10 minutos sua atendente ja esta configurada e respondendo seus clientes.\"\n\n# METODO DE VENDAS - REGRAS DE OURO\n\nANTES DE FALAR PRECO, sempre:\n1. Entenda o perfil e o negocio\n2. Descubra a dor principal\n3. Apresente o beneficio que resolve aquela dor especifica\n4. Mostre o diferencial (nao e chatbot, e funcionaria especialista)\n5. Fale do teste gratis como eliminador de risco total\n\nPROVA SOCIAL (use naturalmente, nunca invente numeros):\n\"O proprio salao do Jean, aqui em Pelotas, usa e atende mais de 200 agendamentos por mes automaticamente.\"\n\"Varios clientes nos diferentes nichos ja estao usando e vendo resultado.\"\n\"Manicures, esteticistas, dentistas, corretores - funciona para qualquer negocio com agenda.\"\n\nGATILHOS DE VENDA:\n- Zero risco: \"Voce nao perde nada testando. Se nao gostar, cancela e pronto.\"\n- Custo x beneficio: \"Menos de 10% do custo de uma recepcionista, com 100% de disponibilidade.\"\n- Urgencia suave: \"Enquanto voce pensa, seu concorrente pode estar atendendo o cliente que voce perdeu agora as 23h.\"\n- Personalizacao: \"Ela e treinada para o SEU negocio, nao e solucao generica.\"\n\n# TRATAMENTO DE OBJECOES\n\n\"E caro\":\n\"Entendo! Mas pensa: uma recepcionista custa em media R$1.800/mes mais encargos. A AtendentIA custa menos de 10% disso, trabalha 24h e nunca falta. E voce testa de graca antes de pagar qualquer coisa.\"\n\n\"Preciso pensar\":\n\"Claro, sem pressao! O que ficou em duvida? Posso esclarecer agora. E lembra: o teste e gratis, voce nao precisa decidir nada hoje - so comecar a testar.\"\n\n\"Ja tenho sistema de agenda\":\n\"Entendo! A diferenca e que a AtendentIA atende no WhatsApp, que e onde seus clientes JA estao. Nao pede para o cliente baixar app nem fazer login. Ela vai ate o cliente, nao o contrario.\"\n\n\"Parece robotico\":\n\"E exatamente o que os nossos clientes acham antes de testar. Na pratica ela conversa de forma totalmente natural - aprende o tom do seu negocio e atende como se fosse voce mesma respondendo.\"\n\n\"Nao tenho tempo para configurar\":\n\"O cadastro leva menos de 10 minutos e a gente da todo o suporte. Voce preenche os dados do seu negocio e ela ja esta pronta para atender.\"\n\n\"E seguro?\":\n\"Sim! Seguimos todas as normas da LGPD. Os dados ficam protegidos e somos parceiros da OpenAI, maior empresa de IA do mundo.\"\n\n# REGRAS DE SEGURANCA E DADOS\n- NUNCA compartilhe dados de outros clientes\n- NUNCA prometa funcionalidades que nao existem nos planos\n- NUNCA oferea desconto sem falar com o Jean\n- NUNCA pressione - conduza, nao empurre\n- NUNCA invente depoimentos ou numeros especificos\n- Se perguntar sobre integracao especifica nao listada: \"Vou confirmar com o Jean se e possivel\"\n- Se o lead tiver problema tecnico como cliente existente, transfira para o Jean\n\n# TRANSFERENCIA PARA O JEAN\nTransferir APENAS quando:\n- Lead pedir falar com humano ou com Jean especificamente\n- Lead fechar e precisar de suporte na configuracao\n- Lead tiver problema tecnico ja como cliente\n- Lead pedir condicao especial de preco ou parceria comercial\n- Duvida tecnica avancada que voce nao sabe responder\n\nResposta ao transferir: \"Vou chamar o Jean pra te ajudar com isso. Um momento!\"\n\n# REGRAS ABSOLUTAS\n- Maximo 3-4 frases por mensagem\n- SEM markdown, SEM asteriscos, SEM bullets nas mensagens ao cliente\n- Emojis com moderacao (1-2 por mensagem)\n- NUNCA mencione concorrentes pelo nome\n- NUNCA fale de politica, religiao, esportes ou assuntos fora da UpvIA\n- Se tentar falar de outro assunto: \"Consigo ajudar apenas com informacoes sobre a AtendentIA e os servicos da UpvIA.\"\n- Sempre conduza a conversa - nunca fique passiva esperando\n- Se o lead sumir, nao mande mais de 1 follow-up\n- Foco total: levar o lead para o link do teste gratis"
         }
       },
-      "id": "b638802e-1e4a-4d27-b507-4f07f067734d",
+      "id": "30b23bee-430b-4f39-9a67-8b3f947d17bb",
       "name": "Vendedor IA",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "position": [
-        4928,
-        752
+        -2048,
+        -656
       ],
       "typeVersion": 1.7
     },
@@ -115,12 +115,12 @@
         "builtInTools": {},
         "options": {}
       },
-      "id": "cd6c2878-37c4-4b70-8156-4796099adcd8",
+      "id": "881f3047-8c98-4c36-b7f5-8f21512bb6ef",
       "name": "OpenAI Chat Model",
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "position": [
-        4848,
-        944
+        -2128,
+        -464
       ],
       "typeVersion": 1.3,
       "credentials": {
@@ -136,12 +136,12 @@
         "sessionKey": "={{ $('Montar Contexto Dinamico').first().json.session_id }}",
         "contextWindowLength": 12
       },
-      "id": "d966aa4f-20b9-4772-b18e-247b9c6aead6",
+      "id": "84f4ed1c-d272-4e76-8f79-4c26aeaf08cf",
       "name": "Postgres Memory",
       "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
       "position": [
-        5024,
-        944
+        -1952,
+        -464
       ],
       "typeVersion": 1.1,
       "credentials": {
@@ -169,12 +169,12 @@
         "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.remoteJid }}\",\n  \"text\": {{ JSON.stringify($json.output || $json.text || '') }}\n}",
         "options": {}
       },
-      "id": "5cf275a2-add5-42a4-a4d1-9578dcfce20c",
+      "id": "462ec0f3-bf49-468e-9c4b-923b4c40650d",
       "name": "Resposta ao Cliente",
       "type": "n8n-nodes-base.httpRequest",
       "position": [
-        5280,
-        752
+        -1696,
+        -656
       ],
       "typeVersion": 4.2,
       "onError": "continueRegularOutput"
@@ -230,12 +230,12 @@
         },
         "options": {}
       },
-      "id": "4f8bdd43-288f-4725-be92-cd159dc6641a",
+      "id": "134c6795-ccc7-440f-8be7-62eb792ba5ae",
       "name": "Pediu Humano?",
       "type": "n8n-nodes-base.filter",
       "position": [
-        4464,
-        576
+        -2512,
+        -832
       ],
       "typeVersion": 2.2
     },
@@ -257,12 +257,12 @@
         "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.remoteJid }}\",\n  \"text\": \"Claro! Vou chamar {{ $('Montar Contexto Dinamico').first().json.nome_proprietario }} pra te atender. Um momento! ??\"\n}",
         "options": {}
       },
-      "id": "e21b9773-ffd4-45f9-86ca-cce9d6b35287",
+      "id": "32e9dff0-074d-440f-9307-b772323c43e6",
       "name": "Avisar Cliente Humano",
       "type": "n8n-nodes-base.httpRequest",
       "position": [
-        4688,
-        576
+        -2288,
+        -832
       ],
       "typeVersion": 4.2,
       "onError": "continueRegularOutput"
@@ -285,12 +285,12 @@
         "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.telefone_proprietario }}\",\n  \"text\": \"?? ATENDIMENTO HUMANO\\n\\nCliente {{ $('Montar Contexto Dinamico').first().json.pushName }} ({{ $('Montar Contexto Dinamico').first().json.telefone }}) pediu atendente humano.\\n\\n?ltima msg: {{ $('Montar Contexto Dinamico').first().json.text }}\"\n}",
         "options": {}
       },
-      "id": "ea31475a-c497-4848-a5f0-d92eab1f213f",
+      "id": "a7cd2b98-0385-4979-933c-54eee83fbc5f",
       "name": "Notificar Dono",
       "type": "n8n-nodes-base.httpRequest",
       "position": [
-        4912,
-        576
+        -2064,
+        -832
       ],
       "typeVersion": 4.2,
       "onError": "continueRegularOutput"
@@ -306,12 +306,12 @@
           ]
         }
       },
-      "id": "f687bfa6-3d9e-4c5c-8570-767db116c252",
+      "id": "270f38b2-50c6-4971-920b-31da7cbad544",
       "name": "Check Carrinho 1h",
       "type": "n8n-nodes-base.scheduleTrigger",
       "position": [
-        2464,
-        1216
+        -4512,
+        -192
       ],
       "typeVersion": 1.2
     },
@@ -321,12 +321,12 @@
         "query": "SELECT ca.telefone, ca.session_id, ca.instancia, cs.nome_atendente_ia, cs.nome_empresa, cs.evo_api_url, cs.evo_api_key, cs.link_vendas, cs.tipo_produto FROM carrinho_abandonado ca JOIN clientes_sistema cs ON ca.instancia = cs.instancia_whatsapp WHERE ca.status = 'ativo' AND ca.updated_at < NOW() - INTERVAL '1 hour' AND ca.updated_at > NOW() - INTERVAL '2 hours' AND ca.followup_1h = false LIMIT 20;",
         "options": {}
       },
-      "id": "10cf42d8-d16a-4fa1-af8e-a6f6079f8860",
+      "id": "e37c66cd-3bd7-4813-8c1b-5e39cd15fd88",
       "name": "Buscar Carrinhos 1h",
       "type": "n8n-nodes-base.postgres",
       "position": [
-        2688,
-        1216
+        -4288,
+        -192
       ],
       "typeVersion": 2.5,
       "credentials": {
@@ -340,12 +340,12 @@
       "parameters": {
         "jsCode": "const items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const tel = item.json.telefone;\n  const nome = item.json.nome_atendente_ia || 'Assistente';\n  const empresa = item.json.nome_empresa || 'nossa loja';\n  \n  const msgs = [\n    `Oi! Aqui ? ${nome} da ${empresa} ?? Vi que voc? estava dando uma olhada nos nossos produtos... Ficou alguma d?vida? Posso te ajudar a escolher o melhor pra voc?!`,\n    `Ei, tudo bem? ${nome} da ${empresa} aqui! Notei que voc? se interessou pelos nossos produtos. Quer que eu te ajude com algo? Estou aqui pra isso! ??`,\n    `Oi! Passando rapidinho pra saber se posso te ajudar com alguma coisa. Vi que estava olhando nossos produtos e adoraria te mostrar como eles podem te ajudar! ??`\n  ];\n  \n  const msg = msgs[Math.floor(Math.random() * msgs.length)];\n  const delay = 10000 + Math.floor(Math.random() * 50000);\n  \n  results.push({ json: { ...item.json, mensagem_followup: msg, delayMs: delay } });\n}\n\nreturn results;"
       },
-      "id": "ba45e4fd-8fb9-4fd5-937d-2f5251fb52cf",
+      "id": "437ceb2d-6863-4ca1-859a-cccf60643f8a",
       "name": "Preparar Followup Carrinho",
       "type": "n8n-nodes-base.code",
       "position": [
-        2912,
-        1216
+        -4064,
+        -192
       ],
       "typeVersion": 2
     },
@@ -353,12 +353,12 @@
       "parameters": {
         "options": {}
       },
-      "id": "c83d4807-4c02-4c31-b350-48c2ab176beb",
+      "id": "20aff080-3c6a-4ba9-99fc-0b42ed256e2d",
       "name": "Loop Carrinho",
       "type": "n8n-nodes-base.splitInBatches",
       "position": [
-        3136,
-        1216
+        -3840,
+        -192
       ],
       "typeVersion": 3
     },
@@ -366,12 +366,12 @@
       "parameters": {
         "amount": "={{ $json.delayMs / 1000 }}"
       },
-      "id": "bb3874ec-acd9-4d12-9c67-86db88aa8e6d",
+      "id": "8bd67556-6bdb-467a-bbe2-072e3a8a63a3",
       "name": "Anti-Spam Delay Cart",
       "type": "n8n-nodes-base.wait",
       "position": [
-        3360,
-        1136
+        -3616,
+        -272
       ],
       "typeVersion": 1.1,
       "webhookId": "cart-delay-wh"
@@ -394,12 +394,12 @@
         "jsonBody": "={\n  \"number\": \"{{ $json.telefone }}\",\n  \"text\": {{ JSON.stringify($json.mensagem_followup) }}\n}",
         "options": {}
       },
-      "id": "adc41203-621e-4dae-adad-f6495c278f38",
+      "id": "a2931356-84e4-442c-a0a6-1662dddedba3",
       "name": "Enviar Followup Carrinho",
       "type": "n8n-nodes-base.httpRequest",
       "position": [
-        3584,
-        1136
+        -3392,
+        -272
       ],
       "typeVersion": 4.2,
       "onError": "continueRegularOutput"
@@ -410,12 +410,12 @@
         "query": "UPDATE carrinho_abandonado SET followup_1h = true WHERE telefone = '{{ $json.telefone }}' AND instancia = '{{ $json.instancia }}';",
         "options": {}
       },
-      "id": "8aa808bc-9c63-4d35-a635-a7c20420d6ad",
+      "id": "b5009b00-0dac-42df-a213-f0042f2d87a5",
       "name": "Marcar Followup 1h",
       "type": "n8n-nodes-base.postgres",
       "position": [
-        3808,
-        1216
+        -3168,
+        -192
       ],
       "typeVersion": 2.5,
       "credentials": {
@@ -437,12 +437,12 @@
           ]
         }
       },
-      "id": "30239b96-e71d-45db-ba78-d6924926ec1d",
-      "name": "Check Inativos Di?rio",
+      "id": "7310d75a-2d41-4b81-8d2e-9e3673c1e2bd",
+      "name": "Check Inativos Diario",
       "type": "n8n-nodes-base.scheduleTrigger",
       "position": [
-        2464,
-        1504
+        -4512,
+        112
       ],
       "typeVersion": 1.2
     },
@@ -452,12 +452,12 @@
         "query": "SELECT dc.telefone, dc.session_id, cs.nome_atendente_ia, cs.nome_empresa, cs.instancia_whatsapp, cs.evo_api_url, cs.evo_api_key, cs.link_vendas FROM dados_cliente dc JOIN clientes_sistema cs ON dc.session_id LIKE cs.instancia_whatsapp || '%' WHERE dc.updated_at < NOW() - INTERVAL '7 days' AND dc.updated_at > NOW() - INTERVAL '30 days' AND (dc.recuperado = false OR dc.recuperado IS NULL) LIMIT 15;",
         "options": {}
       },
-      "id": "62cddbd5-3c18-44ab-b699-4d37d63b2df2",
+      "id": "1721e4ae-1e75-4062-b393-6fad304520e6",
       "name": "Buscar Inativos",
       "type": "n8n-nodes-base.postgres",
       "position": [
-        2688,
-        1504
+        -4288,
+        112
       ],
       "typeVersion": 2.5,
       "credentials": {
@@ -471,12 +471,12 @@
       "parameters": {
         "jsCode": "const items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const nome = (item.json.nome || 'amigo(a)').split(' ')[0];\n  const empresa = item.json.nome_empresa || 'nossa loja';\n  \n  const msgs = [\n    `Oi ${nome}! ?? Faz um tempinho que n?o te vejo por aqui na ${empresa}. Temos novidades incr?veis que acho que voc? vai amar! Quer dar uma olhada?`,\n    `${nome}, tudo bem? Aqui ? da ${empresa}! Separei umas novidades especiais que combinam com voc?. Posso te mostrar? ??`,\n    `Oi ${nome}! Passando pra te contar que temos condi??es especiais essa semana na ${empresa}. Bora aproveitar? ??`,\n    `${nome}, sentimos sua falta! ?? A ${empresa} tem ofertas imperd?veis agora. Posso te ajudar a encontrar algo especial?`\n  ];\n  \n  const msg = msgs[Math.floor(Math.random() * msgs.length)];\n  const delay = 30000 + Math.floor(Math.random() * 270000);\n  \n  results.push({ json: { ...item.json, mensagem_recover: msg, delayMs: delay } });\n}\n\nfor (let i = results.length - 1; i > 0; i--) {\n  const j = Math.floor(Math.random() * (i + 1));\n  [results[i], results[j]] = [results[j], results[i]];\n}\n\nreturn results;"
       },
-      "id": "d1636006-8297-4be2-98d7-a68a9cefda8a",
-      "name": "Preparar Recupera??o",
+      "id": "f74b85f4-34d2-4687-afc7-305db6c6b36b",
+      "name": "Preparar Recuperacao",
       "type": "n8n-nodes-base.code",
       "position": [
-        2912,
-        1504
+        -4064,
+        112
       ],
       "typeVersion": 2
     },
@@ -484,12 +484,12 @@
       "parameters": {
         "options": {}
       },
-      "id": "44ea0e76-1507-4667-b839-86450b4a04a9",
-      "name": "Loop Recupera??o",
+      "id": "dbd6100f-25be-414d-93c0-29acef5a011b",
+      "name": "Loop Recuperacao",
       "type": "n8n-nodes-base.splitInBatches",
       "position": [
-        3136,
-        1504
+        -3840,
+        112
       ],
       "typeVersion": 3
     },
@@ -497,12 +497,12 @@
       "parameters": {
         "amount": "={{ $json.delayMs / 1000 }}"
       },
-      "id": "e88d9a60-8d1f-4448-bcc2-a3c8d6024293",
+      "id": "28fa5cb8-7c5f-446a-9278-915c73370e15",
       "name": "Anti-Spam Delay Recover",
       "type": "n8n-nodes-base.wait",
       "position": [
-        3360,
-        1440
+        -3616,
+        48
       ],
       "typeVersion": 1.1,
       "webhookId": "recover-delay-wh"
@@ -525,12 +525,12 @@
         "jsonBody": "={\n  \"number\": \"{{ $json.telefone }}\",\n  \"text\": {{ JSON.stringify($json.mensagem_recover) }}\n}",
         "options": {}
       },
-      "id": "2f812afe-0101-4a43-b65b-68b85c3ef7e8",
-      "name": "Enviar Recupera??o",
+      "id": "1796505b-e9a7-4980-96e7-211365518b6f",
+      "name": "Enviar Recuperacao",
       "type": "n8n-nodes-base.httpRequest",
       "position": [
-        3584,
-        1440
+        -3392,
+        48
       ],
       "typeVersion": 4.2,
       "onError": "continueRegularOutput"
@@ -541,12 +541,12 @@
         "query": "UPDATE dados_cliente SET recuperado = true WHERE telefone = '{{ $json.telefone }}' AND session_id LIKE '{{ $json.instancia_whatsapp }}_%';",
         "options": {}
       },
-      "id": "ed3b3c31-97b8-4cf0-a44b-9b8fcaedf04c",
+      "id": "ea5202f2-979c-47eb-ab22-6cf3e6bac75c",
       "name": "Marcar Recuperado",
       "type": "n8n-nodes-base.postgres",
       "position": [
-        3808,
-        1504
+        -3168,
+        112
       ],
       "typeVersion": 2.5,
       "credentials": {
@@ -563,12 +563,12 @@
         "query": "CREATE TABLE IF NOT EXISTS carrinho_abandonado (\n  id bigserial PRIMARY KEY,\n  telefone text NOT NULL,\n  session_id text,\n  instancia text NOT NULL,\n  ultima_msg text,\n  status text DEFAULT 'ativo',\n  followup_1h boolean DEFAULT false,\n  followup_6h boolean DEFAULT false,\n  followup_24h boolean DEFAULT false,\n  created_at timestamptz DEFAULT NOW(),\n  updated_at timestamptz DEFAULT NOW(),\n  UNIQUE(telefone, instancia)\n);\n\nALTER TABLE dados_cliente ADD COLUMN IF NOT EXISTS cliente_id bigint REFERENCES clientes_sistema(id);\nALTER TABLE dados_cliente ADD COLUMN IF NOT EXISTS recuperado boolean DEFAULT false;\nALTER TABLE dados_cliente ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT NOW();\nCREATE UNIQUE INDEX IF NOT EXISTS dados_cliente_session_id_idx ON dados_cliente(session_id);\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS catalogo_sheets_id text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS link_vendas text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS tipo_produto text DEFAULT 'fisico';\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS chave_pix text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS tipo_chave_pix text DEFAULT 'cpf';\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS nome_titular_pix text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS banco_pix text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS aceita_cartao boolean DEFAULT false;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS link_checkout text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS msg_pos_venda text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS google_sheet_id text;",
         "options": {}
       },
-      "id": "7f0fe8a8-493f-453a-8961-4d7765616f05",
+      "id": "c61435b1-f2cb-4e49-9030-b447b8e9b8a2",
       "name": "Setup Tabelas (executar 1x)",
       "type": "n8n-nodes-base.postgres",
       "position": [
-        2464,
-        1728
+        -4512,
+        336
       ],
       "typeVersion": 2.5,
       "credentials": {
@@ -589,12 +589,12 @@
           ]
         }
       },
-      "id": "226b49c8-6f41-4653-9d5c-ee17edab8b85",
-      "name": "Balan?o Mensal - Trigger",
+      "id": "87fa519b-2e99-48de-975f-f1e4639f3d70",
+      "name": "Balanco Mensal - Trigger",
       "type": "n8n-nodes-base.scheduleTrigger",
       "position": [
-        2464,
-        2256
+        -4512,
+        864
       ],
       "typeVersion": 1.2
     },
@@ -604,12 +604,12 @@
         "query": "SELECT id as cliente_id, nome_empresa, instancia_whatsapp, evo_api_url, evo_api_key, telefone as telefone_proprietario FROM clientes_sistema WHERE status = 'ativo';",
         "options": {}
       },
-      "id": "d5245b3a-3a12-4d9c-a0d0-518b4023eaa3",
-      "name": "Buscar Clientes Ativos Balan?o",
+      "id": "0d25d39c-37ea-4295-ada8-e7cdcb6e5053",
+      "name": "Buscar Clientes Ativos Balanco",
       "type": "n8n-nodes-base.postgres",
       "position": [
-        2688,
-        2256
+        -4288,
+        864
       ],
       "typeVersion": 2.5,
       "credentials": {
@@ -623,12 +623,12 @@
       "parameters": {
         "options": {}
       },
-      "id": "c145ee8a-dee4-4306-8d4f-160d423b7e0c",
-      "name": "Loop Clientes Balan?o",
+      "id": "96544c29-145b-4434-b19d-10589169d6ac",
+      "name": "Loop Clientes Balanco",
       "type": "n8n-nodes-base.splitInBatches",
       "position": [
-        2912,
-        2256
+        -4064,
+        864
       ],
       "typeVersion": 3
     },
@@ -638,12 +638,12 @@
         "query": "SELECT COUNT(*) as total_mensagens, COUNT(DISTINCT telefone) as total_contatos, COUNT(CASE WHEN status = 'ativo' THEN 1 END) as carrinhos_ativos FROM carrinho_abandonado WHERE instancia = '{{ $json.instancia_whatsapp }}' AND created_at >= DATE_TRUNC('month', NOW() - INTERVAL '1 month') AND created_at < DATE_TRUNC('month', NOW());",
         "options": {}
       },
-      "id": "dc980d7f-bdc8-4d04-a80f-6675d96a6533",
-      "name": "Buscar Intera??es do M?s",
+      "id": "1052790f-aef9-4b99-8523-54a0126db171",
+      "name": "Buscar Interacoes do Mes",
       "type": "n8n-nodes-base.postgres",
       "position": [
-        3136,
-        2176
+        -3840,
+        784
       ],
       "typeVersion": 2.5,
       "credentials": {
@@ -656,14 +656,14 @@
     },
     {
       "parameters": {
-        "jsCode": "const cliente = $('Loop Clientes Balan?o').first().json;\nconst stats = $input.first().json;\n\nconst mesAnterior = new Date();\nmesAnterior.setMonth(mesAnterior.getMonth() - 1);\nconst nomeMes = mesAnterior.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });\n\nconst relatorio = `Balan?o ${nomeMes} - ${cliente.nome_empresa}\\n\\nAtendimentos realizados: ${stats.total_mensagens || 0}\\nContatos ?nicos: ${stats.total_contatos || 0}\\nCarrinhos abertos: ${stats.carrinhos_ativos || 0}\\n\\nSeu agente de vendas trabalhou o m?s inteiro pra voc?! Qualquer d?vida estou aqui. ??`;\n\nreturn [{ json: {\n  cliente_id: cliente.cliente_id,\n  instancia: cliente.instancia_whatsapp,\n  evo_api_url: cliente.evo_api_url || 'https://evo.upviaagentes.com',\n  evo_api_key: cliente.evo_api_key,\n  telefone_proprietario: cliente.telefone_proprietario,\n  nome_empresa: cliente.nome_empresa,\n  relatorio,\n  total_mensagens: Number(stats.total_mensagens) || 0,\n  total_contatos: Number(stats.total_contatos) || 0,\n  carrinhos_ativos: Number(stats.carrinhos_ativos) || 0,\n  mes_referencia: nomeMes\n} }];"
+        "jsCode": "const cliente = $('Loop Clientes Balanco').first().json;\nconst stats = $input.first().json;\n\nconst mesAnterior = new Date();\nmesAnterior.setMonth(mesAnterior.getMonth() - 1);\nconst nomeMes = mesAnterior.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });\n\nconst relatorio = `Balan?o ${nomeMes} - ${cliente.nome_empresa}\\n\\nAtendimentos realizados: ${stats.total_mensagens || 0}\\nContatos ?nicos: ${stats.total_contatos || 0}\\nCarrinhos abertos: ${stats.carrinhos_ativos || 0}\\n\\nSeu agente de vendas trabalhou o m?s inteiro pra voc?! Qualquer d?vida estou aqui. ??`;\n\nreturn [{ json: {\n  cliente_id: cliente.cliente_id,\n  instancia: cliente.instancia_whatsapp,\n  evo_api_url: cliente.evo_api_url || 'https://evo.upviaagentes.com',\n  evo_api_key: cliente.evo_api_key,\n  telefone_proprietario: cliente.telefone_proprietario,\n  nome_empresa: cliente.nome_empresa,\n  relatorio,\n  total_mensagens: Number(stats.total_mensagens) || 0,\n  total_contatos: Number(stats.total_contatos) || 0,\n  carrinhos_ativos: Number(stats.carrinhos_ativos) || 0,\n  mes_referencia: nomeMes\n} }];"
       },
-      "id": "584b7e00-c6a4-451e-a6e2-27444a9545ce",
-      "name": "Montar Relat?rio Balan?o",
+      "id": "09b97d35-6506-446e-8948-19a088ddf935",
+      "name": "Montar Relatorio Balanco",
       "type": "n8n-nodes-base.code",
       "position": [
-        3360,
-        2176
+        -3616,
+        784
       ],
       "typeVersion": 2
     },
@@ -673,12 +673,12 @@
         "query": "INSERT INTO balanco_mensal (cliente_id, instancia, mes_referencia, total_mensagens, total_contatos, carrinhos_ativos, relatorio_texto, gerado_em) VALUES ('{{ $json.cliente_id }}', '{{ $json.instancia }}', '{{ $json.mes_referencia }}', {{ $json.total_mensagens }}, {{ $json.total_contatos }}, {{ $json.carrinhos_ativos }}, '{{ $json.relatorio.replace(/'/g, \"''\") }}', NOW()) ON CONFLICT (cliente_id, mes_referencia) DO UPDATE SET total_mensagens = EXCLUDED.total_mensagens, total_contatos = EXCLUDED.total_contatos, gerado_em = NOW();",
         "options": {}
       },
-      "id": "1c804df0-48e4-4bec-9cc2-4b97f3edc0d4",
-      "name": "Salvar Balan?o Mensal",
+      "id": "f868ffc5-ded3-45d7-af4b-bb33fedd8e42",
+      "name": "Salvar Balanco Mensal",
       "type": "n8n-nodes-base.postgres",
       "position": [
-        3584,
-        2176
+        -3392,
+        784
       ],
       "typeVersion": 2.5,
       "credentials": {
@@ -707,12 +707,12 @@
         "jsonBody": "={\n  \"number\": \"{{ $json.telefone_proprietario }}\",\n  \"text\": {{ JSON.stringify($json.relatorio) }}\n}",
         "options": {}
       },
-      "id": "1f388367-f947-4413-a573-5623fabc3c5a",
-      "name": "Enviar Balan?o WhatsApp",
+      "id": "2688550c-393c-40a9-98ca-0c3a58070ba2",
+      "name": "Enviar Balanco WhatsApp",
       "type": "n8n-nodes-base.httpRequest",
       "position": [
-        3808,
-        2256
+        -3168,
+        864
       ],
       "typeVersion": 4.2,
       "onError": "continueRegularOutput"
@@ -724,12 +724,12 @@
         "width": 640,
         "color": 4
       },
-      "id": "87eaf660-efc7-497c-8469-df9b2c1b9d5f",
+      "id": "d6e388b4-6c65-4cd6-b95b-1c1132145d47",
       "name": "Sticky Note Arquitetura1",
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        1232,
-        960
+        -5744,
+        -448
       ],
       "typeVersion": 1
     },
@@ -740,12 +740,12 @@
         "width": 520,
         "color": 3
       },
-      "id": "8445fa26-1ffb-4c9a-8b67-0c36edb0338f",
+      "id": "b8bdd72b-baf5-4d37-a3ae-f223578792ed",
       "name": "Sticky Note Vendas1",
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        1232,
-        1584
+        -5744,
+        192
       ],
       "typeVersion": 1
     },
@@ -756,12 +756,12 @@
         "width": 640,
         "color": 6
       },
-      "id": "68b7a7a3-575c-46cd-9f66-921465eb3b02",
-      "name": "Sticky Note Configura??o",
+      "id": "828279d2-4c60-4397-997f-51933c64961c",
+      "name": "Sticky Note Configuracao",
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        1232,
-        1904
+        -5744,
+        512
       ],
       "typeVersion": 1
     },
@@ -771,12 +771,12 @@
         "query": "INSERT INTO dados_cliente (telefone, session_id, cliente_id, message, created_at) VALUES ('{{ $('Montar Contexto Dinamico').first().json.remoteJid }}', '{{ $('Montar Contexto Dinamico').first().json.session_id }}', {{ $('Montar Contexto Dinamico').first().json.cliente_id }}, '{{ $('Montar Contexto Dinamico').first().json.text }}', NOW()) ON CONFLICT (session_id) DO UPDATE SET cliente_id = EXCLUDED.cliente_id, message = EXCLUDED.message, updated_at = NOW() RETURNING *;",
         "options": {}
       },
-      "id": "d0a29c54-dc18-433e-b8db-8c6c140e23cd",
+      "id": "fed7cb33-d537-4323-a2e4-f7322847f276",
       "name": "Registrar Interacao",
       "type": "n8n-nodes-base.postgres",
       "position": [
-        4464,
-        960
+        -2512,
+        -448
       ],
       "typeVersion": 2.5,
       "credentials": {
@@ -791,12 +791,12 @@
       "parameters": {
         "jsCode": "const filtroData = $('Filtro + Extrair').first().json;\n\nreturn [{ json: {\n  instancia: filtroData.instance || '',\n  session_id: `upvia_${filtroData.telefone}`,\n  remoteJid: filtroData.remoteJid,\n  telefone: filtroData.telefone || '',\n  pushName: filtroData.pushName || '',\n  fromMe: filtroData.fromMe || false,\n  text: filtroData.text || '',\n  messageId: filtroData.messageId || '',\n  telefone_proprietario: '555391437079',\n  nome_proprietario: 'Jean',\n  nome_atendente_ia: 'Bia',\n  evo_api_url: 'https://evo.upviaagentes.com',\n  evo_api_key: '3gl0eq56t0ahsh3m5lx7ruv8i764qcvd',\n  instancia_evo: 'upvia-comercial'\n} }];"
       },
-      "id": "217ff3f4-cc36-4c6f-b3c0-332e783800b5",
+      "id": "ca16e887-cbe4-418d-b7bc-8fa844f0ead5",
       "name": "Montar Contexto Dinamico",
       "type": "n8n-nodes-base.code",
       "position": [
-        3856,
-        896
+        -3120,
+        -512
       ],
       "typeVersion": 2
     },
@@ -808,12 +808,12 @@
         "expire": true,
         "ttl": 4
       },
-      "id": "d103dacf-37f6-41de-97fc-db282658f30c",
+      "id": "d165d822-2869-425a-8d80-de40adc56618",
       "name": "Redis SET Debounce",
       "type": "n8n-nodes-base.redis",
       "position": [
-        2880,
-        912
+        -4096,
+        -496
       ],
       "typeVersion": 1,
       "credentials": {
@@ -827,12 +827,12 @@
       "parameters": {
         "amount": 4
       },
-      "id": "66356f19-9f6a-4367-a3a9-f8fe96c18ce3",
+      "id": "ee466735-9e63-4914-9d4d-a703cf2aa4e1",
       "name": "Wait 4s",
       "type": "n8n-nodes-base.wait",
       "position": [
-        3104,
-        912
+        -3872,
+        -496
       ],
       "typeVersion": 1.1,
       "webhookId": "deb-wait-4s"
@@ -843,12 +843,12 @@
         "key": "={{ 'debounce_' + $('Filtro + Extrair').first().json.instance + '_' + $('Filtro + Extrair').first().json.remoteJid }}",
         "options": {}
       },
-      "id": "038e7020-63c2-4602-b5f0-4c10810440f1",
+      "id": "bd1d40c9-6c7a-4ddb-993a-42945275065e",
       "name": "Redis GET Debounce",
       "type": "n8n-nodes-base.redis",
       "position": [
-        3328,
-        912
+        -3648,
+        -496
       ],
       "typeVersion": 1,
       "credentials": {
@@ -883,12 +883,12 @@
         },
         "options": {}
       },
-      "id": "e400586d-26c3-4638-aff2-64e76b76a890",
+      "id": "4cb808d2-8b0d-4463-bd5f-059d21fad3dd",
       "name": "IF Mensagem Mais Recente?",
       "type": "n8n-nodes-base.if",
       "position": [
-        3552,
-        912
+        -3424,
+        -496
       ],
       "typeVersion": 2.2
     },
@@ -903,12 +903,12 @@
           ]
         }
       },
-      "id": "94617194-57a9-46f7-be9d-646db235a4d0",
+      "id": "1ef487d1-acb2-4417-b972-ad535d2524bb",
       "name": "Prospeccao Trigger 09h",
       "type": "n8n-nodes-base.scheduleTrigger",
       "position": [
-        2464,
-        1952
+        -4512,
+        560
       ],
       "typeVersion": 1.2,
       "disabled": true
@@ -917,12 +917,12 @@
       "parameters": {
         "jsCode": "const nichos = [\n  \"salão de beleza Pelotas\",\n  \"clínica estética Pelotas\",\n  \"dentista Pelotas\",\n  \"manicure Pelotas\",\n  \"salão de beleza Rio Grande RS\",\n  \"clínica estética Porto Alegre\",\n  \"consultório odontológico Pelotas\"\n];\n\nconst dataMin = new Date();\ndataMin.setDate(dataMin.getDate() - 7);\nconst ad_delivery_date_min = dataMin.toISOString().split('T')[0];\n\nreturn nichos.map(nicho => ({ json: { nicho, ad_delivery_date_min } }));"
       },
-      "id": "35b782eb-ceff-46ef-bc3c-6eb0ecba38ad",
+      "id": "b82f052a-0e06-40f4-adfc-594c3399bed2",
       "name": "Montar Lista de Nichos",
       "type": "n8n-nodes-base.code",
       "position": [
-        2688,
-        1952
+        -4288,
+        560
       ],
       "typeVersion": 2
     },
@@ -958,32 +958,32 @@
         },
         "options": {}
       },
-      "id": "07821508-46d7-42c1-97f0-06d3041e341a",
+      "id": "6d828666-4ebb-4402-80bb-237349fb92b7",
       "name": "Buscar Meta Ad Library",
       "type": "n8n-nodes-base.httpRequest",
       "position": [
-        2912,
-        1952
+        -4064,
+        560
       ],
       "typeVersion": 4.2,
-      "onError": "continueRegularOutput",
       "credentials": {
         "httpQueryAuth": {
           "id": "MzG7cfBY3Ch1LEoD",
           "name": "Meta Ad Library - Prospeccao Pelotas"
         }
-      }
+      },
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
         "jsCode": "const regex = /(5[1-9]|[1-9][1-9])9?[6-9]\\d{7}/;\nconst items = $input.all();\nconst resultados = [];\n\nfor (let i = 0; i < items.length; i++) {\n  const nicho = $('Montar Lista de Nichos').itemMatching(i).json.nicho;\n  const ads = items[i].json?.data || [];\n\n  for (const ad of ads) {\n    if (!ad.page_name || !ad.page_id) continue;\n\n    const texto = ad.ad_creative_body || '';\n    const digitos = texto.replace(/\\D/g, '');\n    const match = digitos.match(regex);\n\n    let telefone = '';\n    if (match) {\n      telefone = match[0].length <= 11 ? '55' + match[0] : match[0];\n    }\n\n    resultados.push({\n      json: {\n        page_name: ad.page_name,\n        page_id: ad.page_id,\n        nicho,\n        telefone,\n        texto_anuncio: texto.slice(0, 500),\n        data_captacao: new Date().toISOString()\n      }\n    });\n  }\n}\n\nreturn resultados;"
       },
-      "id": "7ca3a0ea-ad0b-452e-8165-720663f54859",
+      "id": "6f2cc297-d768-4433-a513-3715191119d2",
       "name": "Processar e Filtrar Leads",
       "type": "n8n-nodes-base.code",
       "position": [
-        3136,
-        1952
+        -3840,
+        560
       ],
       "typeVersion": 2
     },
@@ -993,12 +993,12 @@
         "query": "INSERT INTO upvia_prospeccao (page_name, page_id, nicho, telefone, texto_anuncio, status, data_captacao, instancia)\nVALUES (\n  '{{ $json.page_name.replace(/'/g, \"''\") }}',\n  '{{ $json.page_id }}',\n  '{{ $json.nicho.replace(/'/g, \"''\") }}',\n  '{{ $json.telefone }}',\n  '{{ $json.texto_anuncio.replace(/'/g, \"''\") }}',\n  'novo',\n  '{{ $json.data_captacao }}',\n  'upvia-comercial'\n)\nON CONFLICT (page_id) DO NOTHING\nRETURNING *;",
         "options": {}
       },
-      "id": "6eb20bd6-399b-4463-9877-dab9eeb7f8f9",
+      "id": "d8de53cd-f30a-4f7d-b208-6daa665ccf55",
       "name": "Salvar Lead Dedupe",
       "type": "n8n-nodes-base.postgres",
       "position": [
-        3360,
-        1952
+        -3616,
+        560
       ],
       "typeVersion": 2.5,
       "credentials": {
@@ -1033,40 +1033,38 @@
         },
         "options": {}
       },
-      "id": "06540633-054a-4849-840e-32098859e95f",
+      "id": "4349f7f3-a837-4aee-9e14-a542eb93cb4f",
       "name": "Tem Telefone?",
       "type": "n8n-nodes-base.if",
       "position": [
-        3584,
-        1952
+        -3392,
+        560
       ],
       "typeVersion": 2.2
     },
     {
       "parameters": {
-        "batchSize": 1,
         "options": {}
       },
-      "id": "de6457a5-3caf-4030-868f-b141a88d4289",
+      "id": "9418cb52-2265-455e-b9f6-f4636d3486f0",
       "name": "Loop Envio Prospeccao",
       "type": "n8n-nodes-base.splitInBatches",
       "position": [
-        3808,
-        1952
+        -3168,
+        560
       ],
       "typeVersion": 3
     },
     {
       "parameters": {
-        "amount": 30,
-        "unit": "seconds"
+        "amount": 30
       },
-      "id": "748e24a1-1f97-4ea0-a5f6-66d86b512b32",
+      "id": "ae823a5f-3df2-4ef9-a0ef-8c70752ac4c5",
       "name": "Aguardar 30s",
       "type": "n8n-nodes-base.wait",
       "position": [
-        4032,
-        1850
+        -2944,
+        448
       ],
       "typeVersion": 1.1,
       "webhookId": "35624065-d7fc-4863-b0a8-61bc995b315b"
@@ -1082,21 +1080,21 @@
         "jsonBody": "={{ JSON.stringify({ number: $json.telefone, text: \"Olá! Vi que o *\" + $json.page_name + \"* está anunciando no Facebook. 👋\\n\\nSou a Bia, da UpVia Agentes. Ajudamos negócios como o seu a nunca perder um cliente por falta de atendimento no WhatsApp.\\n\\nNossa atendente IA responde 24h, agenda automaticamente e ainda manda lembretes para os clientes. ✨\\n\\nQuer testar *7 dias grátis*, sem compromisso?\\n\\nSó me dizer que explico como funciona! 😊\" }) }}",
         "options": {}
       },
-      "id": "22596ec4-dd76-4ff4-8aa9-98a1edfd83a6",
+      "id": "0fe98330-9c80-40b4-aed3-ac0f76e9bbe8",
       "name": "Enviar WhatsApp Bia",
       "type": "n8n-nodes-base.httpRequest",
       "position": [
-        4256,
-        1850
+        -2720,
+        448
       ],
       "typeVersion": 4.2,
-      "onError": "continueRegularOutput",
       "credentials": {
         "httpHeaderAuth": {
           "id": "WqUVLvaCGrtpqLOl",
           "name": "Evolution API - apikey global"
         }
-      }
+      },
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -1104,12 +1102,12 @@
         "query": "UPDATE upvia_prospeccao SET status = 'abordado', data_abordagem = NOW() WHERE page_id = '{{ $json.page_id }}';",
         "options": {}
       },
-      "id": "552a4078-66f9-4d55-b071-59958f778906",
+      "id": "ea6a7991-0654-4ddb-a101-f7aa4793edec",
       "name": "Atualizar Status Abordado",
       "type": "n8n-nodes-base.postgres",
       "position": [
-        4480,
-        1850
+        -2496,
+        448
       ],
       "typeVersion": 2.5,
       "credentials": {
@@ -1207,11 +1205,6 @@
             "index": 0
           }
         ]
-      ]
-    },
-    "Resposta ao Cliente": {
-      "main": [
-        []
       ]
     },
     "Pediu Humano?": {
@@ -1313,7 +1306,7 @@
         ]
       ]
     },
-    "Check Inativos Di?rio": {
+    "Check Inativos Diario": {
       "main": [
         [
           {
@@ -1328,25 +1321,25 @@
       "main": [
         [
           {
-            "node": "Preparar Recupera??o",
+            "node": "Preparar Recuperacao",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Preparar Recupera??o": {
+    "Preparar Recuperacao": {
       "main": [
         [
           {
-            "node": "Loop Recupera??o",
+            "node": "Loop Recuperacao",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Loop Recupera??o": {
+    "Loop Recuperacao": {
       "main": [
         [
           {
@@ -1361,14 +1354,14 @@
       "main": [
         [
           {
-            "node": "Enviar Recupera??o",
+            "node": "Enviar Recuperacao",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Enviar Recupera??o": {
+    "Enviar Recuperacao": {
       "main": [
         [
           {
@@ -1383,84 +1376,84 @@
       "main": [
         [
           {
-            "node": "Loop Recupera??o",
+            "node": "Loop Recuperacao",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Balan?o Mensal - Trigger": {
+    "Balanco Mensal - Trigger": {
       "main": [
         [
           {
-            "node": "Buscar Clientes Ativos Balan?o",
+            "node": "Buscar Clientes Ativos Balanco",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Buscar Clientes Ativos Balan?o": {
+    "Buscar Clientes Ativos Balanco": {
       "main": [
         [
           {
-            "node": "Loop Clientes Balan?o",
+            "node": "Loop Clientes Balanco",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Loop Clientes Balan?o": {
+    "Loop Clientes Balanco": {
       "main": [
         [
           {
-            "node": "Buscar Intera??es do M?s",
+            "node": "Buscar Interacoes do Mes",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Buscar Intera??es do M?s": {
+    "Buscar Interacoes do Mes": {
       "main": [
         [
           {
-            "node": "Montar Relat?rio Balan?o",
+            "node": "Montar Relatorio Balanco",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Montar Relat?rio Balan?o": {
+    "Montar Relatorio Balanco": {
       "main": [
         [
           {
-            "node": "Salvar Balan?o Mensal",
+            "node": "Salvar Balanco Mensal",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Salvar Balan?o Mensal": {
+    "Salvar Balanco Mensal": {
       "main": [
         [
           {
-            "node": "Enviar Balan?o WhatsApp",
+            "node": "Enviar Balanco WhatsApp",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Enviar Balan?o WhatsApp": {
+    "Enviar Balanco WhatsApp": {
       "main": [
         [
           {
-            "node": "Loop Clientes Balan?o",
+            "node": "Loop Clientes Balanco",
             "type": "main",
             "index": 0
           }
@@ -1596,8 +1589,7 @@
             "type": "main",
             "index": 0
           }
-        ],
-        []
+        ]
       ]
     },
     "Loop Envio Prospeccao": {
@@ -1608,8 +1600,7 @@
             "type": "main",
             "index": 0
           }
-        ],
-        []
+        ]
       ]
     },
     "Aguardar 30s": {
@@ -1662,13 +1653,19 @@
     },
     "node:Balan?o Mensal - Trigger": {
       "recurrenceRules": []
+    },
+    "node:Check Inativos Diario": {
+      "recurrenceRules": []
+    },
+    "node:Balanco Mensal - Trigger": {
+      "recurrenceRules": []
     }
   },
   "meta": null,
   "pinData": {},
-  "versionId": "83d53253-c40a-4994-a86e-daad62399c64",
-  "activeVersionId": "83d53253-c40a-4994-a86e-daad62399c64",
-  "versionCounter": 81,
+  "versionId": "38032d4e-6640-43f3-9d70-ad1888e6b4a2",
+  "activeVersionId": "38032d4e-6640-43f3-9d70-ad1888e6b4a2",
+  "versionCounter": 91,
   "triggerCount": 4,
   "shared": [
     {
@@ -1691,9 +1688,9 @@
   ],
   "tags": [],
   "activeVersion": {
-    "updatedAt": "2026-06-10T20:34:29.356Z",
-    "createdAt": "2026-06-10T20:34:29.356Z",
-    "versionId": "83d53253-c40a-4994-a86e-daad62399c64",
+    "updatedAt": "2026-06-10T21:56:02.974Z",
+    "createdAt": "2026-06-10T21:56:02.974Z",
+    "versionId": "38032d4e-6640-43f3-9d70-ad1888e6b4a2",
     "workflowId": "D7J9eVxwj1i43rgh",
     "nodes": [
       {
@@ -1704,12 +1701,12 @@
             "rawBody": true
           }
         },
-        "id": "5436a3d6-eaa2-423b-8117-f07bf1cafe4f",
+        "id": "d4a3adce-2600-4d33-80c6-aaf115c99182",
         "name": "Webhook",
         "type": "n8n-nodes-base.webhook",
         "position": [
-          2464,
-          912
+          -4512,
+          -496
         ],
         "typeVersion": 2,
         "webhookId": "vendedor-ia-saas"
@@ -1718,12 +1715,12 @@
         "parameters": {
           "jsCode": "const raw = $input.first().json;\nconst body = raw.body || raw;\n\nconst evento = (body?.event || '').toLowerCase();\nconst fromMe = body?.data?.key?.fromMe ?? false;\nconst remoteJid = body?.data?.key?.remoteJid || '';\nconst messageId = body?.data?.key?.id || '';\nconst instance = body?.instance || body?.instanceName || '';\n\nconst msg = body?.data?.message || {};\nconst text = msg.conversation || msg.extendedTextMessage?.text || '';\nconst hasContent = !!(text || msg.audioMessage || msg.imageMessage);\nconst pushName = body?.data?.pushName || '';\n\nconst isMessage = evento.includes('messages');\nconst isGroup = remoteJid.endsWith('@g.us');\n\nif (!isMessage || isGroup || !hasContent || (fromMe && !text.trim().startsWith('#'))) {\n  return [];\n}\n\nreturn [{\n  json: {\n    instance: String(instance),\n    remoteJid,\n    telefone: remoteJid.replace(/@s\\.whatsapp\\.net$/, ''),\n    text,\n    pushName,\n    fromMe,\n    evento,\n    messageId,\n    body\n  }\n}];"
         },
-        "id": "e716b9f2-9ad3-4bf5-a337-186d9b9b9c16",
+        "id": "fa8961b3-70eb-422d-b81d-e293e657a595",
         "name": "Filtro + Extrair",
         "type": "n8n-nodes-base.code",
         "position": [
-          2688,
-          912
+          -4288,
+          -496
         ],
         "typeVersion": 2
       },
@@ -1752,12 +1749,12 @@
           },
           "options": {}
         },
-        "id": "5dd4d190-e40d-4685-aa1b-382f2b56c6bb",
+        "id": "11937a8e-04f5-40ce-b1e3-074eb32c904b",
         "name": "Guard Erro Contexto",
         "type": "n8n-nodes-base.if",
         "position": [
-          4192,
-          880
+          -2784,
+          -528
         ],
         "typeVersion": 2.2
       },
@@ -1767,12 +1764,12 @@
           "combineBy": "combineByPosition",
           "options": {}
         },
-        "id": "1ee4a92d-56b6-441a-8485-54006faf616c",
+        "id": "a47102bf-4d8e-4944-8bc7-0fd2c290cd29",
         "name": "Merge Dados",
         "type": "n8n-nodes-base.merge",
         "position": [
-          4704,
-          752
+          -2272,
+          -656
         ],
         "typeVersion": 3
       },
@@ -1784,12 +1781,12 @@
             "systemMessage": "=Hoje: {{ $now.weekdayLong }}, {{ $now.format('dd/MM/yyyy') }} {{ $now.hour.toString().padStart(2, '0') }}:{{ $now.minute.toString().padStart(2, '0') }}\n\n# IDENTIDADE\nVoce e Bia, consultora virtual especialista em automacao de atendimento da UpvIA Agentes.\nVoce representa o Jean Andrade, fundador da UpvIA.\nTom: simpatica, confiante, estrategica, conversa natural de WhatsApp.\nNunca diga que e inteligencia artificial.\nNunca parecas robotica.\nNunca transfira para o Jean sem motivo valido.\n\n# SOBRE O PRODUTO\nA UpvIA Agentes cria a AtendentIA - uma funcionaria virtual especialista no negocio do cliente.\nNao e um chatbot. E uma profissional virtual treinada para o nicho especifico do cliente, que aprende o vocabulario do negocio, guarda o historico de cada cliente e age com foco em fechar agenda e trazer lucro.\n\nO DIFERENCIAL PRINCIPAL:\nMenos de 10% do custo de uma funcionaria - com 100% de disponibilidade, sem ferias, sem 13o, sem encargos.\n\n# O QUE A ATENDENTIA FAZ NA PRATICA\n- Responde e agenda automaticamente no WhatsApp 24h por dia\n- Entende texto, audio E imagem - nao precisa digitar nada\n- Verifica a agenda e oferece os horarios disponiveis\n- Confirma o agendamento e envia para o Google Calendar automaticamente\n- Envia lembrete automatico antes do horario (reduz faltas em ate 40%)\n- Recupera clientes inativos com mensagens personalizadas no momento certo\n- Lembra o historico completo de cada cliente e age como uma vendedora treinada\n- Faz relatorio de balanco mensal automaticamente\n- CRM completo com historico de cada cliente\n\n# COMANDOS QUE O DONO USA DIRETO NO WHATSAPP\nSem precisar de nenhum outro aplicativo - tudo pelo proprio WhatsApp:\n- #agenda - solicita um novo agendamento\n- #cancela - cancela um agendamento existente\n- #remarca - remarca para outra data ou horario\n- #promocao - dispara promocao para clientes inativos\n- #relatorio-crm - gera relatorio completo de CRM (exclusivo Plano Premium)\n\n# NICHOS ATENDIDOS\nSalao de Beleza, Barbearia, Manicure/Nail Designer, Banho e Tosa/Pet Shop, Fotografo(a), Clinica Estetica, Psicologa/Terapeuta, Personal Trainer/Pilates, Escritorio de Arquitetura, Clinica Odontologica, Escritorio de Advocacia, Imobiliaria/Corretor de Imoveis, e qualquer negocio com agenda.\n\n# PLANOS E PRECOS ATUALIZADOS\n\nPLANO ESSENCIAL - R$297/mes\nPara pequenos negocios com 1 profissional\nIdeal para: Barbearia, Salao individual, Manicure/Nail Designer, Banho e Tosa, Fotografo(a)\nResolve: WhatsApp lotado sem tempo pra responder, agenda desorganizada, clientes que somem sem retorno.\nInclui:\n- IA personalizada pro seu nicho\n- Atendimento 24/7\n- Agendamento automatico\n- Google Calendar integrado\n- CRM basico\n\nPLANO PRO - R$497/mes\nPara negocios em crescimento com ate 5 profissionais\nIdeal para: Clinica Estetica, Psicologa/Terapeuta, Personal Trainer/Pilates, Escritorio de Arquitetura\nResolve: Multiplas agendas, clientes que precisam de follow-up, promocoes que precisam ser disparadas na hora certa.\nInclui tudo do Essencial mais:\n- Follow-up inteligente de inativos\n- Disparo de promocoes para a base\n- CRM completo com historico\n- Multiplas agendas independentes\n\nPLANO PREMIUM - R$897/mes\nPara empresas com alto volume de mensagens e ate 10 profissionais\nIdeal para: Clinica Odontologica, Escritorio de Advocacia, Imobiliaria/Corretor de Imoveis\nResolve: Grande volume de mensagens diarias, varios profissionais com agendas independentes, CRM completo.\nInclui tudo do Pro mais:\n- CRM avancado com upsell automatico\n- Relatorios de atendimento\n- Escala total de mensagens\n- Suporte prioritario\n- CRM completo com funil de qualificacao\n- Relatorio em WhatsApp ou Excel incluido\n- Funil automatico com 5 estagios (Lead, Interessado, Agendou, Frequente, VIP)\n- Score VIP automatico para clientes com 6+ agendamentos\n- Campanhas segmentadas por estagio\n- Deteccao de clientes em risco com reativacao automatica\n\nIMPORTANTE: Todos os planos incluem 7 DIAS COMPLETAMENTE GRATUITOS.\nSem cartao de credito. Sem compromisso. Sem cobranca. Zero.\nA pessoa so paga se gostar depois de testar.\n\n# LINK PARA COMECAR O TESTE GRATIS\nhttps://www.upviaagentes.com.br/conectar-whatsapp.html\n\n# FLUXO OBRIGATORIO DE VENDAS\n\nETAPA 1 - QUALIFICACAO (primeira mensagem sempre):\n\"Ola! Tudo bem? Sou a Bia, da UpvIA Agentes.\nQue otimo que voce quer conhecer a AtendentIA!\nMe conta rapidinho: qual e o seu tipo de negocio e quantos profissionais voce tem?\"\nAguarde a resposta.\n\nETAPA 2 - IDENTIFICAR A DOR PRINCIPAL:\nCom base no negocio, pergunte naturalmente UMA dessas:\n- \"Voce perde clientes por nao conseguir atender no WhatsApp fora do horario?\"\n- \"Ja teve situacao de cliente marcar e nao aparecer sem avisar?\"\n- \"Voce passa muito tempo respondendo mensagens manualmente todos os dias?\"\n- \"Tem clientes que some e voce nao sabe como reconquistar?\"\nObjetivo: descobrir a dor real para apresentar a solucao certa.\n\nETAPA 3 - APRESENTAR A SOLUCAO focada na dor identificada:\n\nSe perde clientes fora do horario:\n\"Imagina seu WhatsApp atendendo, agendando e confirmando automaticamente as 23h enquanto voce dorme. Com a AtendentIA isso acontece todo dia.\"\n\nSe tem muita falta:\n\"Nossa IA envia lembretes automaticos antes de cada horario. Nossos clientes reduziram as faltas em ate 40%. Cada furo evitado e dinheiro que fica no seu bolso.\"\n\nSe perde tempo respondendo:\n\"A IA assume todo o atendimento - texto, audio e ate imagem. Voce so entra quando realmente precisa. Libera horas do seu dia todo dia.\"\n\nSe clientes somem:\n\"A IA detecta automaticamente quem parou de vir e dispara campanhas personalizadas de reativacao no momento certo. Voce recupera clientes sem fazer nada.\"\n\nETAPA 4 - APRESENTAR O DIFERENCIAL CHAVE:\n\"E o melhor: ela nao e um chatbot generico.\nE uma funcionaria virtual treinada especificamente para o seu [tipo de negocio].\nEla aprende o vocabulario do seu negocio, lembra o historico de cada cliente e age como uma vendedora treinada por voce.\nTudo pelo WhatsApp - sem precisar de nenhum outro aplicativo.\"\n\nETAPA 5 - SUGERIR O PLANO IDEAL:\n1 profissional ? Essencial (R$297/mes)\n2-5 profissionais ? Pro (R$497/mes)\n6-10 profissionais ou alto volume ? Premium (R$897/mes)\n\nETAPA 6 - FECHAR COM TESTE GRATIS (mais importante):\n\"E o melhor de tudo: voce pode testar COMPLETAMENTE GRATIS por 7 dias.\nSem colocar cartao. Sem compromisso. Sem cobranca nenhuma.\nVoce usa, ve funcionando no seu negocio, e so decide se quer continuar depois.\nE so acessar agora: https://www.upviaagentes.com.br/conectar-whatsapp.html\nEm menos de 10 minutos sua atendente ja esta configurada e respondendo seus clientes.\"\n\n# METODO DE VENDAS - REGRAS DE OURO\n\nANTES DE FALAR PRECO, sempre:\n1. Entenda o perfil e o negocio\n2. Descubra a dor principal\n3. Apresente o beneficio que resolve aquela dor especifica\n4. Mostre o diferencial (nao e chatbot, e funcionaria especialista)\n5. Fale do teste gratis como eliminador de risco total\n\nPROVA SOCIAL (use naturalmente, nunca invente numeros):\n\"O proprio salao do Jean, aqui em Pelotas, usa e atende mais de 200 agendamentos por mes automaticamente.\"\n\"Varios clientes nos diferentes nichos ja estao usando e vendo resultado.\"\n\"Manicures, esteticistas, dentistas, corretores - funciona para qualquer negocio com agenda.\"\n\nGATILHOS DE VENDA:\n- Zero risco: \"Voce nao perde nada testando. Se nao gostar, cancela e pronto.\"\n- Custo x beneficio: \"Menos de 10% do custo de uma recepcionista, com 100% de disponibilidade.\"\n- Urgencia suave: \"Enquanto voce pensa, seu concorrente pode estar atendendo o cliente que voce perdeu agora as 23h.\"\n- Personalizacao: \"Ela e treinada para o SEU negocio, nao e solucao generica.\"\n\n# TRATAMENTO DE OBJECOES\n\n\"E caro\":\n\"Entendo! Mas pensa: uma recepcionista custa em media R$1.800/mes mais encargos. A AtendentIA custa menos de 10% disso, trabalha 24h e nunca falta. E voce testa de graca antes de pagar qualquer coisa.\"\n\n\"Preciso pensar\":\n\"Claro, sem pressao! O que ficou em duvida? Posso esclarecer agora. E lembra: o teste e gratis, voce nao precisa decidir nada hoje - so comecar a testar.\"\n\n\"Ja tenho sistema de agenda\":\n\"Entendo! A diferenca e que a AtendentIA atende no WhatsApp, que e onde seus clientes JA estao. Nao pede para o cliente baixar app nem fazer login. Ela vai ate o cliente, nao o contrario.\"\n\n\"Parece robotico\":\n\"E exatamente o que os nossos clientes acham antes de testar. Na pratica ela conversa de forma totalmente natural - aprende o tom do seu negocio e atende como se fosse voce mesma respondendo.\"\n\n\"Nao tenho tempo para configurar\":\n\"O cadastro leva menos de 10 minutos e a gente da todo o suporte. Voce preenche os dados do seu negocio e ela ja esta pronta para atender.\"\n\n\"E seguro?\":\n\"Sim! Seguimos todas as normas da LGPD. Os dados ficam protegidos e somos parceiros da OpenAI, maior empresa de IA do mundo.\"\n\n# REGRAS DE SEGURANCA E DADOS\n- NUNCA compartilhe dados de outros clientes\n- NUNCA prometa funcionalidades que nao existem nos planos\n- NUNCA oferea desconto sem falar com o Jean\n- NUNCA pressione - conduza, nao empurre\n- NUNCA invente depoimentos ou numeros especificos\n- Se perguntar sobre integracao especifica nao listada: \"Vou confirmar com o Jean se e possivel\"\n- Se o lead tiver problema tecnico como cliente existente, transfira para o Jean\n\n# TRANSFERENCIA PARA O JEAN\nTransferir APENAS quando:\n- Lead pedir falar com humano ou com Jean especificamente\n- Lead fechar e precisar de suporte na configuracao\n- Lead tiver problema tecnico ja como cliente\n- Lead pedir condicao especial de preco ou parceria comercial\n- Duvida tecnica avancada que voce nao sabe responder\n\nResposta ao transferir: \"Vou chamar o Jean pra te ajudar com isso. Um momento!\"\n\n# REGRAS ABSOLUTAS\n- Maximo 3-4 frases por mensagem\n- SEM markdown, SEM asteriscos, SEM bullets nas mensagens ao cliente\n- Emojis com moderacao (1-2 por mensagem)\n- NUNCA mencione concorrentes pelo nome\n- NUNCA fale de politica, religiao, esportes ou assuntos fora da UpvIA\n- Se tentar falar de outro assunto: \"Consigo ajudar apenas com informacoes sobre a AtendentIA e os servicos da UpvIA.\"\n- Sempre conduza a conversa - nunca fique passiva esperando\n- Se o lead sumir, nao mande mais de 1 follow-up\n- Foco total: levar o lead para o link do teste gratis"
           }
         },
-        "id": "b638802e-1e4a-4d27-b507-4f07f067734d",
+        "id": "30b23bee-430b-4f39-9a67-8b3f947d17bb",
         "name": "Vendedor IA",
         "type": "@n8n/n8n-nodes-langchain.agent",
         "position": [
-          4928,
-          752
+          -2048,
+          -656
         ],
         "typeVersion": 1.7
       },
@@ -1804,12 +1801,12 @@
           "builtInTools": {},
           "options": {}
         },
-        "id": "cd6c2878-37c4-4b70-8156-4796099adcd8",
+        "id": "881f3047-8c98-4c36-b7f5-8f21512bb6ef",
         "name": "OpenAI Chat Model",
         "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
         "position": [
-          4848,
-          944
+          -2128,
+          -464
         ],
         "typeVersion": 1.3,
         "credentials": {
@@ -1825,12 +1822,12 @@
           "sessionKey": "={{ $('Montar Contexto Dinamico').first().json.session_id }}",
           "contextWindowLength": 12
         },
-        "id": "d966aa4f-20b9-4772-b18e-247b9c6aead6",
+        "id": "84f4ed1c-d272-4e76-8f79-4c26aeaf08cf",
         "name": "Postgres Memory",
         "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
         "position": [
-          5024,
-          944
+          -1952,
+          -464
         ],
         "typeVersion": 1.1,
         "credentials": {
@@ -1858,12 +1855,12 @@
           "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.remoteJid }}\",\n  \"text\": {{ JSON.stringify($json.output || $json.text || '') }}\n}",
           "options": {}
         },
-        "id": "5cf275a2-add5-42a4-a4d1-9578dcfce20c",
+        "id": "462ec0f3-bf49-468e-9c4b-923b4c40650d",
         "name": "Resposta ao Cliente",
         "type": "n8n-nodes-base.httpRequest",
         "position": [
-          5280,
-          752
+          -1696,
+          -656
         ],
         "typeVersion": 4.2,
         "onError": "continueRegularOutput"
@@ -1919,12 +1916,12 @@
           },
           "options": {}
         },
-        "id": "4f8bdd43-288f-4725-be92-cd159dc6641a",
+        "id": "134c6795-ccc7-440f-8be7-62eb792ba5ae",
         "name": "Pediu Humano?",
         "type": "n8n-nodes-base.filter",
         "position": [
-          4464,
-          576
+          -2512,
+          -832
         ],
         "typeVersion": 2.2
       },
@@ -1946,12 +1943,12 @@
           "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.remoteJid }}\",\n  \"text\": \"Claro! Vou chamar {{ $('Montar Contexto Dinamico').first().json.nome_proprietario }} pra te atender. Um momento! ??\"\n}",
           "options": {}
         },
-        "id": "e21b9773-ffd4-45f9-86ca-cce9d6b35287",
+        "id": "32e9dff0-074d-440f-9307-b772323c43e6",
         "name": "Avisar Cliente Humano",
         "type": "n8n-nodes-base.httpRequest",
         "position": [
-          4688,
-          576
+          -2288,
+          -832
         ],
         "typeVersion": 4.2,
         "onError": "continueRegularOutput"
@@ -1974,12 +1971,12 @@
           "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.telefone_proprietario }}\",\n  \"text\": \"?? ATENDIMENTO HUMANO\\n\\nCliente {{ $('Montar Contexto Dinamico').first().json.pushName }} ({{ $('Montar Contexto Dinamico').first().json.telefone }}) pediu atendente humano.\\n\\n?ltima msg: {{ $('Montar Contexto Dinamico').first().json.text }}\"\n}",
           "options": {}
         },
-        "id": "ea31475a-c497-4848-a5f0-d92eab1f213f",
+        "id": "a7cd2b98-0385-4979-933c-54eee83fbc5f",
         "name": "Notificar Dono",
         "type": "n8n-nodes-base.httpRequest",
         "position": [
-          4912,
-          576
+          -2064,
+          -832
         ],
         "typeVersion": 4.2,
         "onError": "continueRegularOutput"
@@ -1995,12 +1992,12 @@
             ]
           }
         },
-        "id": "f687bfa6-3d9e-4c5c-8570-767db116c252",
+        "id": "270f38b2-50c6-4971-920b-31da7cbad544",
         "name": "Check Carrinho 1h",
         "type": "n8n-nodes-base.scheduleTrigger",
         "position": [
-          2464,
-          1216
+          -4512,
+          -192
         ],
         "typeVersion": 1.2
       },
@@ -2010,12 +2007,12 @@
           "query": "SELECT ca.telefone, ca.session_id, ca.instancia, cs.nome_atendente_ia, cs.nome_empresa, cs.evo_api_url, cs.evo_api_key, cs.link_vendas, cs.tipo_produto FROM carrinho_abandonado ca JOIN clientes_sistema cs ON ca.instancia = cs.instancia_whatsapp WHERE ca.status = 'ativo' AND ca.updated_at < NOW() - INTERVAL '1 hour' AND ca.updated_at > NOW() - INTERVAL '2 hours' AND ca.followup_1h = false LIMIT 20;",
           "options": {}
         },
-        "id": "10cf42d8-d16a-4fa1-af8e-a6f6079f8860",
+        "id": "e37c66cd-3bd7-4813-8c1b-5e39cd15fd88",
         "name": "Buscar Carrinhos 1h",
         "type": "n8n-nodes-base.postgres",
         "position": [
-          2688,
-          1216
+          -4288,
+          -192
         ],
         "typeVersion": 2.5,
         "credentials": {
@@ -2029,12 +2026,12 @@
         "parameters": {
           "jsCode": "const items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const tel = item.json.telefone;\n  const nome = item.json.nome_atendente_ia || 'Assistente';\n  const empresa = item.json.nome_empresa || 'nossa loja';\n  \n  const msgs = [\n    `Oi! Aqui ? ${nome} da ${empresa} ?? Vi que voc? estava dando uma olhada nos nossos produtos... Ficou alguma d?vida? Posso te ajudar a escolher o melhor pra voc?!`,\n    `Ei, tudo bem? ${nome} da ${empresa} aqui! Notei que voc? se interessou pelos nossos produtos. Quer que eu te ajude com algo? Estou aqui pra isso! ??`,\n    `Oi! Passando rapidinho pra saber se posso te ajudar com alguma coisa. Vi que estava olhando nossos produtos e adoraria te mostrar como eles podem te ajudar! ??`\n  ];\n  \n  const msg = msgs[Math.floor(Math.random() * msgs.length)];\n  const delay = 10000 + Math.floor(Math.random() * 50000);\n  \n  results.push({ json: { ...item.json, mensagem_followup: msg, delayMs: delay } });\n}\n\nreturn results;"
         },
-        "id": "ba45e4fd-8fb9-4fd5-937d-2f5251fb52cf",
+        "id": "437ceb2d-6863-4ca1-859a-cccf60643f8a",
         "name": "Preparar Followup Carrinho",
         "type": "n8n-nodes-base.code",
         "position": [
-          2912,
-          1216
+          -4064,
+          -192
         ],
         "typeVersion": 2
       },
@@ -2042,12 +2039,12 @@
         "parameters": {
           "options": {}
         },
-        "id": "c83d4807-4c02-4c31-b350-48c2ab176beb",
+        "id": "20aff080-3c6a-4ba9-99fc-0b42ed256e2d",
         "name": "Loop Carrinho",
         "type": "n8n-nodes-base.splitInBatches",
         "position": [
-          3136,
-          1216
+          -3840,
+          -192
         ],
         "typeVersion": 3
       },
@@ -2055,12 +2052,12 @@
         "parameters": {
           "amount": "={{ $json.delayMs / 1000 }}"
         },
-        "id": "bb3874ec-acd9-4d12-9c67-86db88aa8e6d",
+        "id": "8bd67556-6bdb-467a-bbe2-072e3a8a63a3",
         "name": "Anti-Spam Delay Cart",
         "type": "n8n-nodes-base.wait",
         "position": [
-          3360,
-          1136
+          -3616,
+          -272
         ],
         "typeVersion": 1.1,
         "webhookId": "cart-delay-wh"
@@ -2083,12 +2080,12 @@
           "jsonBody": "={\n  \"number\": \"{{ $json.telefone }}\",\n  \"text\": {{ JSON.stringify($json.mensagem_followup) }}\n}",
           "options": {}
         },
-        "id": "adc41203-621e-4dae-adad-f6495c278f38",
+        "id": "a2931356-84e4-442c-a0a6-1662dddedba3",
         "name": "Enviar Followup Carrinho",
         "type": "n8n-nodes-base.httpRequest",
         "position": [
-          3584,
-          1136
+          -3392,
+          -272
         ],
         "typeVersion": 4.2,
         "onError": "continueRegularOutput"
@@ -2099,12 +2096,12 @@
           "query": "UPDATE carrinho_abandonado SET followup_1h = true WHERE telefone = '{{ $json.telefone }}' AND instancia = '{{ $json.instancia }}';",
           "options": {}
         },
-        "id": "8aa808bc-9c63-4d35-a635-a7c20420d6ad",
+        "id": "b5009b00-0dac-42df-a213-f0042f2d87a5",
         "name": "Marcar Followup 1h",
         "type": "n8n-nodes-base.postgres",
         "position": [
-          3808,
-          1216
+          -3168,
+          -192
         ],
         "typeVersion": 2.5,
         "credentials": {
@@ -2126,12 +2123,12 @@
             ]
           }
         },
-        "id": "30239b96-e71d-45db-ba78-d6924926ec1d",
-        "name": "Check Inativos Di?rio",
+        "id": "7310d75a-2d41-4b81-8d2e-9e3673c1e2bd",
+        "name": "Check Inativos Diario",
         "type": "n8n-nodes-base.scheduleTrigger",
         "position": [
-          2464,
-          1504
+          -4512,
+          112
         ],
         "typeVersion": 1.2
       },
@@ -2141,12 +2138,12 @@
           "query": "SELECT dc.telefone, dc.session_id, cs.nome_atendente_ia, cs.nome_empresa, cs.instancia_whatsapp, cs.evo_api_url, cs.evo_api_key, cs.link_vendas FROM dados_cliente dc JOIN clientes_sistema cs ON dc.session_id LIKE cs.instancia_whatsapp || '%' WHERE dc.updated_at < NOW() - INTERVAL '7 days' AND dc.updated_at > NOW() - INTERVAL '30 days' AND (dc.recuperado = false OR dc.recuperado IS NULL) LIMIT 15;",
           "options": {}
         },
-        "id": "62cddbd5-3c18-44ab-b699-4d37d63b2df2",
+        "id": "1721e4ae-1e75-4062-b393-6fad304520e6",
         "name": "Buscar Inativos",
         "type": "n8n-nodes-base.postgres",
         "position": [
-          2688,
-          1504
+          -4288,
+          112
         ],
         "typeVersion": 2.5,
         "credentials": {
@@ -2160,12 +2157,12 @@
         "parameters": {
           "jsCode": "const items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const nome = (item.json.nome || 'amigo(a)').split(' ')[0];\n  const empresa = item.json.nome_empresa || 'nossa loja';\n  \n  const msgs = [\n    `Oi ${nome}! ?? Faz um tempinho que n?o te vejo por aqui na ${empresa}. Temos novidades incr?veis que acho que voc? vai amar! Quer dar uma olhada?`,\n    `${nome}, tudo bem? Aqui ? da ${empresa}! Separei umas novidades especiais que combinam com voc?. Posso te mostrar? ??`,\n    `Oi ${nome}! Passando pra te contar que temos condi??es especiais essa semana na ${empresa}. Bora aproveitar? ??`,\n    `${nome}, sentimos sua falta! ?? A ${empresa} tem ofertas imperd?veis agora. Posso te ajudar a encontrar algo especial?`\n  ];\n  \n  const msg = msgs[Math.floor(Math.random() * msgs.length)];\n  const delay = 30000 + Math.floor(Math.random() * 270000);\n  \n  results.push({ json: { ...item.json, mensagem_recover: msg, delayMs: delay } });\n}\n\nfor (let i = results.length - 1; i > 0; i--) {\n  const j = Math.floor(Math.random() * (i + 1));\n  [results[i], results[j]] = [results[j], results[i]];\n}\n\nreturn results;"
         },
-        "id": "d1636006-8297-4be2-98d7-a68a9cefda8a",
-        "name": "Preparar Recupera??o",
+        "id": "f74b85f4-34d2-4687-afc7-305db6c6b36b",
+        "name": "Preparar Recuperacao",
         "type": "n8n-nodes-base.code",
         "position": [
-          2912,
-          1504
+          -4064,
+          112
         ],
         "typeVersion": 2
       },
@@ -2173,12 +2170,12 @@
         "parameters": {
           "options": {}
         },
-        "id": "44ea0e76-1507-4667-b839-86450b4a04a9",
-        "name": "Loop Recupera??o",
+        "id": "dbd6100f-25be-414d-93c0-29acef5a011b",
+        "name": "Loop Recuperacao",
         "type": "n8n-nodes-base.splitInBatches",
         "position": [
-          3136,
-          1504
+          -3840,
+          112
         ],
         "typeVersion": 3
       },
@@ -2186,12 +2183,12 @@
         "parameters": {
           "amount": "={{ $json.delayMs / 1000 }}"
         },
-        "id": "e88d9a60-8d1f-4448-bcc2-a3c8d6024293",
+        "id": "28fa5cb8-7c5f-446a-9278-915c73370e15",
         "name": "Anti-Spam Delay Recover",
         "type": "n8n-nodes-base.wait",
         "position": [
-          3360,
-          1440
+          -3616,
+          48
         ],
         "typeVersion": 1.1,
         "webhookId": "recover-delay-wh"
@@ -2214,12 +2211,12 @@
           "jsonBody": "={\n  \"number\": \"{{ $json.telefone }}\",\n  \"text\": {{ JSON.stringify($json.mensagem_recover) }}\n}",
           "options": {}
         },
-        "id": "2f812afe-0101-4a43-b65b-68b85c3ef7e8",
-        "name": "Enviar Recupera??o",
+        "id": "1796505b-e9a7-4980-96e7-211365518b6f",
+        "name": "Enviar Recuperacao",
         "type": "n8n-nodes-base.httpRequest",
         "position": [
-          3584,
-          1440
+          -3392,
+          48
         ],
         "typeVersion": 4.2,
         "onError": "continueRegularOutput"
@@ -2230,12 +2227,12 @@
           "query": "UPDATE dados_cliente SET recuperado = true WHERE telefone = '{{ $json.telefone }}' AND session_id LIKE '{{ $json.instancia_whatsapp }}_%';",
           "options": {}
         },
-        "id": "ed3b3c31-97b8-4cf0-a44b-9b8fcaedf04c",
+        "id": "ea5202f2-979c-47eb-ab22-6cf3e6bac75c",
         "name": "Marcar Recuperado",
         "type": "n8n-nodes-base.postgres",
         "position": [
-          3808,
-          1504
+          -3168,
+          112
         ],
         "typeVersion": 2.5,
         "credentials": {
@@ -2252,12 +2249,12 @@
           "query": "CREATE TABLE IF NOT EXISTS carrinho_abandonado (\n  id bigserial PRIMARY KEY,\n  telefone text NOT NULL,\n  session_id text,\n  instancia text NOT NULL,\n  ultima_msg text,\n  status text DEFAULT 'ativo',\n  followup_1h boolean DEFAULT false,\n  followup_6h boolean DEFAULT false,\n  followup_24h boolean DEFAULT false,\n  created_at timestamptz DEFAULT NOW(),\n  updated_at timestamptz DEFAULT NOW(),\n  UNIQUE(telefone, instancia)\n);\n\nALTER TABLE dados_cliente ADD COLUMN IF NOT EXISTS cliente_id bigint REFERENCES clientes_sistema(id);\nALTER TABLE dados_cliente ADD COLUMN IF NOT EXISTS recuperado boolean DEFAULT false;\nALTER TABLE dados_cliente ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT NOW();\nCREATE UNIQUE INDEX IF NOT EXISTS dados_cliente_session_id_idx ON dados_cliente(session_id);\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS catalogo_sheets_id text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS link_vendas text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS tipo_produto text DEFAULT 'fisico';\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS chave_pix text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS tipo_chave_pix text DEFAULT 'cpf';\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS nome_titular_pix text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS banco_pix text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS aceita_cartao boolean DEFAULT false;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS link_checkout text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS msg_pos_venda text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS google_sheet_id text;",
           "options": {}
         },
-        "id": "7f0fe8a8-493f-453a-8961-4d7765616f05",
+        "id": "c61435b1-f2cb-4e49-9030-b447b8e9b8a2",
         "name": "Setup Tabelas (executar 1x)",
         "type": "n8n-nodes-base.postgres",
         "position": [
-          2464,
-          1728
+          -4512,
+          336
         ],
         "typeVersion": 2.5,
         "credentials": {
@@ -2278,12 +2275,12 @@
             ]
           }
         },
-        "id": "226b49c8-6f41-4653-9d5c-ee17edab8b85",
-        "name": "Balan?o Mensal - Trigger",
+        "id": "87fa519b-2e99-48de-975f-f1e4639f3d70",
+        "name": "Balanco Mensal - Trigger",
         "type": "n8n-nodes-base.scheduleTrigger",
         "position": [
-          2464,
-          2256
+          -4512,
+          864
         ],
         "typeVersion": 1.2
       },
@@ -2293,12 +2290,12 @@
           "query": "SELECT id as cliente_id, nome_empresa, instancia_whatsapp, evo_api_url, evo_api_key, telefone as telefone_proprietario FROM clientes_sistema WHERE status = 'ativo';",
           "options": {}
         },
-        "id": "d5245b3a-3a12-4d9c-a0d0-518b4023eaa3",
-        "name": "Buscar Clientes Ativos Balan?o",
+        "id": "0d25d39c-37ea-4295-ada8-e7cdcb6e5053",
+        "name": "Buscar Clientes Ativos Balanco",
         "type": "n8n-nodes-base.postgres",
         "position": [
-          2688,
-          2256
+          -4288,
+          864
         ],
         "typeVersion": 2.5,
         "credentials": {
@@ -2312,12 +2309,12 @@
         "parameters": {
           "options": {}
         },
-        "id": "c145ee8a-dee4-4306-8d4f-160d423b7e0c",
-        "name": "Loop Clientes Balan?o",
+        "id": "96544c29-145b-4434-b19d-10589169d6ac",
+        "name": "Loop Clientes Balanco",
         "type": "n8n-nodes-base.splitInBatches",
         "position": [
-          2912,
-          2256
+          -4064,
+          864
         ],
         "typeVersion": 3
       },
@@ -2327,12 +2324,12 @@
           "query": "SELECT COUNT(*) as total_mensagens, COUNT(DISTINCT telefone) as total_contatos, COUNT(CASE WHEN status = 'ativo' THEN 1 END) as carrinhos_ativos FROM carrinho_abandonado WHERE instancia = '{{ $json.instancia_whatsapp }}' AND created_at >= DATE_TRUNC('month', NOW() - INTERVAL '1 month') AND created_at < DATE_TRUNC('month', NOW());",
           "options": {}
         },
-        "id": "dc980d7f-bdc8-4d04-a80f-6675d96a6533",
-        "name": "Buscar Intera??es do M?s",
+        "id": "1052790f-aef9-4b99-8523-54a0126db171",
+        "name": "Buscar Interacoes do Mes",
         "type": "n8n-nodes-base.postgres",
         "position": [
-          3136,
-          2176
+          -3840,
+          784
         ],
         "typeVersion": 2.5,
         "credentials": {
@@ -2345,14 +2342,14 @@
       },
       {
         "parameters": {
-          "jsCode": "const cliente = $('Loop Clientes Balan?o').first().json;\nconst stats = $input.first().json;\n\nconst mesAnterior = new Date();\nmesAnterior.setMonth(mesAnterior.getMonth() - 1);\nconst nomeMes = mesAnterior.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });\n\nconst relatorio = `Balan?o ${nomeMes} - ${cliente.nome_empresa}\\n\\nAtendimentos realizados: ${stats.total_mensagens || 0}\\nContatos ?nicos: ${stats.total_contatos || 0}\\nCarrinhos abertos: ${stats.carrinhos_ativos || 0}\\n\\nSeu agente de vendas trabalhou o m?s inteiro pra voc?! Qualquer d?vida estou aqui. ??`;\n\nreturn [{ json: {\n  cliente_id: cliente.cliente_id,\n  instancia: cliente.instancia_whatsapp,\n  evo_api_url: cliente.evo_api_url || 'https://evo.upviaagentes.com',\n  evo_api_key: cliente.evo_api_key,\n  telefone_proprietario: cliente.telefone_proprietario,\n  nome_empresa: cliente.nome_empresa,\n  relatorio,\n  total_mensagens: Number(stats.total_mensagens) || 0,\n  total_contatos: Number(stats.total_contatos) || 0,\n  carrinhos_ativos: Number(stats.carrinhos_ativos) || 0,\n  mes_referencia: nomeMes\n} }];"
+          "jsCode": "const cliente = $('Loop Clientes Balanco').first().json;\nconst stats = $input.first().json;\n\nconst mesAnterior = new Date();\nmesAnterior.setMonth(mesAnterior.getMonth() - 1);\nconst nomeMes = mesAnterior.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });\n\nconst relatorio = `Balan?o ${nomeMes} - ${cliente.nome_empresa}\\n\\nAtendimentos realizados: ${stats.total_mensagens || 0}\\nContatos ?nicos: ${stats.total_contatos || 0}\\nCarrinhos abertos: ${stats.carrinhos_ativos || 0}\\n\\nSeu agente de vendas trabalhou o m?s inteiro pra voc?! Qualquer d?vida estou aqui. ??`;\n\nreturn [{ json: {\n  cliente_id: cliente.cliente_id,\n  instancia: cliente.instancia_whatsapp,\n  evo_api_url: cliente.evo_api_url || 'https://evo.upviaagentes.com',\n  evo_api_key: cliente.evo_api_key,\n  telefone_proprietario: cliente.telefone_proprietario,\n  nome_empresa: cliente.nome_empresa,\n  relatorio,\n  total_mensagens: Number(stats.total_mensagens) || 0,\n  total_contatos: Number(stats.total_contatos) || 0,\n  carrinhos_ativos: Number(stats.carrinhos_ativos) || 0,\n  mes_referencia: nomeMes\n} }];"
         },
-        "id": "584b7e00-c6a4-451e-a6e2-27444a9545ce",
-        "name": "Montar Relat?rio Balan?o",
+        "id": "09b97d35-6506-446e-8948-19a088ddf935",
+        "name": "Montar Relatorio Balanco",
         "type": "n8n-nodes-base.code",
         "position": [
-          3360,
-          2176
+          -3616,
+          784
         ],
         "typeVersion": 2
       },
@@ -2362,12 +2359,12 @@
           "query": "INSERT INTO balanco_mensal (cliente_id, instancia, mes_referencia, total_mensagens, total_contatos, carrinhos_ativos, relatorio_texto, gerado_em) VALUES ('{{ $json.cliente_id }}', '{{ $json.instancia }}', '{{ $json.mes_referencia }}', {{ $json.total_mensagens }}, {{ $json.total_contatos }}, {{ $json.carrinhos_ativos }}, '{{ $json.relatorio.replace(/'/g, \"''\") }}', NOW()) ON CONFLICT (cliente_id, mes_referencia) DO UPDATE SET total_mensagens = EXCLUDED.total_mensagens, total_contatos = EXCLUDED.total_contatos, gerado_em = NOW();",
           "options": {}
         },
-        "id": "1c804df0-48e4-4bec-9cc2-4b97f3edc0d4",
-        "name": "Salvar Balan?o Mensal",
+        "id": "f868ffc5-ded3-45d7-af4b-bb33fedd8e42",
+        "name": "Salvar Balanco Mensal",
         "type": "n8n-nodes-base.postgres",
         "position": [
-          3584,
-          2176
+          -3392,
+          784
         ],
         "typeVersion": 2.5,
         "credentials": {
@@ -2396,12 +2393,12 @@
           "jsonBody": "={\n  \"number\": \"{{ $json.telefone_proprietario }}\",\n  \"text\": {{ JSON.stringify($json.relatorio) }}\n}",
           "options": {}
         },
-        "id": "1f388367-f947-4413-a573-5623fabc3c5a",
-        "name": "Enviar Balan?o WhatsApp",
+        "id": "2688550c-393c-40a9-98ca-0c3a58070ba2",
+        "name": "Enviar Balanco WhatsApp",
         "type": "n8n-nodes-base.httpRequest",
         "position": [
-          3808,
-          2256
+          -3168,
+          864
         ],
         "typeVersion": 4.2,
         "onError": "continueRegularOutput"
@@ -2413,12 +2410,12 @@
           "width": 640,
           "color": 4
         },
-        "id": "87eaf660-efc7-497c-8469-df9b2c1b9d5f",
+        "id": "d6e388b4-6c65-4cd6-b95b-1c1132145d47",
         "name": "Sticky Note Arquitetura1",
         "type": "n8n-nodes-base.stickyNote",
         "position": [
-          1232,
-          960
+          -5744,
+          -448
         ],
         "typeVersion": 1
       },
@@ -2429,12 +2426,12 @@
           "width": 520,
           "color": 3
         },
-        "id": "8445fa26-1ffb-4c9a-8b67-0c36edb0338f",
+        "id": "b8bdd72b-baf5-4d37-a3ae-f223578792ed",
         "name": "Sticky Note Vendas1",
         "type": "n8n-nodes-base.stickyNote",
         "position": [
-          1232,
-          1584
+          -5744,
+          192
         ],
         "typeVersion": 1
       },
@@ -2445,12 +2442,12 @@
           "width": 640,
           "color": 6
         },
-        "id": "68b7a7a3-575c-46cd-9f66-921465eb3b02",
-        "name": "Sticky Note Configura??o",
+        "id": "828279d2-4c60-4397-997f-51933c64961c",
+        "name": "Sticky Note Configuracao",
         "type": "n8n-nodes-base.stickyNote",
         "position": [
-          1232,
-          1904
+          -5744,
+          512
         ],
         "typeVersion": 1
       },
@@ -2460,12 +2457,12 @@
           "query": "INSERT INTO dados_cliente (telefone, session_id, cliente_id, message, created_at) VALUES ('{{ $('Montar Contexto Dinamico').first().json.remoteJid }}', '{{ $('Montar Contexto Dinamico').first().json.session_id }}', {{ $('Montar Contexto Dinamico').first().json.cliente_id }}, '{{ $('Montar Contexto Dinamico').first().json.text }}', NOW()) ON CONFLICT (session_id) DO UPDATE SET cliente_id = EXCLUDED.cliente_id, message = EXCLUDED.message, updated_at = NOW() RETURNING *;",
           "options": {}
         },
-        "id": "d0a29c54-dc18-433e-b8db-8c6c140e23cd",
+        "id": "fed7cb33-d537-4323-a2e4-f7322847f276",
         "name": "Registrar Interacao",
         "type": "n8n-nodes-base.postgres",
         "position": [
-          4464,
-          960
+          -2512,
+          -448
         ],
         "typeVersion": 2.5,
         "credentials": {
@@ -2480,12 +2477,12 @@
         "parameters": {
           "jsCode": "const filtroData = $('Filtro + Extrair').first().json;\n\nreturn [{ json: {\n  instancia: filtroData.instance || '',\n  session_id: `upvia_${filtroData.telefone}`,\n  remoteJid: filtroData.remoteJid,\n  telefone: filtroData.telefone || '',\n  pushName: filtroData.pushName || '',\n  fromMe: filtroData.fromMe || false,\n  text: filtroData.text || '',\n  messageId: filtroData.messageId || '',\n  telefone_proprietario: '555391437079',\n  nome_proprietario: 'Jean',\n  nome_atendente_ia: 'Bia',\n  evo_api_url: 'https://evo.upviaagentes.com',\n  evo_api_key: '3gl0eq56t0ahsh3m5lx7ruv8i764qcvd',\n  instancia_evo: 'upvia-comercial'\n} }];"
         },
-        "id": "217ff3f4-cc36-4c6f-b3c0-332e783800b5",
+        "id": "ca16e887-cbe4-418d-b7bc-8fa844f0ead5",
         "name": "Montar Contexto Dinamico",
         "type": "n8n-nodes-base.code",
         "position": [
-          3856,
-          896
+          -3120,
+          -512
         ],
         "typeVersion": 2
       },
@@ -2497,12 +2494,12 @@
           "expire": true,
           "ttl": 4
         },
-        "id": "d103dacf-37f6-41de-97fc-db282658f30c",
+        "id": "d165d822-2869-425a-8d80-de40adc56618",
         "name": "Redis SET Debounce",
         "type": "n8n-nodes-base.redis",
         "position": [
-          2880,
-          912
+          -4096,
+          -496
         ],
         "typeVersion": 1,
         "credentials": {
@@ -2516,12 +2513,12 @@
         "parameters": {
           "amount": 4
         },
-        "id": "66356f19-9f6a-4367-a3a9-f8fe96c18ce3",
+        "id": "ee466735-9e63-4914-9d4d-a703cf2aa4e1",
         "name": "Wait 4s",
         "type": "n8n-nodes-base.wait",
         "position": [
-          3104,
-          912
+          -3872,
+          -496
         ],
         "typeVersion": 1.1,
         "webhookId": "deb-wait-4s"
@@ -2532,12 +2529,12 @@
           "key": "={{ 'debounce_' + $('Filtro + Extrair').first().json.instance + '_' + $('Filtro + Extrair').first().json.remoteJid }}",
           "options": {}
         },
-        "id": "038e7020-63c2-4602-b5f0-4c10810440f1",
+        "id": "bd1d40c9-6c7a-4ddb-993a-42945275065e",
         "name": "Redis GET Debounce",
         "type": "n8n-nodes-base.redis",
         "position": [
-          3328,
-          912
+          -3648,
+          -496
         ],
         "typeVersion": 1,
         "credentials": {
@@ -2572,12 +2569,12 @@
           },
           "options": {}
         },
-        "id": "e400586d-26c3-4638-aff2-64e76b76a890",
+        "id": "4cb808d2-8b0d-4463-bd5f-059d21fad3dd",
         "name": "IF Mensagem Mais Recente?",
         "type": "n8n-nodes-base.if",
         "position": [
-          3552,
-          912
+          -3424,
+          -496
         ],
         "typeVersion": 2.2
       },
@@ -2592,12 +2589,12 @@
             ]
           }
         },
-        "id": "94617194-57a9-46f7-be9d-646db235a4d0",
+        "id": "1ef487d1-acb2-4417-b972-ad535d2524bb",
         "name": "Prospeccao Trigger 09h",
         "type": "n8n-nodes-base.scheduleTrigger",
         "position": [
-          2464,
-          1952
+          -4512,
+          560
         ],
         "typeVersion": 1.2,
         "disabled": true
@@ -2606,12 +2603,12 @@
         "parameters": {
           "jsCode": "const nichos = [\n  \"salão de beleza Pelotas\",\n  \"clínica estética Pelotas\",\n  \"dentista Pelotas\",\n  \"manicure Pelotas\",\n  \"salão de beleza Rio Grande RS\",\n  \"clínica estética Porto Alegre\",\n  \"consultório odontológico Pelotas\"\n];\n\nconst dataMin = new Date();\ndataMin.setDate(dataMin.getDate() - 7);\nconst ad_delivery_date_min = dataMin.toISOString().split('T')[0];\n\nreturn nichos.map(nicho => ({ json: { nicho, ad_delivery_date_min } }));"
         },
-        "id": "35b782eb-ceff-46ef-bc3c-6eb0ecba38ad",
+        "id": "b82f052a-0e06-40f4-adfc-594c3399bed2",
         "name": "Montar Lista de Nichos",
         "type": "n8n-nodes-base.code",
         "position": [
-          2688,
-          1952
+          -4288,
+          560
         ],
         "typeVersion": 2
       },
@@ -2647,32 +2644,32 @@
           },
           "options": {}
         },
-        "id": "07821508-46d7-42c1-97f0-06d3041e341a",
+        "id": "6d828666-4ebb-4402-80bb-237349fb92b7",
         "name": "Buscar Meta Ad Library",
         "type": "n8n-nodes-base.httpRequest",
         "position": [
-          2912,
-          1952
+          -4064,
+          560
         ],
         "typeVersion": 4.2,
-        "onError": "continueRegularOutput",
         "credentials": {
           "httpQueryAuth": {
             "id": "MzG7cfBY3Ch1LEoD",
             "name": "Meta Ad Library - Prospeccao Pelotas"
           }
-        }
+        },
+        "onError": "continueRegularOutput"
       },
       {
         "parameters": {
           "jsCode": "const regex = /(5[1-9]|[1-9][1-9])9?[6-9]\\d{7}/;\nconst items = $input.all();\nconst resultados = [];\n\nfor (let i = 0; i < items.length; i++) {\n  const nicho = $('Montar Lista de Nichos').itemMatching(i).json.nicho;\n  const ads = items[i].json?.data || [];\n\n  for (const ad of ads) {\n    if (!ad.page_name || !ad.page_id) continue;\n\n    const texto = ad.ad_creative_body || '';\n    const digitos = texto.replace(/\\D/g, '');\n    const match = digitos.match(regex);\n\n    let telefone = '';\n    if (match) {\n      telefone = match[0].length <= 11 ? '55' + match[0] : match[0];\n    }\n\n    resultados.push({\n      json: {\n        page_name: ad.page_name,\n        page_id: ad.page_id,\n        nicho,\n        telefone,\n        texto_anuncio: texto.slice(0, 500),\n        data_captacao: new Date().toISOString()\n      }\n    });\n  }\n}\n\nreturn resultados;"
         },
-        "id": "7ca3a0ea-ad0b-452e-8165-720663f54859",
+        "id": "6f2cc297-d768-4433-a513-3715191119d2",
         "name": "Processar e Filtrar Leads",
         "type": "n8n-nodes-base.code",
         "position": [
-          3136,
-          1952
+          -3840,
+          560
         ],
         "typeVersion": 2
       },
@@ -2682,12 +2679,12 @@
           "query": "INSERT INTO upvia_prospeccao (page_name, page_id, nicho, telefone, texto_anuncio, status, data_captacao, instancia)\nVALUES (\n  '{{ $json.page_name.replace(/'/g, \"''\") }}',\n  '{{ $json.page_id }}',\n  '{{ $json.nicho.replace(/'/g, \"''\") }}',\n  '{{ $json.telefone }}',\n  '{{ $json.texto_anuncio.replace(/'/g, \"''\") }}',\n  'novo',\n  '{{ $json.data_captacao }}',\n  'upvia-comercial'\n)\nON CONFLICT (page_id) DO NOTHING\nRETURNING *;",
           "options": {}
         },
-        "id": "6eb20bd6-399b-4463-9877-dab9eeb7f8f9",
+        "id": "d8de53cd-f30a-4f7d-b208-6daa665ccf55",
         "name": "Salvar Lead Dedupe",
         "type": "n8n-nodes-base.postgres",
         "position": [
-          3360,
-          1952
+          -3616,
+          560
         ],
         "typeVersion": 2.5,
         "credentials": {
@@ -2722,40 +2719,38 @@
           },
           "options": {}
         },
-        "id": "06540633-054a-4849-840e-32098859e95f",
+        "id": "4349f7f3-a837-4aee-9e14-a542eb93cb4f",
         "name": "Tem Telefone?",
         "type": "n8n-nodes-base.if",
         "position": [
-          3584,
-          1952
+          -3392,
+          560
         ],
         "typeVersion": 2.2
       },
       {
         "parameters": {
-          "batchSize": 1,
           "options": {}
         },
-        "id": "de6457a5-3caf-4030-868f-b141a88d4289",
+        "id": "9418cb52-2265-455e-b9f6-f4636d3486f0",
         "name": "Loop Envio Prospeccao",
         "type": "n8n-nodes-base.splitInBatches",
         "position": [
-          3808,
-          1952
+          -3168,
+          560
         ],
         "typeVersion": 3
       },
       {
         "parameters": {
-          "amount": 30,
-          "unit": "seconds"
+          "amount": 30
         },
-        "id": "748e24a1-1f97-4ea0-a5f6-66d86b512b32",
+        "id": "ae823a5f-3df2-4ef9-a0ef-8c70752ac4c5",
         "name": "Aguardar 30s",
         "type": "n8n-nodes-base.wait",
         "position": [
-          4032,
-          1850
+          -2944,
+          448
         ],
         "typeVersion": 1.1,
         "webhookId": "35624065-d7fc-4863-b0a8-61bc995b315b"
@@ -2771,21 +2766,21 @@
           "jsonBody": "={{ JSON.stringify({ number: $json.telefone, text: \"Olá! Vi que o *\" + $json.page_name + \"* está anunciando no Facebook. 👋\\n\\nSou a Bia, da UpVia Agentes. Ajudamos negócios como o seu a nunca perder um cliente por falta de atendimento no WhatsApp.\\n\\nNossa atendente IA responde 24h, agenda automaticamente e ainda manda lembretes para os clientes. ✨\\n\\nQuer testar *7 dias grátis*, sem compromisso?\\n\\nSó me dizer que explico como funciona! 😊\" }) }}",
           "options": {}
         },
-        "id": "22596ec4-dd76-4ff4-8aa9-98a1edfd83a6",
+        "id": "0fe98330-9c80-40b4-aed3-ac0f76e9bbe8",
         "name": "Enviar WhatsApp Bia",
         "type": "n8n-nodes-base.httpRequest",
         "position": [
-          4256,
-          1850
+          -2720,
+          448
         ],
         "typeVersion": 4.2,
-        "onError": "continueRegularOutput",
         "credentials": {
           "httpHeaderAuth": {
             "id": "WqUVLvaCGrtpqLOl",
             "name": "Evolution API - apikey global"
           }
-        }
+        },
+        "onError": "continueRegularOutput"
       },
       {
         "parameters": {
@@ -2793,12 +2788,12 @@
           "query": "UPDATE upvia_prospeccao SET status = 'abordado', data_abordagem = NOW() WHERE page_id = '{{ $json.page_id }}';",
           "options": {}
         },
-        "id": "552a4078-66f9-4d55-b071-59958f778906",
+        "id": "ea6a7991-0654-4ddb-a101-f7aa4793edec",
         "name": "Atualizar Status Abordado",
         "type": "n8n-nodes-base.postgres",
         "position": [
-          4480,
-          1850
+          -2496,
+          448
         ],
         "typeVersion": 2.5,
         "credentials": {
@@ -2896,11 +2891,6 @@
               "index": 0
             }
           ]
-        ]
-      },
-      "Resposta ao Cliente": {
-        "main": [
-          []
         ]
       },
       "Pediu Humano?": {
@@ -3002,7 +2992,7 @@
           ]
         ]
       },
-      "Check Inativos Di?rio": {
+      "Check Inativos Diario": {
         "main": [
           [
             {
@@ -3017,25 +3007,25 @@
         "main": [
           [
             {
-              "node": "Preparar Recupera??o",
+              "node": "Preparar Recuperacao",
               "type": "main",
               "index": 0
             }
           ]
         ]
       },
-      "Preparar Recupera??o": {
+      "Preparar Recuperacao": {
         "main": [
           [
             {
-              "node": "Loop Recupera??o",
+              "node": "Loop Recuperacao",
               "type": "main",
               "index": 0
             }
           ]
         ]
       },
-      "Loop Recupera??o": {
+      "Loop Recuperacao": {
         "main": [
           [
             {
@@ -3050,14 +3040,14 @@
         "main": [
           [
             {
-              "node": "Enviar Recupera??o",
+              "node": "Enviar Recuperacao",
               "type": "main",
               "index": 0
             }
           ]
         ]
       },
-      "Enviar Recupera??o": {
+      "Enviar Recuperacao": {
         "main": [
           [
             {
@@ -3072,84 +3062,84 @@
         "main": [
           [
             {
-              "node": "Loop Recupera??o",
+              "node": "Loop Recuperacao",
               "type": "main",
               "index": 0
             }
           ]
         ]
       },
-      "Balan?o Mensal - Trigger": {
+      "Balanco Mensal - Trigger": {
         "main": [
           [
             {
-              "node": "Buscar Clientes Ativos Balan?o",
+              "node": "Buscar Clientes Ativos Balanco",
               "type": "main",
               "index": 0
             }
           ]
         ]
       },
-      "Buscar Clientes Ativos Balan?o": {
+      "Buscar Clientes Ativos Balanco": {
         "main": [
           [
             {
-              "node": "Loop Clientes Balan?o",
+              "node": "Loop Clientes Balanco",
               "type": "main",
               "index": 0
             }
           ]
         ]
       },
-      "Loop Clientes Balan?o": {
+      "Loop Clientes Balanco": {
         "main": [
           [
             {
-              "node": "Buscar Intera??es do M?s",
+              "node": "Buscar Interacoes do Mes",
               "type": "main",
               "index": 0
             }
           ]
         ]
       },
-      "Buscar Intera??es do M?s": {
+      "Buscar Interacoes do Mes": {
         "main": [
           [
             {
-              "node": "Montar Relat?rio Balan?o",
+              "node": "Montar Relatorio Balanco",
               "type": "main",
               "index": 0
             }
           ]
         ]
       },
-      "Montar Relat?rio Balan?o": {
+      "Montar Relatorio Balanco": {
         "main": [
           [
             {
-              "node": "Salvar Balan?o Mensal",
+              "node": "Salvar Balanco Mensal",
               "type": "main",
               "index": 0
             }
           ]
         ]
       },
-      "Salvar Balan?o Mensal": {
+      "Salvar Balanco Mensal": {
         "main": [
           [
             {
-              "node": "Enviar Balan?o WhatsApp",
+              "node": "Enviar Balanco WhatsApp",
               "type": "main",
               "index": 0
             }
           ]
         ]
       },
-      "Enviar Balan?o WhatsApp": {
+      "Enviar Balanco WhatsApp": {
         "main": [
           [
             {
-              "node": "Loop Clientes Balan?o",
+              "node": "Loop Clientes Balanco",
               "type": "main",
               "index": 0
             }
@@ -3285,8 +3275,7 @@
               "type": "main",
               "index": 0
             }
-          ],
-          []
+          ]
         ]
       },
       "Loop Envio Prospeccao": {
@@ -3297,8 +3286,7 @@
               "type": "main",
               "index": 0
             }
-          ],
-          []
+          ]
         ]
       },
       "Aguardar 30s": {
@@ -3341,18 +3329,18 @@
     "autosaved": false,
     "workflowPublishHistory": [
       {
-        "createdAt": "2026-06-10T20:34:29.453Z",
-        "id": 476,
+        "createdAt": "2026-06-10T21:56:03.151Z",
+        "id": 480,
         "workflowId": "D7J9eVxwj1i43rgh",
-        "versionId": "83d53253-c40a-4994-a86e-daad62399c64",
+        "versionId": "38032d4e-6640-43f3-9d70-ad1888e6b4a2",
         "event": "activated",
         "userId": "63b6bda0-d1aa-4abc-beaa-0fbb599f2288"
       },
       {
-        "createdAt": "2026-06-10T20:34:29.423Z",
-        "id": 475,
+        "createdAt": "2026-06-10T21:56:03.102Z",
+        "id": 479,
         "workflowId": "D7J9eVxwj1i43rgh",
-        "versionId": "83d53253-c40a-4994-a86e-daad62399c64",
+        "versionId": "38032d4e-6640-43f3-9d70-ad1888e6b4a2",
         "event": "deactivated",
         "userId": "63b6bda0-d1aa-4abc-beaa-0fbb599f2288"
       }
