@@ -1,0 +1,3605 @@
+{
+  "updatedAt": "2026-06-03T19:34:32.766Z",
+  "createdAt": "2026-05-29T23:15:23.769Z",
+  "id": "Jkt0vu99AsQnEs6a",
+  "name": "VendedorIA SaaS - Unhabella",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "vendedor-ia",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "cd2e903a-774a-4581-87f1-c97c37eaf26c",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        13008,
+        2672
+      ],
+      "typeVersion": 2,
+      "webhookId": "vendedor-ia-saas"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json;\nconst body = raw.body || raw;\n\nconst evento = (body?.event || '').toLowerCase();\nconst fromMe = body?.data?.key?.fromMe ?? false;\nconst remoteJid = body?.data?.key?.remoteJid || '';\nconst messageId = body?.data?.key?.id || '';\nconst instance = body?.instance || body?.instanceName || '';\n\nconst msg = body?.data?.message || {};\nconst text = msg.conversation || msg.extendedTextMessage?.text || '';\nconst hasContent = !!(text || msg.audioMessage || msg.imageMessage);\nconst pushName = body?.data?.pushName || '';\n\nconst isMessage = evento.includes('messages');\nconst isGroup = remoteJid.endsWith('@g.us');\n\nif (!isMessage || isGroup || !hasContent || (fromMe && !text.trim().startsWith('#'))) {\n  return [];\n}\n\nreturn [{\n  json: {\n    instance: String(instance),\n    remoteJid,\n    telefone: remoteJid.replace(/@s\\.whatsapp\\.net$/, ''),\n    text,\n    pushName,\n    fromMe,\n    evento,\n    messageId,\n    body\n  }\n}];"
+      },
+      "id": "adefa15e-b078-415f-97d5-14973a6f54de",
+      "name": "Filtro + Extrair",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        13232,
+        2672
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Montar Contexto Dinamico').first().json.text || '' }}",
+        "options": {
+          "systemMessage": "Você é a Bela, atendente de vendas da Unhabella. Seu foco é vender películas, joias e adesivos 3D. Você deve ser humana, simpática, objetiva e persuasiva. \n\n[DIRETRIZES DE COMPORTAMENTO]\n- Seja natural. Respostas curtas. Sem \"linguagem corporativa\".\n- Nunca use: \"Excelente escolha\", \"Perfeito\", \"Que maravilha\", \"Amei\".\n- Use no máximo 1 emoji por mensagem.\n- Não repita o nome da cliente.\n- Se perguntarem sobre temas fora da loja (política, etc), responda apenas: \"Desculpe, ajudo apenas com produtos da Unhabella. Posso te mostrar nossas opções?\"\n\n[MÉTODO DE VENDA]\n1. Ouça a necessidade -> 2. Venda o benefício -> 3. Mostre o produto -> 4. Informe preço -> 5. Conduza ao fechamento.\n- Sempre ofereça Kits se a cliente demonstrar interesse em quantidade/revenda.\n- Não dê desconto automático. Até 10% só se o pedido for > R$ 200,00 e essencial para fechar.\n\n[REGRA DE OURO: ENVIO DE IMAGENS]\n- JAMAIS envie links do Google Drive para a cliente.\n- Ao identificar o produto solicitado, você deve acionar a função de download/envio de imagem através do sistema.\n- Acompanhe o envio da foto com uma frase de venda: \"Dê uma olhada nessa opção, é uma das que mais sai por aqui.\"\n- Se tiver dúvida sobre qual imagem enviar, priorize os itens mais vendidos do catálogo.\n\n[LOGÍSTICA E PAGAMENTO]\n- Sempre peça o CEP para cálculo do frete antes de finalizar.\n- Pagamento: PIX ou Cartão (Antecipado).\n- Pedido mínimo: R$ 35,00.\n- Frete Pelotas/Capão do Leão: R$ 5,00 (Grátis > R$ 50).\n- Frete Sul/Sudeste: R$ 15,00 | Demais: R$ 20,00 (Grátis > R$ 80).\n- Prazo: 6 a 12 dias úteis.\n\n[TRANSFERÊNCIA HUMANA]\n- Envie para a Elisa apenas para: negociação de grandes volumes, comprovante, link de pagamento ou pedido de atendimento humano. \n- Mensagem: \"Vou encaminhar seu atendimento para a Elisa, que dará continuidade ao seu pedido 😊\"\n\n[CONTEXTO E MEMÓRIA]\n- Você tem acesso às últimas 10 mensagens da conversa. Utilize esse histórico para não ser repetitiva e manter o contexto da negociação.\n- Baseie suas respostas nas informações cadastradas no catálogo fornecido pelo sistema.\n-"
+        }
+      },
+      "id": "5e0f3d6e-8ca5-4392-8313-f84899d4ab21",
+      "name": "Vendedor IA",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        14944,
+        2656
+      ],
+      "typeVersion": 1.7
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "4adf8433-965a-4c62-b192-15b8ca939f7a",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "position": [
+        14864,
+        2848
+      ],
+      "typeVersion": 1.3,
+      "credentials": {
+        "openAiApi": {
+          "id": "sjemA3sd4BGEaIHJ",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Montar Contexto Dinamico').first().json.session_id }}",
+        "contextWindowLength": 12
+      },
+      "id": "5567c381-e81b-4c0d-8e87-c932c4676716",
+      "name": "Postgres Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "position": [
+        15040,
+        2848
+      ],
+      "typeVersion": 1.1,
+      "credentials": {
+        "postgres": {
+          "id": "Dym0Y2qw1VYqERST",
+          "name": "Postgres account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "h1",
+              "leftValue": "={{ $('Montar Contexto Dinamico').first().json.text }}",
+              "rightValue": "atendente",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "h2",
+              "leftValue": "={{ $('Montar Contexto Dinamico').first().json.text }}",
+              "rightValue": "humano",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "h3",
+              "leftValue": "={{ $('Montar Contexto Dinamico').first().json.text }}",
+              "rightValue": "pessoa real",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "h4",
+              "leftValue": "={{ $('Montar Contexto Dinamico').first().json.text }}",
+              "rightValue": "quero falar com",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "929d37e9-8004-4695-b0f1-451bc5a2f791",
+      "name": "Pediu Humano?",
+      "type": "n8n-nodes-base.filter",
+      "position": [
+        15728,
+        2384
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Montar Contexto Dinamico').first().json.evo_api_url }}/message/sendText/{{ $('Montar Contexto Dinamico').first().json.instancia_evo }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $('Montar Contexto Dinamico').first().json.evo_api_key }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.remoteJid }}\",\n  \"text\": \"Claro! Vou chamar {{ $('Montar Contexto Dinamico').first().json.nome_proprietario }} pra te atender. Um momento! ??\"\n}",
+        "options": {}
+      },
+      "id": "f5948a65-fb01-4cba-9388-b0b54a067fd3",
+      "name": "Avisar Cliente Humano",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        15952,
+        2384
+      ],
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Montar Contexto Dinamico').first().json.evo_api_url }}/message/sendText/{{ $('Montar Contexto Dinamico').first().json.instancia_evo }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $('Montar Contexto Dinamico').first().json.evo_api_key }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.telefone_proprietario }}\",\n  \"text\": \"🚨 ATENDIMENTO HUMANO\\n\\nCliente {{ $('Montar Contexto Dinamico').first().json.pushName }} ({{ $('Montar Contexto Dinamico').first().json.telefone }}) pediu atendente humano.\\n\\nÚltima msg: {{ $('Montar Contexto Dinamico').first().json.text }}\"\n}",
+        "options": {}
+      },
+      "id": "7859e22d-7351-4db4-8f0d-a4812febaa41",
+      "name": "Notificar Dono",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        16176,
+        2384
+      ],
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "pix1",
+              "leftValue": "={{ ($json.output || '').toLowerCase() }}",
+              "rightValue": "chave",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "pix2",
+              "leftValue": "={{ ($json.output || '').toLowerCase() }}",
+              "rightValue": "comprovante",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "pix3",
+              "leftValue": "={{ ($json.output || '').toLowerCase() }}",
+              "rightValue": "pix",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "2845d460-0507-494a-aacb-c89fed8ad9cb",
+      "name": "Mencionou Pagamento",
+      "type": "n8n-nodes-base.filter",
+      "position": [
+        15744,
+        2144
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Montar Contexto Dinamico').first().json.evo_api_url }}/message/sendText/{{ $('Montar Contexto Dinamico').first().json.instancia_evo }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $('Montar Contexto Dinamico').first().json.evo_api_key }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.telefone_proprietario }}\",\n  \"text\": \"💰 PAGAMENTO EM ANDAMENTO\\n\\nCliente: {{ $('Montar Contexto Dinamico').first().json.pushName }}\\nTelefone: {{ $('Montar Contexto Dinamico').first().json.telefone }}\\nInstância: {{ $('Montar Contexto Dinamico').first().json.instancia_evo }}\\n\\nA IA enviou dados de pagamento ou o cliente mencionou Pix/comprovante. Fique atento pra confirmar o recebimento e combinar a entrega! 📦\"\n}",
+        "options": {}
+      },
+      "id": "361268a2-2a62-416e-9e0b-fcf7a5169045",
+      "name": "Notificar Dono Pagamento",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        15968,
+        2144
+      ],
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const f = $('Filtro + Extrair').first().json;\nreturn [{ json: { instancia: f.instance || 'unhabella', session_id: 'unhabella_' + (f.telefone || ''), remoteJid: f.remoteJid || '', telefone: f.telefone || '', pushName: f.pushName || '', fromMe: f.fromMe || false, text: f.text || '', messageId: f.messageId || '', nome_empresa: 'Unhabella Peliculas', nome_proprietario: 'Elisa', telefone_proprietario: '555391437079', nome_atendente_ia: 'Bela', evo_api_url: 'https://evo.upviaagentes.com', evo_api_key: '3gl0eq56t0ahsh3m5lx7ruv8i764qcvd', instancia_evo: 'unhabella' } }];"
+      },
+      "id": "ccbf80f6-ddd4-4264-8b72-89caa3fb7dff",
+      "name": "Montar Contexto Dinamico",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        14416,
+        2656
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "={{ 'debounce_' + $json.instance + '_' + $json.remoteJid }}",
+        "value": "={{ $json.messageId }}",
+        "expire": true,
+        "ttl": 4
+      },
+      "id": "897b5d38-1019-4487-a387-d3736f310686",
+      "name": "Redis SET Debounce",
+      "type": "n8n-nodes-base.redis",
+      "position": [
+        13472,
+        2672
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "redis": {
+          "id": "5K2NbkySCax4MAWq",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 4
+      },
+      "id": "30e39cc5-4572-493b-8677-2dcc1c0ab8df",
+      "name": "Wait 4s",
+      "type": "n8n-nodes-base.wait",
+      "position": [
+        13696,
+        2672
+      ],
+      "typeVersion": 1.1,
+      "webhookId": "deb-wait-4s"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "key": "={{ 'debounce_' + $('Filtro + Extrair').first().json.instance + '_' + $('Filtro + Extrair').first().json.remoteJid }}",
+        "options": {}
+      },
+      "id": "c2d7a9e9-22a1-4ce2-9f53-b38f1378c12c",
+      "name": "Redis GET Debounce",
+      "type": "n8n-nodes-base.redis",
+      "position": [
+        13920,
+        2672
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "redis": {
+          "id": "5K2NbkySCax4MAWq",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "deb-check-1",
+              "leftValue": "={{ $json.value }}",
+              "rightValue": "=",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "60f1b50c-9aed-4af9-a7cf-b328aa8f5a9a",
+      "name": "IF Mensagem Mais Recente?",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        14144,
+        2672
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Montar Contexto Dinamico').first().json.evo_api_url }}/message/sendText/{{ $('Montar Contexto Dinamico').first().json.instancia_evo }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $('Montar Contexto Dinamico').first().json.evo_api_key }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.telefone_proprietario }}@s.whatsapp.net\",\n  \"text\": \"Ola {{ $('Montar Contexto Dinamico').first().json.nome_proprietario }}! O cliente {{ $('Montar Contexto Dinamico').first().json.pushName }} ({{ $('Montar Contexto Dinamico').first().json.telefone }}) enviou um comprovante de pagamento. Acesse o WhatsApp para confirmar!\"\n}",
+        "options": {}
+      },
+      "id": "1ab125df-36d9-4485-b7c0-b3fcc3c21720",
+      "name": "Notificar Dono Comprovante1",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        16192,
+        2144
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "drv1",
+              "leftValue": "={{ $('Vendedor IA').first().json.output || '' }}",
+              "rightValue": "drive.google.com/drive/folders/",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-drive-lnk",
+      "name": "IF Contem Link Drive?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        15648,
+        2656
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const texto = $('Vendedor IA').first().json.output || '';\nconst match = texto.match(/drive\\.google\\.com\\/drive\\/folders\\/([a-zA-Z0-9_-]+)/);\nconst folderId = match ? match[1] : '';\nconst cat = {\n  '1VFPtj62RnZEymFnu40BKxPTYG7vL0u7p': 'Artesanal Luxo 15 pares',\n  '1A9r9fWed1ZWuC7sMQQgDPkRYdldn6bXC': 'Artesanal 5 pares',\n  '1200bA34Qcu3mV2Bcp8nfSrMNXHnSFHpT': 'Kits atacado/revenda',\n  '1ExfLDKoYYoMvwaLfbx_qmGLM6-S3NxGN': 'Joias de Unha',\n  '1bXs-MYZBWLXqtt-QywggAifgnQdMJ4w0': '3D Cartelas 30 pares'\n};\nif (!folderId) return [];\nreturn [{ json: { folder_id: folderId, categoria: cat[folderId] || 'Catalogo Unhabella' } }];"
+      },
+      "id": "code-extr-folder",
+      "name": "Code: Extrair Folder ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        15888,
+        2640
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/drive/v3/files",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ '\"' + $json.folder_id + '\"' + ' in parents and mimeType contains \"image/\" and trashed = false' }}"
+            },
+            {
+              "name": "fields",
+              "value": "files(id,name,mimeType)"
+            },
+            {
+              "name": "pageSize",
+              "value": "50"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http-list-drive",
+      "name": "HTTP: Listar Fotos Drive",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        16128,
+        2640
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "r3sysG7EBAp9qEfd",
+          "name": "Google Drive account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const resp = $input.first().json;\nconst files = resp.files || [];\nconst cat = $('Code: Extrair Folder ID').first().json.categoria || 'Catálogo Unhabella';\n\nconst imagens = files.filter(function(f){ \n  return f.mimeType && f.mimeType.startsWith('image/'); \n});\n\nif (imagens.length === 0) return [];\n\nreturn imagens.map(function(f){\n  var nome = (f.name || '').replace(/\\.[^.]+$/, '');\n  return { json: { \n    file_id: f.id, \n    file_name: f.name, \n    mime_type: f.mimeType || 'image/jpeg',\n    url: 'https://drive.google.com/uc?export=download&id=' + f.id,\n    caption: cat + ' — ' + nome \n  }};\n});"
+      },
+      "id": "code-prep-urls",
+      "name": "Code: Preparar URLs Fotos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        16368,
+        2640
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "batchSize": 10,
+        "options": {}
+      },
+      "id": "split-fotos-5",
+      "name": "Split Fotos (10 por vez)",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        16608,
+        2640
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://www.googleapis.com/drive/v3/files/{{ $json.file_id }}?alt=media",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "http-dl-foto-drive",
+      "name": "HTTP: Download Foto Drive",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        16848,
+        2640
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "r3sysG7EBAp9qEfd",
+          "name": "Google Drive account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const texto = $json.output || $json.text || '';\nconst textoLimpo = texto\n  .replace(/https?:\\/\\/drive\\.google\\.com\\/drive\\/folders\\/[a-zA-Z0-9_-]+/g, '')\n  .replace(/[ \\t]{2,}/g, ' ')\n  .replace(/\\n{3,}/g, '\\n\\n')\n  .trim();\nreturn [{ json: { output: textoLimpo, output_original: texto } }];"
+      },
+      "id": "code-limpar-texto-ia",
+      "name": "Code: Limpar Texto IA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        14672,
+        2656
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Montar Contexto Dinamico').first().json.evo_api_url }}/message/sendText/{{ $('Montar Contexto Dinamico').first().json.instancia_evo }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $('Montar Contexto Dinamico').first().json.evo_api_key }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.remoteJid }}\",\\n  \"text\": {{ JSON.stringify($json.output || $json.text || '') }}\\n}",
+        "options": {}
+      },
+      "id": "resposta-ao-cliente-unhabella",
+      "name": "Resposta ao Cliente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        15296,
+        2656
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://evo.upviaagentes.com/message/sendMedia/unhabella",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $('Montar Contexto Dinamico').first().json.evo_api_key }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.remoteJid }}\",\n  \"mediatype\": \"image\",\n  \"mimetype\": \"image/jpeg\",\n  \"media\": \"{{ $json.url }}\",\n  \"caption\": \"{{ $json.caption }}\"\n}",
+        "options": {}
+      },
+      "id": "b789e228-f732-46ad-9a8f-c3b475a67a13",
+      "name": "Enviar Foto ao Cliente",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        17072,
+        2640
+      ],
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 */1 * * *"
+            }
+          ]
+        }
+      },
+      "id": "3d851276-e749-4ff0-95f5-92045f8193e0",
+      "name": "Check Carrinho 1h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        12992,
+        3040
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT ca.telefone, ca.session_id, ca.instancia, cs.nome_atendente_ia, cs.nome_empresa, cs.evo_api_url, cs.evo_api_key, cs.link_vendas, cs.tipo_produto FROM carrinho_abandonado ca JOIN clientes_sistema cs ON ca.instancia = cs.instancia_whatsapp WHERE ca.status = 'ativo' AND ca.updated_at < NOW() - INTERVAL '1 hour' AND ca.updated_at > NOW() - INTERVAL '2 hours' AND ca.followup_1h = false LIMIT 20;",
+        "options": {}
+      },
+      "id": "cb00cf2c-f4ff-4423-85f5-3c495f29fcb2",
+      "name": "Buscar Carrinhos 1h",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        13216,
+        3040
+      ],
+      "typeVersion": 2.5,
+      "credentials": {
+        "postgres": {
+          "id": "Dym0Y2qw1VYqERST",
+          "name": "Postgres account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const tel = item.json.telefone;\n  const nome = item.json.nome_atendente_ia || 'Assistente';\n  const empresa = item.json.nome_empresa || 'nossa loja';\n  \n  const msgs = [\n    `Oi! Aqui é ${nome} da ${empresa} 😊 Vi que você estava dando uma olhada nos nossos produtos... Ficou alguma dúvida? Posso te ajudar a escolher o melhor pra você!`,\n    `Ei, tudo bem? ${nome} da ${empresa} aqui! Notei que você se interessou pelos nossos produtos. Quer que eu te ajude com algo? Estou aqui pra isso! 💅`,\n    `Oi! Passando rapidinho pra saber se posso te ajudar com alguma coisa. Vi que estava olhando nossos produtos e adoraria te mostrar como eles podem te ajudar! ✨`\n  ];\n  \n  const msg = msgs[Math.floor(Math.random() * msgs.length)];\n  const delay = 10000 + Math.floor(Math.random() * 50000);\n  \n  results.push({ json: { ...item.json, mensagem_followup: msg, delayMs: delay } });\n}\n\nreturn results;"
+      },
+      "id": "5e1f26ae-015a-4a97-9e25-000823857f25",
+      "name": "Preparar Followup Carrinho",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        13440,
+        3040
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "dbbed5d5-d3dd-48c1-be92-c963673f73f4",
+      "name": "Loop Carrinho",
+      "type": "n8n-nodes-base.splitInBatches",
+      "position": [
+        13664,
+        3040
+      ],
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE carrinho_abandonado SET followup_1h = true WHERE telefone = '{{ $json.telefone }}' AND instancia = '{{ $json.instancia }}';",
+        "options": {}
+      },
+      "id": "fc63a615-af12-4c68-ae5a-365723da8545",
+      "name": "Marcar Followup 1h",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        14336,
+        3040
+      ],
+      "typeVersion": 2.5,
+      "credentials": {
+        "postgres": {
+          "id": "Dym0Y2qw1VYqERST",
+          "name": "Postgres account 3"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT dc.telefone, dc.session_id, cs.nome_atendente_ia, cs.nome_empresa, cs.instancia_whatsapp, cs.evo_api_url, cs.evo_api_key, cs.link_vendas FROM dados_cliente dc JOIN clientes_sistema cs ON dc.session_id LIKE cs.instancia_whatsapp || '%' WHERE dc.updated_at < NOW() - INTERVAL '7 days' AND dc.updated_at > NOW() - INTERVAL '30 days' AND (dc.recuperado = false OR dc.recuperado IS NULL) LIMIT 15;",
+        "options": {}
+      },
+      "id": "dd23ba46-048d-4242-aa5a-897f03043995",
+      "name": "Buscar Inativos",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        13216,
+        3328
+      ],
+      "typeVersion": 2.5,
+      "credentials": {
+        "postgres": {
+          "id": "Dym0Y2qw1VYqERST",
+          "name": "Postgres account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": "={{ $json.delayMs / 1000 }}"
+      },
+      "id": "dd92c300-2267-4ac5-aa1b-e10161d6a47c",
+      "name": "Anti-Spam Delay Recover",
+      "type": "n8n-nodes-base.wait",
+      "position": [
+        13888,
+        3264
+      ],
+      "typeVersion": 1.1,
+      "webhookId": "recover-delay-wh"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE dados_cliente SET recuperado = true WHERE telefone = '{{ $json.telefone }}' AND session_id LIKE '{{ $json.instancia_whatsapp }}_%';",
+        "options": {}
+      },
+      "id": "a973da75-2e3f-44f5-8006-b740a09c78d7",
+      "name": "Marcar Recuperado",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        14336,
+        3328
+      ],
+      "typeVersion": 2.5,
+      "credentials": {
+        "postgres": {
+          "id": "Dym0Y2qw1VYqERST",
+          "name": "Postgres account 3"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "CREATE TABLE IF NOT EXISTS carrinho_abandonado (\n  id bigserial PRIMARY KEY,\n  telefone text NOT NULL,\n  session_id text,\n  instancia text NOT NULL,\n  ultima_msg text,\n  status text DEFAULT 'ativo',\n  followup_1h boolean DEFAULT false,\n  followup_6h boolean DEFAULT false,\n  followup_24h boolean DEFAULT false,\n  created_at timestamptz DEFAULT NOW(),\n  updated_at timestamptz DEFAULT NOW(),\n  UNIQUE(telefone, instancia)\n);\n\nALTER TABLE dados_cliente ADD COLUMN IF NOT EXISTS cliente_id bigint REFERENCES clientes_sistema(id);\nALTER TABLE dados_cliente ADD COLUMN IF NOT EXISTS recuperado boolean DEFAULT false;\nALTER TABLE dados_cliente ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT NOW();\nCREATE UNIQUE INDEX IF NOT EXISTS dados_cliente_session_id_idx ON dados_cliente(session_id);\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS catalogo_sheets_id text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS link_vendas text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS tipo_produto text DEFAULT 'fisico';\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS chave_pix text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS tipo_chave_pix text DEFAULT 'cpf';\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS nome_titular_pix text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS banco_pix text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS aceita_cartao boolean DEFAULT false;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS link_checkout text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS msg_pos_venda text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS google_sheet_id text;\n\nCREATE TABLE IF NOT EXISTS prospectos_ativos (\n  id bigserial PRIMARY KEY,\n  page_name text,\n  page_id text UNIQUE,\n  ad_id text,\n  mensagem_gerada text,\n  status text DEFAULT 'pendente',\n  prospectado_em timestamptz DEFAULT NOW()\n);\n\nCREATE TABLE IF NOT EXISTS balanco_mensal (\n  id bigserial PRIMARY KEY,\n  cliente_id bigint REFERENCES clientes_sistema(id),\n  instancia text,\n  mes_referencia text,\n  total_mensagens integer DEFAULT 0,\n  total_contatos integer DEFAULT 0,\n  carrinhos_ativos integer DEFAULT 0,\n  relatorio_texto text,\n  gerado_em timestamptz DEFAULT NOW(),\n  UNIQUE(cliente_id, mes_referencia)\n);",
+        "options": {}
+      },
+      "id": "aa237a10-18c9-4544-a95d-d567b5183830",
+      "name": "Setup Tabelas (executar 1x)",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        12992,
+        3552
+      ],
+      "typeVersion": 2.5,
+      "credentials": {
+        "postgres": {
+          "id": "Dym0Y2qw1VYqERST",
+          "name": "Postgres account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://graph.facebook.com/v19.0/ads_archive",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "access_token",
+              "value": "EAAX1xUhF9MoBRtEEnAedpZBBKHq63qTRemZCw578GfvGlzfSKg9P9sD6IZBZCKtx9hTfmnz9dNlBNZBdgCKZAzjYhlxIqq5x6mLvzJQ56j8EbnJHGo7ZCZCjUg1ceYf0KnMWnQ9xGZAzJkvVfQwegdZCzxsKrBNxclP8ZAVoPyCZAv9hKfxBsbOVznM0TRTo3UzDiZCrbL7TtCPCp"
+            },
+            {
+              "name": "ad_reached_countries",
+              "value": "[\"BR\"]"
+            },
+            {
+              "name": "ad_active_status",
+              "value": "ACTIVE"
+            },
+            {
+              "name": "search_terms",
+              "value": "produto digital infoproduto"
+            },
+            {
+              "name": "fields",
+              "value": "id,ad_creative_body,page_name,page_id"
+            },
+            {
+              "name": "limit",
+              "value": "20"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "18e360e4-26dd-4a0a-a4a8-df9750e49b86",
+      "name": "Buscar Meta Ad Library",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        13216,
+        3776
+      ],
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const ads = $input.all();\nconst resultados = [];\n\nfor (const item of ads) {\n  const data = item.json?.data || [];\n  for (const ad of data) {\n    if (!ad.page_name || !ad.page_id) continue;\n    resultados.push({\n      json: {\n        page_name: ad.page_name,\n        page_id: ad.page_id,\n        ad_body: (ad.ad_creative_body || '').slice(0, 300),\n        ad_id: ad.id,\n        prospectado_em: new Date().toISOString()\n      }\n    });\n  }\n}\n\nreturn resultados.slice(0, 10);"
+      },
+      "id": "88575c57-7dfb-4db7-b843-bae01ff52f72",
+      "name": "Filtrar Prospectos",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        13440,
+        3776
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO prospectos_ativos (page_name, page_id, ad_id, mensagem_gerada, status, prospectado_em) VALUES ('{{ $('Filtrar Prospectos').item.json.page_name }}', '{{ $('Filtrar Prospectos').item.json.page_id }}', '{{ $('Filtrar Prospectos').item.json.ad_id }}', '{{ ($json.choices?.[0]?.message?.content || '').replace(/'/g, \"''\") }}', 'pendente', NOW()) ON CONFLICT (page_id) DO UPDATE SET mensagem_gerada = EXCLUDED.mensagem_gerada, prospectado_em = NOW();",
+        "options": {}
+      },
+      "id": "96cab6c2-e792-41c7-a335-6dd13eacbe27",
+      "name": "Salvar Prospecto",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        13888,
+        3776
+      ],
+      "typeVersion": 2.5,
+      "credentials": {
+        "postgres": {
+          "id": "Dym0Y2qw1VYqERST",
+          "name": "Postgres account 3"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 10 * * *"
+            }
+          ]
+        }
+      },
+      "id": "909a1d99-c503-4dce-8b48-7c7dabbdd121",
+      "name": "Check Inativos Diario",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        12992,
+        3328
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const nome = (item.json.nome || 'amigo(a)').split(' ')[0];\n  const empresa = item.json.nome_empresa || 'nossa loja';\n  \n  const msgs = [\n    `Oi ${nome}! 👋 Faz um tempinho que não te vejo por aqui na ${empresa}. Temos novidades incríveis que acho que você vai amar! Quer dar uma olhada?`,\n    `${nome}, tudo bem? Aqui é da ${empresa}! Separei umas novidades especiais que combinam com você. Posso te mostrar? 😊`,\n    `Oi ${nome}! Passando pra te contar que temos condições especiais essa semana na ${empresa}. Bora aproveitar? 🎉`,\n    `${nome}, sentimos sua falta! 💔 A ${empresa} tem ofertas imperdíveis agora. Posso te ajudar a encontrar algo especial?`\n  ];\n  \n  const msg = msgs[Math.floor(Math.random() * msgs.length)];\n  const delay = 30000 + Math.floor(Math.random() * 270000);\n  \n  results.push({ json: { ...item.json, mensagem_recover: msg, delayMs: delay } });\n}\n\nfor (let i = results.length - 1; i > 0; i--) {\n  const j = Math.floor(Math.random() * (i + 1));\n  [results[i], results[j]] = [results[j], results[i]];\n}\n\nreturn results;"
+      },
+      "id": "dd9d35ca-9582-4567-8278-d5ee38da723f",
+      "name": "Preparar Recuperação",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        13440,
+        3328
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "16f0a130-ae51-41cb-b6b5-95cc31801f70",
+      "name": "Loop Recuperação",
+      "type": "n8n-nodes-base.splitInBatches",
+      "position": [
+        13664,
+        3328
+      ],
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.evo_api_url }}/message/sendText/{{ $json.instancia_whatsapp }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $json.evo_api_key }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $json.telefone }}\",\n  \"text\": {{ JSON.stringify($json.mensagem_recover) }}\n}",
+        "options": {}
+      },
+      "id": "f01d6734-b926-49bb-a939-c17f25ee70b5",
+      "name": "Enviar Recuperação",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        14112,
+        3264
+      ],
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $vars.OPENAI_API_KEY || '' }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-4.1-mini\",\n  \"messages\": [\n    {\"role\": \"system\", \"content\": \"Você é especialista em prospecção ativa B2B. Crie uma mensagem de abordagem no WhatsApp para o negócio informado. Seja direto, personalizado e propositivo. Máximo 3 frases. Sem markdown.\"},\n    {\"role\": \"user\", \"content\": \"Negócio: {{ $json.page_name }}. Anúncio: {{ $json.ad_body }}. Crie uma mensagem apresentando nossa solução de agente de vendas com IA para WhatsApp.\"}\n  ],\n  \"max_tokens\": 200\n}",
+        "options": {}
+      },
+      "id": "1998e019-f73b-472a-b2ab-d6451795a29b",
+      "name": "Gerar Mensagem Prospeção",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        13664,
+        3776
+      ],
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://evo.upviaagentes.com/message/sendText/upvia-comercial",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "1523A5EE-9C3D-4284-9694-1089F38E6760"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $('Filtrar Prospectos').first().json.page_id }}\",\n  \"text\": {{ JSON.stringify($('Gerar Mensagem Prospeção').first().json.choices?.[0]?.message?.content || 'Ol?! Somos especialistas em automa??o de vendas com IA para WhatsApp. Posso te apresentar nossa solu??o?') }}\n}",
+        "options": {}
+      },
+      "id": "fcddfddf-94ac-4f4b-9200-2985bcc65b31",
+      "name": "Enviar Prospecção WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        14112,
+        3776
+      ],
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * 1-5"
+            }
+          ]
+        }
+      },
+      "id": "b05c0218-76de-4d0a-9e65-ef7ff950c072",
+      "name": "Prospecção Ativa - Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        12992,
+        3776
+      ],
+      "typeVersion": 1.2,
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 1 * *"
+            }
+          ]
+        }
+      },
+      "id": "12c69409-cbe3-4247-8a3d-0f8cd6e017c8",
+      "name": "Balanço Mensal - Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        12992,
+        4080
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id as cliente_id, nome_empresa, instancia_whatsapp, evo_api_url, evo_api_key, telefone as telefone_proprietario FROM clientes_sistema WHERE status = 'ativo';",
+        "options": {}
+      },
+      "id": "796ac359-2b0b-4b96-af32-4ccd8238a2ad",
+      "name": "Buscar Clientes Ativos Balanço",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        13216,
+        4080
+      ],
+      "typeVersion": 2.5,
+      "credentials": {
+        "postgres": {
+          "id": "Dym0Y2qw1VYqERST",
+          "name": "Postgres account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "7b61b8e0-4bf2-4505-a7e8-084e08de5183",
+      "name": "Loop Clientes Balanço",
+      "type": "n8n-nodes-base.splitInBatches",
+      "position": [
+        13440,
+        4080
+      ],
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT COUNT(*) as total_mensagens, COUNT(DISTINCT telefone) as total_contatos, COUNT(CASE WHEN status = 'ativo' THEN 1 END) as carrinhos_ativos FROM carrinho_abandonado WHERE instancia = '{{ $json.instancia_whatsapp }}' AND created_at >= DATE_TRUNC('month', NOW() - INTERVAL '1 month') AND created_at < DATE_TRUNC('month', NOW());",
+        "options": {}
+      },
+      "id": "da31b870-aa37-459b-920b-9b14f4e3e982",
+      "name": "Buscar Interações do Mês",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        13664,
+        4000
+      ],
+      "typeVersion": 2.5,
+      "credentials": {
+        "postgres": {
+          "id": "Dym0Y2qw1VYqERST",
+          "name": "Postgres account 3"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const cliente = $('Loop Clientes Balanço').first().json;\nconst stats = $input.first().json;\n\nconst mesAnterior = new Date();\nmesAnterior.setMonth(mesAnterior.getMonth() - 1);\nconst nomeMes = mesAnterior.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });\n\nconst relatorio = `Balanço ${nomeMes} - ${cliente.nome_empresa}\\n\\nAtendimentos realizados: ${stats.total_mensagens || 0}\\nContatos únicos: ${stats.total_contatos || 0}\\nCarrinhos abertos: ${stats.carrinhos_ativos || 0}\\n\\nSeu agente de vendas trabalhou o mês inteiro pra você! Qualquer dúvida estou aqui. 😊`;\n\nreturn [{ json: {\n  cliente_id: cliente.cliente_id,\n  instancia: cliente.instancia_whatsapp,\n  evo_api_url: cliente.evo_api_url || 'https://evo.upviaagentes.com',\n  evo_api_key: cliente.evo_api_key,\n  telefone_proprietario: cliente.telefone_proprietario,\n  nome_empresa: cliente.nome_empresa,\n  relatorio,\n  total_mensagens: Number(stats.total_mensagens) || 0,\n  total_contatos: Number(stats.total_contatos) || 0,\n  carrinhos_ativos: Number(stats.carrinhos_ativos) || 0,\n  mes_referencia: nomeMes\n} }];"
+      },
+      "id": "5b377f8c-4b0b-4729-a691-b4fb6f70dad3",
+      "name": "Montar Relatório Balanço",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        13888,
+        4000
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO balanco_mensal (cliente_id, instancia, mes_referencia, total_mensagens, total_contatos, carrinhos_ativos, relatorio_texto, gerado_em) VALUES ('{{ $json.cliente_id }}', '{{ $json.instancia }}', '{{ $json.mes_referencia }}', {{ $json.total_mensagens }}, {{ $json.total_contatos }}, {{ $json.carrinhos_ativos }}, '{{ $json.relatorio.replace(/'/g, \"''\") }}', NOW()) ON CONFLICT (cliente_id, mes_referencia) DO UPDATE SET total_mensagens = EXCLUDED.total_mensagens, total_contatos = EXCLUDED.total_contatos, gerado_em = NOW();",
+        "options": {}
+      },
+      "id": "68f616f6-d1df-454a-823e-fa207b871fba",
+      "name": "Salvar Balanço Mensal",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        14112,
+        4000
+      ],
+      "typeVersion": 2.5,
+      "credentials": {
+        "postgres": {
+          "id": "Dym0Y2qw1VYqERST",
+          "name": "Postgres account 3"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.evo_api_url }}/message/sendText/{{ $json.instancia }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $json.evo_api_key }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $json.telefone_proprietario }}\",\n  \"text\": {{ JSON.stringify($json.relatorio) }}\n}",
+        "options": {}
+      },
+      "id": "dcd9a298-f65a-4fe2-807c-e6c570908581",
+      "name": "Enviar Balanço WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        14336,
+        4080
+      ],
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "amount": "={{ $json.delayMs / 1000 }}"
+      },
+      "id": "fdb497a1-f9cd-4e80-8c54-8ed5c2a1e857",
+      "name": "Anti-Spam Delay Carrinho",
+      "type": "n8n-nodes-base.wait",
+      "position": [
+        13888,
+        3040
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.evo_api_url }}/message/sendText/{{ $json.instancia }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $json.evo_api_key }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $json.telefone }}\",\n  \"text\": {{ JSON.stringify($json.mensagem_followup) }}\n}",
+        "options": {}
+      },
+      "id": "d7c6c243-3fff-4669-9c69-c4de3bdad186",
+      "name": "Enviar Followup Carrinho",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        14112,
+        3040
+      ],
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Filtro + Extrair",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtro + Extrair": {
+      "main": [
+        [
+          {
+            "node": "Redis SET Debounce",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis SET Debounce": {
+      "main": [
+        [
+          {
+            "node": "Wait 4s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 4s": {
+      "main": [
+        [
+          {
+            "node": "Redis GET Debounce",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis GET Debounce": {
+      "main": [
+        [
+          {
+            "node": "IF Mensagem Mais Recente?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Mensagem Mais Recente?": {
+      "main": [
+        [
+          {
+            "node": "Montar Contexto Dinamico",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Montar Contexto Dinamico": {
+      "main": [
+        [
+          {
+            "node": "Code: Limpar Texto IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Vendedor IA",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Vendedor IA",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Limpar Texto IA": {
+      "main": [
+        [
+          {
+            "node": "Vendedor IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vendedor IA": {
+      "main": [
+        [
+          {
+            "node": "Resposta ao Cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resposta ao Cliente": {
+      "main": [
+        [
+          {
+            "node": "Pediu Humano?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Mencionou Pagamento",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "IF Contem Link Drive?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pediu Humano?": {
+      "main": [
+        [
+          {
+            "node": "Avisar Cliente Humano",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Avisar Cliente Humano": {
+      "main": [
+        [
+          {
+            "node": "Notificar Dono",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mencionou Pagamento": {
+      "main": [
+        [
+          {
+            "node": "Notificar Dono Pagamento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notificar Dono Pagamento": {
+      "main": [
+        [
+          {
+            "node": "Notificar Dono Comprovante1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Contem Link Drive?": {
+      "main": [
+        [
+          {
+            "node": "Code: Extrair Folder ID",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Code: Extrair Folder ID": {
+      "main": [
+        [
+          {
+            "node": "HTTP: Listar Fotos Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: Listar Fotos Drive": {
+      "main": [
+        [
+          {
+            "node": "Code: Preparar URLs Fotos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Preparar URLs Fotos": {
+      "main": [
+        [
+          {
+            "node": "Split Fotos (10 por vez)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Fotos (10 por vez)": {
+      "main": [
+        [],
+        [
+          {
+            "node": "HTTP: Download Foto Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: Download Foto Drive": {
+      "main": [
+        [
+          {
+            "node": "Enviar Foto ao Cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Foto ao Cliente": {
+      "main": [
+        [
+          {
+            "node": "Split Fotos (10 por vez)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Carrinho 1h": {
+      "main": [
+        [
+          {
+            "node": "Buscar Carrinhos 1h",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Carrinhos 1h": {
+      "main": [
+        [
+          {
+            "node": "Preparar Followup Carrinho",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Followup Carrinho": {
+      "main": [
+        [
+          {
+            "node": "Loop Carrinho",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Marcar Followup 1h": {
+      "main": [
+        [
+          {
+            "node": "Loop Carrinho",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Inativos": {
+      "main": [
+        [
+          {
+            "node": "Preparar Recuperação",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anti-Spam Delay Recover": {
+      "main": [
+        [
+          {
+            "node": "Enviar Recuperação",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Marcar Recuperado": {
+      "main": [
+        [
+          {
+            "node": "Loop Recuperação",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Meta Ad Library": {
+      "main": [
+        [
+          {
+            "node": "Filtrar Prospectos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar Prospectos": {
+      "main": [
+        [
+          {
+            "node": "Gerar Mensagem Prospeção",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Salvar Prospecto": {
+      "main": [
+        [
+          {
+            "node": "Enviar Prospecção WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Inativos Diario": {
+      "main": [
+        [
+          {
+            "node": "Buscar Inativos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Recuperação": {
+      "main": [
+        [
+          {
+            "node": "Loop Recuperação",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Recuperação": {
+      "main": [
+        [
+          {
+            "node": "Anti-Spam Delay Recover",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Recuperação": {
+      "main": [
+        [
+          {
+            "node": "Marcar Recuperado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gerar Mensagem Prospeção": {
+      "main": [
+        [
+          {
+            "node": "Salvar Prospecto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prospecção Ativa - Trigger": {
+      "main": [
+        [
+          {
+            "node": "Buscar Meta Ad Library",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Balanço Mensal - Trigger": {
+      "main": [
+        [
+          {
+            "node": "Buscar Clientes Ativos Balanço",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Clientes Ativos Balanço": {
+      "main": [
+        [
+          {
+            "node": "Loop Clientes Balanço",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Clientes Balanço": {
+      "main": [
+        [
+          {
+            "node": "Buscar Interações do Mês",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Interações do Mês": {
+      "main": [
+        [
+          {
+            "node": "Montar Relatório Balanço",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Relatório Balanço": {
+      "main": [
+        [
+          {
+            "node": "Salvar Balanço Mensal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Salvar Balanço Mensal": {
+      "main": [
+        [
+          {
+            "node": "Enviar Balanço WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Balanço WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Loop Clientes Balanço",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Carrinho": {
+      "main": [
+        [
+          {
+            "node": "Anti-Spam Delay Carrinho",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Anti-Spam Delay Carrinho": {
+      "main": [
+        [
+          {
+            "node": "Enviar Followup Carrinho",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Followup Carrinho": {
+      "main": [
+        [
+          {
+            "node": "Marcar Followup 1h",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "staticData": {
+    "node:Check Carrinho 1h": {
+      "recurrenceRules": []
+    },
+    "node:Check Inativos Di?rio": {
+      "recurrenceRules": []
+    },
+    "node:Prospec??o Ativa - Trigger": {
+      "recurrenceRules": []
+    },
+    "node:Balan?o Mensal - Trigger": {
+      "recurrenceRules": []
+    },
+    "Redis SET Debounce": {
+      "main": [
+        [
+          {
+            "node": "Wait 4s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 4s": {
+      "main": [
+        [
+          {
+            "node": "Redis GET Debounce",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis GET Debounce": {
+      "main": [
+        [
+          {
+            "node": "IF Mensagem Mais Recente?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Mensagem Mais Recente?": {
+      "main": [
+        [
+          {
+            "node": "Carregar Dados Negocio",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "node:Check Inativos Diario": {
+      "recurrenceRules": []
+    },
+    "node:Prospeccao Ativa - Trigger": {
+      "recurrenceRules": []
+    },
+    "node:Balanco Mensal - Trigger": {
+      "recurrenceRules": []
+    },
+    "node:Prospecção Ativa - Trigger": {
+      "recurrenceRules": []
+    },
+    "node:Balanço Mensal - Trigger": {
+      "recurrenceRules": []
+    }
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "1cfe70bb-5ee2-4a50-9fa6-a9a04c67f0b9",
+  "activeVersionId": "1cfe70bb-5ee2-4a50-9fa6-a9a04c67f0b9",
+  "versionCounter": 423,
+  "triggerCount": 5,
+  "shared": [
+    {
+      "updatedAt": "2026-05-29T23:15:23.771Z",
+      "createdAt": "2026-05-29T23:15:23.771Z",
+      "role": "workflow:owner",
+      "workflowId": "Jkt0vu99AsQnEs6a",
+      "projectId": "wvVR5bxXzTLlLBhJ",
+      "project": {
+        "updatedAt": "2026-05-23T22:50:01.526Z",
+        "createdAt": "2026-05-23T22:44:43.627Z",
+        "id": "wvVR5bxXzTLlLBhJ",
+        "name": "Elisa Silveira de Moura Andrade <upvianegocios@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "63b6bda0-d1aa-4abc-beaa-0fbb599f2288"
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-06-03T19:34:56.000Z",
+    "createdAt": "2026-06-03T19:34:32.773Z",
+    "versionId": "1cfe70bb-5ee2-4a50-9fa6-a9a04c67f0b9",
+    "workflowId": "Jkt0vu99AsQnEs6a",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "vendedor-ia",
+          "options": {
+            "rawBody": true
+          }
+        },
+        "id": "cd2e903a-774a-4581-87f1-c97c37eaf26c",
+        "name": "Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "position": [
+          13008,
+          2672
+        ],
+        "typeVersion": 2,
+        "webhookId": "vendedor-ia-saas"
+      },
+      {
+        "parameters": {
+          "jsCode": "const raw = $input.first().json;\nconst body = raw.body || raw;\n\nconst evento = (body?.event || '').toLowerCase();\nconst fromMe = body?.data?.key?.fromMe ?? false;\nconst remoteJid = body?.data?.key?.remoteJid || '';\nconst messageId = body?.data?.key?.id || '';\nconst instance = body?.instance || body?.instanceName || '';\n\nconst msg = body?.data?.message || {};\nconst text = msg.conversation || msg.extendedTextMessage?.text || '';\nconst hasContent = !!(text || msg.audioMessage || msg.imageMessage);\nconst pushName = body?.data?.pushName || '';\n\nconst isMessage = evento.includes('messages');\nconst isGroup = remoteJid.endsWith('@g.us');\n\nif (!isMessage || isGroup || !hasContent || (fromMe && !text.trim().startsWith('#'))) {\n  return [];\n}\n\nreturn [{\n  json: {\n    instance: String(instance),\n    remoteJid,\n    telefone: remoteJid.replace(/@s\\.whatsapp\\.net$/, ''),\n    text,\n    pushName,\n    fromMe,\n    evento,\n    messageId,\n    body\n  }\n}];"
+        },
+        "id": "adefa15e-b078-415f-97d5-14973a6f54de",
+        "name": "Filtro + Extrair",
+        "type": "n8n-nodes-base.code",
+        "position": [
+          13232,
+          2672
+        ],
+        "typeVersion": 2
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "={{ $('Montar Contexto Dinamico').first().json.text || '' }}",
+          "options": {
+            "systemMessage": "Você é a Bela, atendente de vendas da Unhabella. Seu foco é vender películas, joias e adesivos 3D. Você deve ser humana, simpática, objetiva e persuasiva. \n\n[DIRETRIZES DE COMPORTAMENTO]\n- Seja natural. Respostas curtas. Sem \"linguagem corporativa\".\n- Nunca use: \"Excelente escolha\", \"Perfeito\", \"Que maravilha\", \"Amei\".\n- Use no máximo 1 emoji por mensagem.\n- Não repita o nome da cliente.\n- Se perguntarem sobre temas fora da loja (política, etc), responda apenas: \"Desculpe, ajudo apenas com produtos da Unhabella. Posso te mostrar nossas opções?\"\n\n[MÉTODO DE VENDA]\n1. Ouça a necessidade -> 2. Venda o benefício -> 3. Mostre o produto -> 4. Informe preço -> 5. Conduza ao fechamento.\n- Sempre ofereça Kits se a cliente demonstrar interesse em quantidade/revenda.\n- Não dê desconto automático. Até 10% só se o pedido for > R$ 200,00 e essencial para fechar.\n\n[REGRA DE OURO: ENVIO DE IMAGENS]\n- JAMAIS envie links do Google Drive para a cliente.\n- Ao identificar o produto solicitado, você deve acionar a função de download/envio de imagem através do sistema.\n- Acompanhe o envio da foto com uma frase de venda: \"Dê uma olhada nessa opção, é uma das que mais sai por aqui.\"\n- Se tiver dúvida sobre qual imagem enviar, priorize os itens mais vendidos do catálogo.\n\n[LOGÍSTICA E PAGAMENTO]\n- Sempre peça o CEP para cálculo do frete antes de finalizar.\n- Pagamento: PIX ou Cartão (Antecipado).\n- Pedido mínimo: R$ 35,00.\n- Frete Pelotas/Capão do Leão: R$ 5,00 (Grátis > R$ 50).\n- Frete Sul/Sudeste: R$ 15,00 | Demais: R$ 20,00 (Grátis > R$ 80).\n- Prazo: 6 a 12 dias úteis.\n\n[TRANSFERÊNCIA HUMANA]\n- Envie para a Elisa apenas para: negociação de grandes volumes, comprovante, link de pagamento ou pedido de atendimento humano. \n- Mensagem: \"Vou encaminhar seu atendimento para a Elisa, que dará continuidade ao seu pedido 😊\"\n\n[CONTEXTO E MEMÓRIA]\n- Você tem acesso às últimas 10 mensagens da conversa. Utilize esse histórico para não ser repetitiva e manter o contexto da negociação.\n- Baseie suas respostas nas informações cadastradas no catálogo fornecido pelo sistema.\n-"
+          }
+        },
+        "id": "5e0f3d6e-8ca5-4392-8313-f84899d4ab21",
+        "name": "Vendedor IA",
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "position": [
+          14944,
+          2656
+        ],
+        "typeVersion": 1.7
+      },
+      {
+        "parameters": {
+          "model": {
+            "__rl": true,
+            "value": "gpt-4.1",
+            "mode": "list",
+            "cachedResultName": "gpt-4.1"
+          },
+          "builtInTools": {},
+          "options": {}
+        },
+        "id": "4adf8433-965a-4c62-b192-15b8ca939f7a",
+        "name": "OpenAI Chat Model",
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+        "position": [
+          14864,
+          2848
+        ],
+        "typeVersion": 1.3,
+        "credentials": {
+          "openAiApi": {
+            "id": "sjemA3sd4BGEaIHJ",
+            "name": "OpenAI account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "sessionIdType": "customKey",
+          "sessionKey": "={{ $('Montar Contexto Dinamico').first().json.session_id }}",
+          "contextWindowLength": 12
+        },
+        "id": "5567c381-e81b-4c0d-8e87-c932c4676716",
+        "name": "Postgres Memory",
+        "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+        "position": [
+          15040,
+          2848
+        ],
+        "typeVersion": 1.1,
+        "credentials": {
+          "postgres": {
+            "id": "Dym0Y2qw1VYqERST",
+            "name": "Postgres account 3"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": false,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "h1",
+                "leftValue": "={{ $('Montar Contexto Dinamico').first().json.text }}",
+                "rightValue": "atendente",
+                "operator": {
+                  "type": "string",
+                  "operation": "contains"
+                }
+              },
+              {
+                "id": "h2",
+                "leftValue": "={{ $('Montar Contexto Dinamico').first().json.text }}",
+                "rightValue": "humano",
+                "operator": {
+                  "type": "string",
+                  "operation": "contains"
+                }
+              },
+              {
+                "id": "h3",
+                "leftValue": "={{ $('Montar Contexto Dinamico').first().json.text }}",
+                "rightValue": "pessoa real",
+                "operator": {
+                  "type": "string",
+                  "operation": "contains"
+                }
+              },
+              {
+                "id": "h4",
+                "leftValue": "={{ $('Montar Contexto Dinamico').first().json.text }}",
+                "rightValue": "quero falar com",
+                "operator": {
+                  "type": "string",
+                  "operation": "contains"
+                }
+              }
+            ],
+            "combinator": "or"
+          },
+          "options": {}
+        },
+        "id": "929d37e9-8004-4695-b0f1-451bc5a2f791",
+        "name": "Pediu Humano?",
+        "type": "n8n-nodes-base.filter",
+        "position": [
+          15728,
+          2384
+        ],
+        "typeVersion": 2.2
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "={{ $('Montar Contexto Dinamico').first().json.evo_api_url }}/message/sendText/{{ $('Montar Contexto Dinamico').first().json.instancia_evo }}",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "={{ $('Montar Contexto Dinamico').first().json.evo_api_key }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.remoteJid }}\",\n  \"text\": \"Claro! Vou chamar {{ $('Montar Contexto Dinamico').first().json.nome_proprietario }} pra te atender. Um momento! ??\"\n}",
+          "options": {}
+        },
+        "id": "f5948a65-fb01-4cba-9388-b0b54a067fd3",
+        "name": "Avisar Cliente Humano",
+        "type": "n8n-nodes-base.httpRequest",
+        "position": [
+          15952,
+          2384
+        ],
+        "typeVersion": 4.2,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "={{ $('Montar Contexto Dinamico').first().json.evo_api_url }}/message/sendText/{{ $('Montar Contexto Dinamico').first().json.instancia_evo }}",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "={{ $('Montar Contexto Dinamico').first().json.evo_api_key }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.telefone_proprietario }}\",\n  \"text\": \"?? ATENDIMENTO HUMANO\\n\\nCliente {{ $('Montar Contexto Dinamico').first().json.pushName }} ({{ $('Montar Contexto Dinamico').first().json.telefone }}) pediu atendente humano.\\n\\n?ltima msg: {{ $('Montar Contexto Dinamico').first().json.text }}\"\n}",
+          "options": {}
+        },
+        "id": "7859e22d-7351-4db4-8f0d-a4812febaa41",
+        "name": "Notificar Dono",
+        "type": "n8n-nodes-base.httpRequest",
+        "position": [
+          16176,
+          2384
+        ],
+        "typeVersion": 4.2,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": false,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "pix1",
+                "leftValue": "={{ ($json.output || '').toLowerCase() }}",
+                "rightValue": "chave",
+                "operator": {
+                  "type": "string",
+                  "operation": "contains"
+                }
+              },
+              {
+                "id": "pix2",
+                "leftValue": "={{ ($json.output || '').toLowerCase() }}",
+                "rightValue": "comprovante",
+                "operator": {
+                  "type": "string",
+                  "operation": "contains"
+                }
+              },
+              {
+                "id": "pix3",
+                "leftValue": "={{ ($json.output || '').toLowerCase() }}",
+                "rightValue": "pix",
+                "operator": {
+                  "type": "string",
+                  "operation": "contains"
+                }
+              }
+            ],
+            "combinator": "or"
+          },
+          "options": {}
+        },
+        "id": "2845d460-0507-494a-aacb-c89fed8ad9cb",
+        "name": "Mencionou Pagamento",
+        "type": "n8n-nodes-base.filter",
+        "position": [
+          15744,
+          2144
+        ],
+        "typeVersion": 2.2
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "={{ $('Montar Contexto Dinamico').first().json.evo_api_url }}/message/sendText/{{ $('Montar Contexto Dinamico').first().json.instancia_evo }}",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "={{ $('Montar Contexto Dinamico').first().json.evo_api_key }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.telefone_proprietario }}\",\n  \"text\": \"?? PAGAMENTO EM ANDAMENTO\\n\\nCliente: {{ $('Montar Contexto Dinamico').first().json.pushName }}\\nTelefone: {{ $('Montar Contexto Dinamico').first().json.telefone }}\\nInst?ncia: {{ $('Montar Contexto Dinamico').first().json.instancia_evo }}\\n\\nA IA enviou dados de pagamento ou o cliente mencionou Pix/comprovante. Fique atento pra confirmar o recebimento e combinar a entrega! ??\"\n}",
+          "options": {}
+        },
+        "id": "361268a2-2a62-416e-9e0b-fcf7a5169045",
+        "name": "Notificar Dono Pagamento",
+        "type": "n8n-nodes-base.httpRequest",
+        "position": [
+          15968,
+          2144
+        ],
+        "typeVersion": 4.2,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "const f = $('Filtro + Extrair').first().json;\nreturn [{ json: { instancia: f.instance || 'unhabella', session_id: 'unhabella_' + (f.telefone || ''), remoteJid: f.remoteJid || '', telefone: f.telefone || '', pushName: f.pushName || '', fromMe: f.fromMe || false, text: f.text || '', messageId: f.messageId || '', nome_empresa: 'Unhabella Peliculas', nome_proprietario: 'Elisa', telefone_proprietario: '555391437079', nome_atendente_ia: 'Bela', evo_api_url: 'https://evo.upviaagentes.com', evo_api_key: '3gl0eq56t0ahsh3m5lx7ruv8i764qcvd', instancia_evo: 'unhabella' } }];"
+        },
+        "id": "ccbf80f6-ddd4-4264-8b72-89caa3fb7dff",
+        "name": "Montar Contexto Dinamico",
+        "type": "n8n-nodes-base.code",
+        "position": [
+          14416,
+          2656
+        ],
+        "typeVersion": 2
+      },
+      {
+        "parameters": {
+          "operation": "set",
+          "key": "={{ 'debounce_' + $json.instance + '_' + $json.remoteJid }}",
+          "value": "={{ $json.messageId }}",
+          "expire": true,
+          "ttl": 4
+        },
+        "id": "897b5d38-1019-4487-a387-d3736f310686",
+        "name": "Redis SET Debounce",
+        "type": "n8n-nodes-base.redis",
+        "position": [
+          13472,
+          2672
+        ],
+        "typeVersion": 1,
+        "credentials": {
+          "redis": {
+            "id": "5K2NbkySCax4MAWq",
+            "name": "Redis account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "amount": 4
+        },
+        "id": "30e39cc5-4572-493b-8677-2dcc1c0ab8df",
+        "name": "Wait 4s",
+        "type": "n8n-nodes-base.wait",
+        "position": [
+          13696,
+          2672
+        ],
+        "typeVersion": 1.1,
+        "webhookId": "deb-wait-4s"
+      },
+      {
+        "parameters": {
+          "operation": "get",
+          "key": "={{ 'debounce_' + $('Filtro + Extrair').first().json.instance + '_' + $('Filtro + Extrair').first().json.remoteJid }}",
+          "options": {}
+        },
+        "id": "c2d7a9e9-22a1-4ce2-9f53-b38f1378c12c",
+        "name": "Redis GET Debounce",
+        "type": "n8n-nodes-base.redis",
+        "position": [
+          13920,
+          2672
+        ],
+        "typeVersion": 1,
+        "credentials": {
+          "redis": {
+            "id": "5K2NbkySCax4MAWq",
+            "name": "Redis account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "deb-check-1",
+                "leftValue": "={{ $json.value }}",
+                "rightValue": "=",
+                "operator": {
+                  "type": "string",
+                  "operation": "empty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "60f1b50c-9aed-4af9-a7cf-b328aa8f5a9a",
+        "name": "IF Mensagem Mais Recente?",
+        "type": "n8n-nodes-base.if",
+        "position": [
+          14144,
+          2672
+        ],
+        "typeVersion": 2.2
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "={{ $('Montar Contexto Dinamico').first().json.evo_api_url }}/message/sendText/{{ $('Montar Contexto Dinamico').first().json.instancia_evo }}",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "={{ $('Montar Contexto Dinamico').first().json.evo_api_key }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.telefone_proprietario }}@s.whatsapp.net\",\n  \"text\": \"Ola {{ $('Montar Contexto Dinamico').first().json.nome_proprietario }}! O cliente {{ $('Montar Contexto Dinamico').first().json.pushName }} ({{ $('Montar Contexto Dinamico').first().json.telefone }}) enviou um comprovante de pagamento. Acesse o WhatsApp para confirmar!\"\n}",
+          "options": {}
+        },
+        "id": "1ab125df-36d9-4485-b7c0-b3fcc3c21720",
+        "name": "Notificar Dono Comprovante1",
+        "type": "n8n-nodes-base.httpRequest",
+        "position": [
+          16192,
+          2144
+        ],
+        "typeVersion": 4.2
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": false,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "drv1",
+                "leftValue": "={{ $('Vendedor IA').first().json.output || '' }}",
+                "rightValue": "drive.google.com/drive/folders/",
+                "operator": {
+                  "type": "string",
+                  "operation": "contains"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "if-drive-lnk",
+        "name": "IF Contem Link Drive?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          15648,
+          2656
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const texto = $('Vendedor IA').first().json.output || '';\nconst match = texto.match(/drive\\.google\\.com\\/drive\\/folders\\/([a-zA-Z0-9_-]+)/);\nconst folderId = match ? match[1] : '';\nconst cat = {\n  '1VFPtj62RnZEymFnu40BKxPTYG7vL0u7p': 'Artesanal Luxo 15 pares',\n  '1A9r9fWed1ZWuC7sMQQgDPkRYdldn6bXC': 'Artesanal 5 pares',\n  '1200bA34Qcu3mV2Bcp8nfSrMNXHnSFHpT': 'Kits atacado/revenda',\n  '1ExfLDKoYYoMvwaLfbx_qmGLM6-S3NxGN': 'Joias de Unha',\n  '1bXs-MYZBWLXqtt-QywggAifgnQdMJ4w0': '3D Cartelas 30 pares'\n};\nif (!folderId) return [];\nreturn [{ json: { folder_id: folderId, categoria: cat[folderId] || 'Catalogo Unhabella' } }];"
+        },
+        "id": "code-extr-folder",
+        "name": "Code: Extrair Folder ID",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          15888,
+          2640
+        ]
+      },
+      {
+        "parameters": {
+          "url": "https://www.googleapis.com/drive/v3/files",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "googleDriveOAuth2Api",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "q",
+                "value": "={{ '\"' + $json.folder_id + '\"' + ' in parents and mimeType contains \"image/\" and trashed = false' }}"
+              },
+              {
+                "name": "fields",
+                "value": "files(id,name,mimeType)"
+              },
+              {
+                "name": "pageSize",
+                "value": "50"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "http-list-drive",
+        "name": "HTTP: Listar Fotos Drive",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          16128,
+          2640
+        ],
+        "credentials": {
+          "googleDriveOAuth2Api": {
+            "id": "r3sysG7EBAp9qEfd",
+            "name": "Google Drive account"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "const resp = $input.first().json;\nconst files = resp.files || [];\nconst cat = $('Code: Extrair Folder ID').first().json.categoria || 'Catálogo Unhabella';\n\nconst imagens = files.filter(function(f){ \n  return f.mimeType && f.mimeType.startsWith('image/'); \n});\n\nif (imagens.length === 0) return [];\n\nreturn imagens.map(function(f){\n  var nome = (f.name || '').replace(/\\.[^.]+$/, '');\n  return { json: { \n    file_id: f.id, \n    file_name: f.name, \n    mime_type: f.mimeType || 'image/jpeg',\n    url: 'https://drive.google.com/uc?export=download&id=' + f.id,\n    caption: cat + ' — ' + nome \n  }};\n});"
+        },
+        "id": "code-prep-urls",
+        "name": "Code: Preparar URLs Fotos",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          16368,
+          2640
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "batchSize": 10,
+          "options": {}
+        },
+        "id": "split-fotos-5",
+        "name": "Split Fotos (10 por vez)",
+        "type": "n8n-nodes-base.splitInBatches",
+        "typeVersion": 3,
+        "position": [
+          16608,
+          2640
+        ]
+      },
+      {
+        "parameters": {
+          "url": "=https://www.googleapis.com/drive/v3/files/{{ $json.file_id }}?alt=media",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "googleDriveOAuth2Api",
+          "options": {
+            "response": {
+              "response": {
+                "responseFormat": "file"
+              }
+            }
+          }
+        },
+        "id": "http-dl-foto-drive",
+        "name": "HTTP: Download Foto Drive",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          16848,
+          2640
+        ],
+        "credentials": {
+          "googleDriveOAuth2Api": {
+            "id": "r3sysG7EBAp9qEfd",
+            "name": "Google Drive account"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "const texto = $json.output || $json.text || '';\nconst textoLimpo = texto\n  .replace(/https?:\\/\\/drive\\.google\\.com\\/drive\\/folders\\/[a-zA-Z0-9_-]+/g, '')\n  .replace(/[ \\t]{2,}/g, ' ')\n  .replace(/\\n{3,}/g, '\\n\\n')\n  .trim();\nreturn [{ json: { output: textoLimpo, output_original: texto } }];"
+        },
+        "id": "code-limpar-texto-ia",
+        "name": "Code: Limpar Texto IA",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          14672,
+          2656
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "={{ $('Montar Contexto Dinamico').first().json.evo_api_url }}/message/sendText/{{ $('Montar Contexto Dinamico').first().json.instancia_evo }}",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "={{ $('Montar Contexto Dinamico').first().json.evo_api_key }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.remoteJid }}\",\\n  \"text\": {{ JSON.stringify($json.output || $json.text || '') }}\\n}",
+          "options": {}
+        },
+        "id": "resposta-ao-cliente-unhabella",
+        "name": "Resposta ao Cliente",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          15296,
+          2656
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "=https://evo.upviaagentes.com/message/sendMedia/unhabella",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "={{ $('Montar Contexto Dinamico').first().json.evo_api_key }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.remoteJid }}\",\n  \"mediatype\": \"image\",\n  \"mimetype\": \"image/jpeg\",\n  \"media\": \"{{ $json.url }}\",\n  \"caption\": \"{{ $json.caption }}\"\n}",
+          "options": {}
+        },
+        "id": "b789e228-f732-46ad-9a8f-c3b475a67a13",
+        "name": "Enviar Foto ao Cliente",
+        "type": "n8n-nodes-base.httpRequest",
+        "position": [
+          17072,
+          2640
+        ],
+        "typeVersion": 4.2,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "cronExpression",
+                "expression": "0 */1 * * *"
+              }
+            ]
+          }
+        },
+        "id": "3d851276-e749-4ff0-95f5-92045f8193e0",
+        "name": "Check Carrinho 1h",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "position": [
+          12992,
+          3040
+        ],
+        "typeVersion": 1.2
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "SELECT ca.telefone, ca.session_id, ca.instancia, cs.nome_atendente_ia, cs.nome_empresa, cs.evo_api_url, cs.evo_api_key, cs.link_vendas, cs.tipo_produto FROM carrinho_abandonado ca JOIN clientes_sistema cs ON ca.instancia = cs.instancia_whatsapp WHERE ca.status = 'ativo' AND ca.updated_at < NOW() - INTERVAL '1 hour' AND ca.updated_at > NOW() - INTERVAL '2 hours' AND ca.followup_1h = false LIMIT 20;",
+          "options": {}
+        },
+        "id": "cb00cf2c-f4ff-4423-85f5-3c495f29fcb2",
+        "name": "Buscar Carrinhos 1h",
+        "type": "n8n-nodes-base.postgres",
+        "position": [
+          13216,
+          3040
+        ],
+        "typeVersion": 2.5,
+        "credentials": {
+          "postgres": {
+            "id": "Dym0Y2qw1VYqERST",
+            "name": "Postgres account 3"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const tel = item.json.telefone;\n  const nome = item.json.nome_atendente_ia || 'Assistente';\n  const empresa = item.json.nome_empresa || 'nossa loja';\n  \n  const msgs = [\n    `Oi! Aqui ? ${nome} da ${empresa} ?? Vi que voc? estava dando uma olhada nos nossos produtos... Ficou alguma d?vida? Posso te ajudar a escolher o melhor pra voc?!`,\n    `Ei, tudo bem? ${nome} da ${empresa} aqui! Notei que voc? se interessou pelos nossos produtos. Quer que eu te ajude com algo? Estou aqui pra isso! ??`,\n    `Oi! Passando rapidinho pra saber se posso te ajudar com alguma coisa. Vi que estava olhando nossos produtos e adoraria te mostrar como eles podem te ajudar! ??`\n  ];\n  \n  const msg = msgs[Math.floor(Math.random() * msgs.length)];\n  const delay = 10000 + Math.floor(Math.random() * 50000);\n  \n  results.push({ json: { ...item.json, mensagem_followup: msg, delayMs: delay } });\n}\n\nreturn results;"
+        },
+        "id": "5e1f26ae-015a-4a97-9e25-000823857f25",
+        "name": "Preparar Followup Carrinho",
+        "type": "n8n-nodes-base.code",
+        "position": [
+          13440,
+          3040
+        ],
+        "typeVersion": 2
+      },
+      {
+        "parameters": {
+          "options": {}
+        },
+        "id": "dbbed5d5-d3dd-48c1-be92-c963673f73f4",
+        "name": "Loop Carrinho",
+        "type": "n8n-nodes-base.splitInBatches",
+        "position": [
+          13664,
+          3040
+        ],
+        "typeVersion": 3
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "UPDATE carrinho_abandonado SET followup_1h = true WHERE telefone = '{{ $json.telefone }}' AND instancia = '{{ $json.instancia }}';",
+          "options": {}
+        },
+        "id": "fc63a615-af12-4c68-ae5a-365723da8545",
+        "name": "Marcar Followup 1h",
+        "type": "n8n-nodes-base.postgres",
+        "position": [
+          14336,
+          3040
+        ],
+        "typeVersion": 2.5,
+        "credentials": {
+          "postgres": {
+            "id": "Dym0Y2qw1VYqERST",
+            "name": "Postgres account 3"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "SELECT dc.telefone, dc.session_id, cs.nome_atendente_ia, cs.nome_empresa, cs.instancia_whatsapp, cs.evo_api_url, cs.evo_api_key, cs.link_vendas FROM dados_cliente dc JOIN clientes_sistema cs ON dc.session_id LIKE cs.instancia_whatsapp || '%' WHERE dc.updated_at < NOW() - INTERVAL '7 days' AND dc.updated_at > NOW() - INTERVAL '30 days' AND (dc.recuperado = false OR dc.recuperado IS NULL) LIMIT 15;",
+          "options": {}
+        },
+        "id": "dd23ba46-048d-4242-aa5a-897f03043995",
+        "name": "Buscar Inativos",
+        "type": "n8n-nodes-base.postgres",
+        "position": [
+          13216,
+          3328
+        ],
+        "typeVersion": 2.5,
+        "credentials": {
+          "postgres": {
+            "id": "Dym0Y2qw1VYqERST",
+            "name": "Postgres account 3"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "amount": "={{ $json.delayMs / 1000 }}"
+        },
+        "id": "dd92c300-2267-4ac5-aa1b-e10161d6a47c",
+        "name": "Anti-Spam Delay Recover",
+        "type": "n8n-nodes-base.wait",
+        "position": [
+          13888,
+          3264
+        ],
+        "typeVersion": 1.1,
+        "webhookId": "recover-delay-wh"
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "UPDATE dados_cliente SET recuperado = true WHERE telefone = '{{ $json.telefone }}' AND session_id LIKE '{{ $json.instancia_whatsapp }}_%';",
+          "options": {}
+        },
+        "id": "a973da75-2e3f-44f5-8006-b740a09c78d7",
+        "name": "Marcar Recuperado",
+        "type": "n8n-nodes-base.postgres",
+        "position": [
+          14336,
+          3328
+        ],
+        "typeVersion": 2.5,
+        "credentials": {
+          "postgres": {
+            "id": "Dym0Y2qw1VYqERST",
+            "name": "Postgres account 3"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "CREATE TABLE IF NOT EXISTS carrinho_abandonado (\n  id bigserial PRIMARY KEY,\n  telefone text NOT NULL,\n  session_id text,\n  instancia text NOT NULL,\n  ultima_msg text,\n  status text DEFAULT 'ativo',\n  followup_1h boolean DEFAULT false,\n  followup_6h boolean DEFAULT false,\n  followup_24h boolean DEFAULT false,\n  created_at timestamptz DEFAULT NOW(),\n  updated_at timestamptz DEFAULT NOW(),\n  UNIQUE(telefone, instancia)\n);\n\nALTER TABLE dados_cliente ADD COLUMN IF NOT EXISTS cliente_id bigint REFERENCES clientes_sistema(id);\nALTER TABLE dados_cliente ADD COLUMN IF NOT EXISTS recuperado boolean DEFAULT false;\nALTER TABLE dados_cliente ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT NOW();\nCREATE UNIQUE INDEX IF NOT EXISTS dados_cliente_session_id_idx ON dados_cliente(session_id);\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS catalogo_sheets_id text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS link_vendas text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS tipo_produto text DEFAULT 'fisico';\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS chave_pix text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS tipo_chave_pix text DEFAULT 'cpf';\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS nome_titular_pix text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS banco_pix text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS aceita_cartao boolean DEFAULT false;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS link_checkout text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS msg_pos_venda text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS google_sheet_id text;",
+          "options": {}
+        },
+        "id": "aa237a10-18c9-4544-a95d-d567b5183830",
+        "name": "Setup Tabelas (executar 1x)",
+        "type": "n8n-nodes-base.postgres",
+        "position": [
+          12992,
+          3552
+        ],
+        "typeVersion": 2.5,
+        "credentials": {
+          "postgres": {
+            "id": "Dym0Y2qw1VYqERST",
+            "name": "Postgres account 3"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "url": "https://graph.facebook.com/v19.0/ads_archive",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "access_token",
+                "value": "EAAX1xUhF9MoBRtEEnAedpZBBKHq63qTRemZCw578GfvGlzfSKg9P9sD6IZBZCKtx9hTfmnz9dNlBNZBdgCKZAzjYhlxIqq5x6mLvzJQ56j8EbnJHGo7ZCZCjUg1ceYf0KnMWnQ9xGZAzJkvVfQwegdZCzxsKrBNxclP8ZAVoPyCZAv9hKfxBsbOVznM0TRTo3UzDiZCrbL7TtCPCp"
+              },
+              {
+                "name": "ad_reached_countries",
+                "value": "[\"BR\"]"
+              },
+              {
+                "name": "ad_active_status",
+                "value": "ACTIVE"
+              },
+              {
+                "name": "search_terms",
+                "value": "produto digital infoproduto"
+              },
+              {
+                "name": "fields",
+                "value": "id,ad_creative_body,page_name,page_id"
+              },
+              {
+                "name": "limit",
+                "value": "20"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "18e360e4-26dd-4a0a-a4a8-df9750e49b86",
+        "name": "Buscar Meta Ad Library",
+        "type": "n8n-nodes-base.httpRequest",
+        "position": [
+          13216,
+          3776
+        ],
+        "typeVersion": 4.2,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "const ads = $input.all();\nconst resultados = [];\n\nfor (const item of ads) {\n  const data = item.json?.data || [];\n  for (const ad of data) {\n    if (!ad.page_name || !ad.page_id) continue;\n    resultados.push({\n      json: {\n        page_name: ad.page_name,\n        page_id: ad.page_id,\n        ad_body: (ad.ad_creative_body || '').slice(0, 300),\n        ad_id: ad.id,\n        prospectado_em: new Date().toISOString()\n      }\n    });\n  }\n}\n\nreturn resultados.slice(0, 10);"
+        },
+        "id": "88575c57-7dfb-4db7-b843-bae01ff52f72",
+        "name": "Filtrar Prospectos",
+        "type": "n8n-nodes-base.code",
+        "position": [
+          13440,
+          3776
+        ],
+        "typeVersion": 2
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "INSERT INTO prospectos_ativos (page_name, page_id, ad_id, mensagem_gerada, status, prospectado_em) VALUES ('{{ $('Filtrar Prospectos').first().json.page_name }}', '{{ $('Filtrar Prospectos').first().json.page_id }}', '{{ $('Filtrar Prospectos').first().json.ad_id }}', '{{ ($json.choices?.[0]?.message?.content || '').replace(/'/g, \"''\") }}', 'pendente', NOW()) ON CONFLICT (page_id) DO UPDATE SET mensagem_gerada = EXCLUDED.mensagem_gerada, prospectado_em = NOW();",
+          "options": {}
+        },
+        "id": "96cab6c2-e792-41c7-a335-6dd13eacbe27",
+        "name": "Salvar Prospecto",
+        "type": "n8n-nodes-base.postgres",
+        "position": [
+          13888,
+          3776
+        ],
+        "typeVersion": 2.5,
+        "credentials": {
+          "postgres": {
+            "id": "Dym0Y2qw1VYqERST",
+            "name": "Postgres account 3"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "cronExpression",
+                "expression": "0 10 * * *"
+              }
+            ]
+          }
+        },
+        "id": "909a1d99-c503-4dce-8b48-7c7dabbdd121",
+        "name": "Check Inativos Diario",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "position": [
+          12992,
+          3328
+        ],
+        "typeVersion": 1.2
+      },
+      {
+        "parameters": {
+          "jsCode": "const items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const nome = (item.json.nome || 'amigo(a)').split(' ')[0];\n  const empresa = item.json.nome_empresa || 'nossa loja';\n  \n  const msgs = [\n    `Oi ${nome}! ?? Faz um tempinho que não te vejo por aqui na ${empresa}. Temos novidades incríveis que acho que você vai amar! Quer dar uma olhada?`,\n    `${nome}, tudo bem? Aqui é da ${empresa}! Separei umas novidades especiais que combinam com você. Posso te mostrar? ??`,\n    `Oi ${nome}! Passando pra te contar que temos condições especiais essa semana na ${empresa}. Bora aproveitar? ??`,\n    `${nome}, sentimos sua falta! ?? A ${empresa} tem ofertas imperd?veis agora. Posso te ajudar a encontrar algo especial?`\n  ];\n  \n  const msg = msgs[Math.floor(Math.random() * msgs.length)];\n  const delay = 30000 + Math.floor(Math.random() * 270000);\n  \n  results.push({ json: { ...item.json, mensagem_recover: msg, delayMs: delay } });\n}\n\nfor (let i = results.length - 1; i > 0; i--) {\n  const j = Math.floor(Math.random() * (i + 1));\n  [results[i], results[j]] = [results[j], results[i]];\n}\n\nreturn results;"
+        },
+        "id": "dd9d35ca-9582-4567-8278-d5ee38da723f",
+        "name": "Preparar Recuperação",
+        "type": "n8n-nodes-base.code",
+        "position": [
+          13440,
+          3328
+        ],
+        "typeVersion": 2
+      },
+      {
+        "parameters": {
+          "options": {}
+        },
+        "id": "16f0a130-ae51-41cb-b6b5-95cc31801f70",
+        "name": "Loop Recuperação",
+        "type": "n8n-nodes-base.splitInBatches",
+        "position": [
+          13664,
+          3328
+        ],
+        "typeVersion": 3
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "={{ $json.evo_api_url }}/message/sendText/{{ $json.instancia_whatsapp }}",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "={{ $json.evo_api_key }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"number\": \"{{ $json.telefone }}\",\n  \"text\": {{ JSON.stringify($json.mensagem_recover) }}\n}",
+          "options": {}
+        },
+        "id": "f01d6734-b926-49bb-a939-c17f25ee70b5",
+        "name": "Enviar Recuperação",
+        "type": "n8n-nodes-base.httpRequest",
+        "position": [
+          14112,
+          3264
+        ],
+        "typeVersion": 4.2,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.openai.com/v1/chat/completions",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "=Bearer {{ $vars.OPENAI_API_KEY || '' }}"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"model\": \"gpt-4.1-mini\",\n  \"messages\": [\n    {\"role\": \"system\", \"content\": \"Voc? ? especialista em prospec??o ativa B2B. Crie uma mensagem de abordagem no WhatsApp para o neg?cio informado. Seja direto, personalizado e propositivo. M?ximo 3 frases. Sem markdown.\"},\n    {\"role\": \"user\", \"content\": \"Neg?cio: {{ $json.page_name }}. An?ncio: {{ $json.ad_body }}. Crie uma mensagem apresentando nossa solu??o de agente de vendas com IA para WhatsApp.\"}\n  ],\n  \"max_tokens\": 200\n}",
+          "options": {}
+        },
+        "id": "1998e019-f73b-472a-b2ab-d6451795a29b",
+        "name": "Gerar Mensagem Prospeção",
+        "type": "n8n-nodes-base.httpRequest",
+        "position": [
+          13664,
+          3776
+        ],
+        "typeVersion": 4.2,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://evo.upviaagentes.com/message/sendText/upvia-comercial",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "1523A5EE-9C3D-4284-9694-1089F38E6760"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"number\": \"{{ $('Filtrar Prospectos').first().json.page_id }}\",\n  \"text\": {{ JSON.stringify($('Gerar Mensagem Prospeção').first().json.choices?.[0]?.message?.content || 'Ol?! Somos especialistas em automa??o de vendas com IA para WhatsApp. Posso te apresentar nossa solu??o?') }}\n}",
+          "options": {}
+        },
+        "id": "fcddfddf-94ac-4f4b-9200-2985bcc65b31",
+        "name": "Enviar Prospecção WhatsApp",
+        "type": "n8n-nodes-base.httpRequest",
+        "position": [
+          14112,
+          3776
+        ],
+        "typeVersion": 4.2,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "cronExpression",
+                "expression": "0 9 * * 1-5"
+              }
+            ]
+          }
+        },
+        "id": "b05c0218-76de-4d0a-9e65-ef7ff950c072",
+        "name": "Prospecção Ativa - Trigger",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "position": [
+          12992,
+          3776
+        ],
+        "typeVersion": 1.2
+      },
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "cronExpression",
+                "expression": "0 8 1 * *"
+              }
+            ]
+          }
+        },
+        "id": "12c69409-cbe3-4247-8a3d-0f8cd6e017c8",
+        "name": "Balanço Mensal - Trigger",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "position": [
+          12992,
+          4080
+        ],
+        "typeVersion": 1.2
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "SELECT id as cliente_id, nome_empresa, instancia_whatsapp, evo_api_url, evo_api_key, telefone as telefone_proprietario FROM clientes_sistema WHERE status = 'ativo';",
+          "options": {}
+        },
+        "id": "796ac359-2b0b-4b96-af32-4ccd8238a2ad",
+        "name": "Buscar Clientes Ativos Balanço",
+        "type": "n8n-nodes-base.postgres",
+        "position": [
+          13216,
+          4080
+        ],
+        "typeVersion": 2.5,
+        "credentials": {
+          "postgres": {
+            "id": "Dym0Y2qw1VYqERST",
+            "name": "Postgres account 3"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "options": {}
+        },
+        "id": "7b61b8e0-4bf2-4505-a7e8-084e08de5183",
+        "name": "Loop Clientes Balanço",
+        "type": "n8n-nodes-base.splitInBatches",
+        "position": [
+          13440,
+          4080
+        ],
+        "typeVersion": 3
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "SELECT COUNT(*) as total_mensagens, COUNT(DISTINCT telefone) as total_contatos, COUNT(CASE WHEN status = 'ativo' THEN 1 END) as carrinhos_ativos FROM carrinho_abandonado WHERE instancia = '{{ $json.instancia_whatsapp }}' AND created_at >= DATE_TRUNC('month', NOW() - INTERVAL '1 month') AND created_at < DATE_TRUNC('month', NOW());",
+          "options": {}
+        },
+        "id": "da31b870-aa37-459b-920b-9b14f4e3e982",
+        "name": "Buscar Interações do Mês",
+        "type": "n8n-nodes-base.postgres",
+        "position": [
+          13664,
+          4000
+        ],
+        "typeVersion": 2.5,
+        "credentials": {
+          "postgres": {
+            "id": "Dym0Y2qw1VYqERST",
+            "name": "Postgres account 3"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "const cliente = $('Loop Clientes Balanço').first().json;\nconst stats = $input.first().json;\n\nconst mesAnterior = new Date();\nmesAnterior.setMonth(mesAnterior.getMonth() - 1);\nconst nomeMes = mesAnterior.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });\n\nconst relatorio = `Balan?o ${nomeMes} - ${cliente.nome_empresa}\\n\\nAtendimentos realizados: ${stats.total_mensagens || 0}\\nContatos ?nicos: ${stats.total_contatos || 0}\\nCarrinhos abertos: ${stats.carrinhos_ativos || 0}\\n\\nSeu agente de vendas trabalhou o m?s inteiro pra voc?! Qualquer d?vida estou aqui. ??`;\n\nreturn [{ json: {\n  cliente_id: cliente.cliente_id,\n  instancia: cliente.instancia_whatsapp,\n  evo_api_url: cliente.evo_api_url || 'https://evo.upviaagentes.com',\n  evo_api_key: cliente.evo_api_key,\n  telefone_proprietario: cliente.telefone_proprietario,\n  nome_empresa: cliente.nome_empresa,\n  relatorio,\n  total_mensagens: Number(stats.total_mensagens) || 0,\n  total_contatos: Number(stats.total_contatos) || 0,\n  carrinhos_ativos: Number(stats.carrinhos_ativos) || 0,\n  mes_referencia: nomeMes\n} }];"
+        },
+        "id": "5b377f8c-4b0b-4729-a691-b4fb6f70dad3",
+        "name": "Montar Relatório Balanço",
+        "type": "n8n-nodes-base.code",
+        "position": [
+          13888,
+          4000
+        ],
+        "typeVersion": 2
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "INSERT INTO balanco_mensal (cliente_id, instancia, mes_referencia, total_mensagens, total_contatos, carrinhos_ativos, relatorio_texto, gerado_em) VALUES ('{{ $json.cliente_id }}', '{{ $json.instancia }}', '{{ $json.mes_referencia }}', {{ $json.total_mensagens }}, {{ $json.total_contatos }}, {{ $json.carrinhos_ativos }}, '{{ $json.relatorio.replace(/'/g, \"''\") }}', NOW()) ON CONFLICT (cliente_id, mes_referencia) DO UPDATE SET total_mensagens = EXCLUDED.total_mensagens, total_contatos = EXCLUDED.total_contatos, gerado_em = NOW();",
+          "options": {}
+        },
+        "id": "68f616f6-d1df-454a-823e-fa207b871fba",
+        "name": "Salvar Balanço Mensal",
+        "type": "n8n-nodes-base.postgres",
+        "position": [
+          14112,
+          4000
+        ],
+        "typeVersion": 2.5,
+        "credentials": {
+          "postgres": {
+            "id": "Dym0Y2qw1VYqERST",
+            "name": "Postgres account 3"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "={{ $json.evo_api_url }}/message/sendText/{{ $json.instancia }}",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "={{ $json.evo_api_key }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"number\": \"{{ $json.telefone_proprietario }}\",\n  \"text\": {{ JSON.stringify($json.relatorio) }}\n}",
+          "options": {}
+        },
+        "id": "dcd9a298-f65a-4fe2-807c-e6c570908581",
+        "name": "Enviar Balanço WhatsApp",
+        "type": "n8n-nodes-base.httpRequest",
+        "position": [
+          14336,
+          4080
+        ],
+        "typeVersion": 4.2,
+        "onError": "continueRegularOutput"
+      }
+    ],
+    "connections": {
+      "Webhook": {
+        "main": [
+          [
+            {
+              "node": "Filtro + Extrair",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Filtro + Extrair": {
+        "main": [
+          [
+            {
+              "node": "Redis SET Debounce",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Redis SET Debounce": {
+        "main": [
+          [
+            {
+              "node": "Wait 4s",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Wait 4s": {
+        "main": [
+          [
+            {
+              "node": "Redis GET Debounce",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Redis GET Debounce": {
+        "main": [
+          [
+            {
+              "node": "IF Mensagem Mais Recente?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "IF Mensagem Mais Recente?": {
+        "main": [
+          [
+            {
+              "node": "Montar Contexto Dinamico",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          []
+        ]
+      },
+      "Montar Contexto Dinamico": {
+        "main": [
+          [
+            {
+              "node": "Code: Limpar Texto IA",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "OpenAI Chat Model": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "Vendedor IA",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Postgres Memory": {
+        "ai_memory": [
+          [
+            {
+              "node": "Vendedor IA",
+              "type": "ai_memory",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Code: Limpar Texto IA": {
+        "main": [
+          [
+            {
+              "node": "Vendedor IA",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Vendedor IA": {
+        "main": [
+          [
+            {
+              "node": "Resposta ao Cliente",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Resposta ao Cliente": {
+        "main": [
+          [
+            {
+              "node": "Pediu Humano?",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Mencionou Pagamento",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "IF Contem Link Drive?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Pediu Humano?": {
+        "main": [
+          [
+            {
+              "node": "Avisar Cliente Humano",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Avisar Cliente Humano": {
+        "main": [
+          [
+            {
+              "node": "Notificar Dono",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Mencionou Pagamento": {
+        "main": [
+          [
+            {
+              "node": "Notificar Dono Pagamento",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Notificar Dono Pagamento": {
+        "main": [
+          [
+            {
+              "node": "Notificar Dono Comprovante1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "IF Contem Link Drive?": {
+        "main": [
+          [
+            {
+              "node": "Code: Extrair Folder ID",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          []
+        ]
+      },
+      "Code: Extrair Folder ID": {
+        "main": [
+          [
+            {
+              "node": "HTTP: Listar Fotos Drive",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "HTTP: Listar Fotos Drive": {
+        "main": [
+          [
+            {
+              "node": "Code: Preparar URLs Fotos",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Code: Preparar URLs Fotos": {
+        "main": [
+          [
+            {
+              "node": "Split Fotos (10 por vez)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Split Fotos (10 por vez)": {
+        "main": [
+          [],
+          [
+            {
+              "node": "HTTP: Download Foto Drive",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "HTTP: Download Foto Drive": {
+        "main": [
+          [
+            {
+              "node": "Enviar Foto ao Cliente",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Enviar Foto ao Cliente": {
+        "main": [
+          [
+            {
+              "node": "Split Fotos (10 por vez)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Check Carrinho 1h": {
+        "main": [
+          [
+            {
+              "node": "Buscar Carrinhos 1h",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Buscar Carrinhos 1h": {
+        "main": [
+          [
+            {
+              "node": "Preparar Followup Carrinho",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Preparar Followup Carrinho": {
+        "main": [
+          [
+            {
+              "node": "Loop Carrinho",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Marcar Followup 1h": {
+        "main": [
+          [
+            {
+              "node": "Loop Carrinho",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Buscar Inativos": {
+        "main": [
+          [
+            {
+              "node": "Preparar Recuperação",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Anti-Spam Delay Recover": {
+        "main": [
+          [
+            {
+              "node": "Enviar Recuperação",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Marcar Recuperado": {
+        "main": [
+          [
+            {
+              "node": "Loop Recuperação",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Buscar Meta Ad Library": {
+        "main": [
+          [
+            {
+              "node": "Filtrar Prospectos",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Filtrar Prospectos": {
+        "main": [
+          [
+            {
+              "node": "Gerar Mensagem Prospeção",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Salvar Prospecto": {
+        "main": [
+          [
+            {
+              "node": "Enviar Prospecção WhatsApp",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Check Inativos Diario": {
+        "main": [
+          [
+            {
+              "node": "Buscar Inativos",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Preparar Recuperação": {
+        "main": [
+          [
+            {
+              "node": "Loop Recuperação",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Loop Recuperação": {
+        "main": [
+          [
+            {
+              "node": "Anti-Spam Delay Recover",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Enviar Recuperação": {
+        "main": [
+          [
+            {
+              "node": "Marcar Recuperado",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Gerar Mensagem Prospeção": {
+        "main": [
+          [
+            {
+              "node": "Salvar Prospecto",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prospecção Ativa - Trigger": {
+        "main": [
+          [
+            {
+              "node": "Buscar Meta Ad Library",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Balanço Mensal - Trigger": {
+        "main": [
+          [
+            {
+              "node": "Buscar Clientes Ativos Balanço",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Buscar Clientes Ativos Balanço": {
+        "main": [
+          [
+            {
+              "node": "Loop Clientes Balanço",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Loop Clientes Balanço": {
+        "main": [
+          [
+            {
+              "node": "Buscar Interações do Mês",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Buscar Interações do Mês": {
+        "main": [
+          [
+            {
+              "node": "Montar Relatório Balanço",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Montar Relatório Balanço": {
+        "main": [
+          [
+            {
+              "node": "Salvar Balanço Mensal",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Salvar Balanço Mensal": {
+        "main": [
+          [
+            {
+              "node": "Enviar Balanço WhatsApp",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Enviar Balanço WhatsApp": {
+        "main": [
+          [
+            {
+              "node": "Loop Clientes Balanço",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Elisa Silveira de Moura Andrade",
+    "name": "Version 1cfe70bb",
+    "description": "",
+    "autosaved": true,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-06-03T19:34:56.621Z",
+        "id": 354,
+        "workflowId": "Jkt0vu99AsQnEs6a",
+        "versionId": "1cfe70bb-5ee2-4a50-9fa6-a9a04c67f0b9",
+        "event": "activated",
+        "userId": "63b6bda0-d1aa-4abc-beaa-0fbb599f2288"
+      }
+    ]
+  }
+}
