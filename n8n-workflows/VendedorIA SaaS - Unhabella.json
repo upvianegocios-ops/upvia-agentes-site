@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-06-03T19:34:32.766Z",
+  "updatedAt": "2026-06-11T01:57:32.450Z",
   "createdAt": "2026-05-29T23:15:23.769Z",
   "id": "Jkt0vu99AsQnEs6a",
   "name": "VendedorIA SaaS - Unhabella",
@@ -441,7 +441,7 @@
           "conditions": [
             {
               "id": "drv1",
-              "leftValue": "={{ $('Vendedor IA').first().json.output || '' }}",
+              "leftValue": "={{ String($('Vendedor IA').first()?.json?.output || '') }}",
               "rightValue": "drive.google.com/drive/folders/",
               "operator": {
                 "type": "string",
@@ -460,7 +460,8 @@
       "position": [
         15648,
         2656
-      ]
+      ],
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -1193,7 +1194,8 @@
         13888,
         3040
       ],
-      "typeVersion": 1.1
+      "typeVersion": 1.1,
+      "webhookId": "b98e2b16-2eff-4baf-9861-b0200847de72"
     },
     {
       "parameters": {
@@ -1861,10 +1863,10 @@
     "templateCredsSetupCompleted": true
   },
   "pinData": {},
-  "versionId": "1cfe70bb-5ee2-4a50-9fa6-a9a04c67f0b9",
-  "activeVersionId": "1cfe70bb-5ee2-4a50-9fa6-a9a04c67f0b9",
-  "versionCounter": 423,
-  "triggerCount": 5,
+  "versionId": "fbbbbb57-4e93-4a9e-a086-bfc8ddba7070",
+  "activeVersionId": "fbbbbb57-4e93-4a9e-a086-bfc8ddba7070",
+  "versionCounter": 432,
+  "triggerCount": 4,
   "shared": [
     {
       "updatedAt": "2026-05-29T23:15:23.771Z",
@@ -1886,9 +1888,9 @@
   ],
   "tags": [],
   "activeVersion": {
-    "updatedAt": "2026-06-03T19:34:56.000Z",
-    "createdAt": "2026-06-03T19:34:32.773Z",
-    "versionId": "1cfe70bb-5ee2-4a50-9fa6-a9a04c67f0b9",
+    "updatedAt": "2026-06-11T01:57:32.454Z",
+    "createdAt": "2026-06-11T01:57:32.454Z",
+    "versionId": "fbbbbb57-4e93-4a9e-a086-bfc8ddba7070",
     "workflowId": "Jkt0vu99AsQnEs6a",
     "nodes": [
       {
@@ -2089,7 +2091,7 @@
           },
           "sendBody": true,
           "specifyBody": "json",
-          "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.telefone_proprietario }}\",\n  \"text\": \"?? ATENDIMENTO HUMANO\\n\\nCliente {{ $('Montar Contexto Dinamico').first().json.pushName }} ({{ $('Montar Contexto Dinamico').first().json.telefone }}) pediu atendente humano.\\n\\n?ltima msg: {{ $('Montar Contexto Dinamico').first().json.text }}\"\n}",
+          "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.telefone_proprietario }}\",\n  \"text\": \"🚨 ATENDIMENTO HUMANO\\n\\nCliente {{ $('Montar Contexto Dinamico').first().json.pushName }} ({{ $('Montar Contexto Dinamico').first().json.telefone }}) pediu atendente humano.\\n\\nÚltima msg: {{ $('Montar Contexto Dinamico').first().json.text }}\"\n}",
           "options": {}
         },
         "id": "7859e22d-7351-4db4-8f0d-a4812febaa41",
@@ -2168,7 +2170,7 @@
           },
           "sendBody": true,
           "specifyBody": "json",
-          "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.telefone_proprietario }}\",\n  \"text\": \"?? PAGAMENTO EM ANDAMENTO\\n\\nCliente: {{ $('Montar Contexto Dinamico').first().json.pushName }}\\nTelefone: {{ $('Montar Contexto Dinamico').first().json.telefone }}\\nInst?ncia: {{ $('Montar Contexto Dinamico').first().json.instancia_evo }}\\n\\nA IA enviou dados de pagamento ou o cliente mencionou Pix/comprovante. Fique atento pra confirmar o recebimento e combinar a entrega! ??\"\n}",
+          "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.telefone_proprietario }}\",\n  \"text\": \"💰 PAGAMENTO EM ANDAMENTO\\n\\nCliente: {{ $('Montar Contexto Dinamico').first().json.pushName }}\\nTelefone: {{ $('Montar Contexto Dinamico').first().json.telefone }}\\nInstância: {{ $('Montar Contexto Dinamico').first().json.instancia_evo }}\\n\\nA IA enviou dados de pagamento ou o cliente mencionou Pix/comprovante. Fique atento pra confirmar o recebimento e combinar a entrega! 📦\"\n}",
           "options": {}
         },
         "id": "361268a2-2a62-416e-9e0b-fcf7a5169045",
@@ -2569,7 +2571,7 @@
       },
       {
         "parameters": {
-          "jsCode": "const items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const tel = item.json.telefone;\n  const nome = item.json.nome_atendente_ia || 'Assistente';\n  const empresa = item.json.nome_empresa || 'nossa loja';\n  \n  const msgs = [\n    `Oi! Aqui ? ${nome} da ${empresa} ?? Vi que voc? estava dando uma olhada nos nossos produtos... Ficou alguma d?vida? Posso te ajudar a escolher o melhor pra voc?!`,\n    `Ei, tudo bem? ${nome} da ${empresa} aqui! Notei que voc? se interessou pelos nossos produtos. Quer que eu te ajude com algo? Estou aqui pra isso! ??`,\n    `Oi! Passando rapidinho pra saber se posso te ajudar com alguma coisa. Vi que estava olhando nossos produtos e adoraria te mostrar como eles podem te ajudar! ??`\n  ];\n  \n  const msg = msgs[Math.floor(Math.random() * msgs.length)];\n  const delay = 10000 + Math.floor(Math.random() * 50000);\n  \n  results.push({ json: { ...item.json, mensagem_followup: msg, delayMs: delay } });\n}\n\nreturn results;"
+          "jsCode": "const items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const tel = item.json.telefone;\n  const nome = item.json.nome_atendente_ia || 'Assistente';\n  const empresa = item.json.nome_empresa || 'nossa loja';\n  \n  const msgs = [\n    `Oi! Aqui é ${nome} da ${empresa} 😊 Vi que você estava dando uma olhada nos nossos produtos... Ficou alguma dúvida? Posso te ajudar a escolher o melhor pra você!`,\n    `Ei, tudo bem? ${nome} da ${empresa} aqui! Notei que você se interessou pelos nossos produtos. Quer que eu te ajude com algo? Estou aqui pra isso! 💅`,\n    `Oi! Passando rapidinho pra saber se posso te ajudar com alguma coisa. Vi que estava olhando nossos produtos e adoraria te mostrar como eles podem te ajudar! ✨`\n  ];\n  \n  const msg = msgs[Math.floor(Math.random() * msgs.length)];\n  const delay = 10000 + Math.floor(Math.random() * 50000);\n  \n  results.push({ json: { ...item.json, mensagem_followup: msg, delayMs: delay } });\n}\n\nreturn results;"
         },
         "id": "5e1f26ae-015a-4a97-9e25-000823857f25",
         "name": "Preparar Followup Carrinho",
@@ -2675,7 +2677,7 @@
       {
         "parameters": {
           "operation": "executeQuery",
-          "query": "CREATE TABLE IF NOT EXISTS carrinho_abandonado (\n  id bigserial PRIMARY KEY,\n  telefone text NOT NULL,\n  session_id text,\n  instancia text NOT NULL,\n  ultima_msg text,\n  status text DEFAULT 'ativo',\n  followup_1h boolean DEFAULT false,\n  followup_6h boolean DEFAULT false,\n  followup_24h boolean DEFAULT false,\n  created_at timestamptz DEFAULT NOW(),\n  updated_at timestamptz DEFAULT NOW(),\n  UNIQUE(telefone, instancia)\n);\n\nALTER TABLE dados_cliente ADD COLUMN IF NOT EXISTS cliente_id bigint REFERENCES clientes_sistema(id);\nALTER TABLE dados_cliente ADD COLUMN IF NOT EXISTS recuperado boolean DEFAULT false;\nALTER TABLE dados_cliente ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT NOW();\nCREATE UNIQUE INDEX IF NOT EXISTS dados_cliente_session_id_idx ON dados_cliente(session_id);\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS catalogo_sheets_id text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS link_vendas text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS tipo_produto text DEFAULT 'fisico';\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS chave_pix text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS tipo_chave_pix text DEFAULT 'cpf';\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS nome_titular_pix text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS banco_pix text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS aceita_cartao boolean DEFAULT false;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS link_checkout text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS msg_pos_venda text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS google_sheet_id text;",
+          "query": "CREATE TABLE IF NOT EXISTS carrinho_abandonado (\n  id bigserial PRIMARY KEY,\n  telefone text NOT NULL,\n  session_id text,\n  instancia text NOT NULL,\n  ultima_msg text,\n  status text DEFAULT 'ativo',\n  followup_1h boolean DEFAULT false,\n  followup_6h boolean DEFAULT false,\n  followup_24h boolean DEFAULT false,\n  created_at timestamptz DEFAULT NOW(),\n  updated_at timestamptz DEFAULT NOW(),\n  UNIQUE(telefone, instancia)\n);\n\nALTER TABLE dados_cliente ADD COLUMN IF NOT EXISTS cliente_id uuid REFERENCES clientes_sistema(id);\nALTER TABLE dados_cliente ADD COLUMN IF NOT EXISTS recuperado boolean DEFAULT false;\nALTER TABLE dados_cliente ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT NOW();\nCREATE UNIQUE INDEX IF NOT EXISTS dados_cliente_session_id_idx ON dados_cliente(session_id);\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS catalogo_sheets_id text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS link_vendas text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS tipo_produto text DEFAULT 'fisico';\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS chave_pix text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS tipo_chave_pix text DEFAULT 'cpf';\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS nome_titular_pix text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS banco_pix text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS aceita_cartao boolean DEFAULT false;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS link_checkout text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS msg_pos_venda text;\nALTER TABLE clientes_sistema ADD COLUMN IF NOT EXISTS google_sheet_id text;\n\nCREATE TABLE IF NOT EXISTS prospectos_ativos (\n  id bigserial PRIMARY KEY,\n  page_name text,\n  page_id text UNIQUE,\n  ad_id text,\n  mensagem_gerada text,\n  status text DEFAULT 'pendente',\n  prospectado_em timestamptz DEFAULT NOW()\n);\n\nCREATE TABLE IF NOT EXISTS balanco_mensal (\n  id bigserial PRIMARY KEY,\n  cliente_id uuid REFERENCES clientes_sistema(id),\n  instancia text,\n  mes_referencia text,\n  total_mensagens integer DEFAULT 0,\n  total_contatos integer DEFAULT 0,\n  carrinhos_ativos integer DEFAULT 0,\n  relatorio_texto text,\n  gerado_em timestamptz DEFAULT NOW(),\n  UNIQUE(cliente_id, mes_referencia)\n);",
           "options": {}
         },
         "id": "aa237a10-18c9-4544-a95d-d567b5183830",
@@ -2753,7 +2755,7 @@
       {
         "parameters": {
           "operation": "executeQuery",
-          "query": "INSERT INTO prospectos_ativos (page_name, page_id, ad_id, mensagem_gerada, status, prospectado_em) VALUES ('{{ $('Filtrar Prospectos').first().json.page_name }}', '{{ $('Filtrar Prospectos').first().json.page_id }}', '{{ $('Filtrar Prospectos').first().json.ad_id }}', '{{ ($json.choices?.[0]?.message?.content || '').replace(/'/g, \"''\") }}', 'pendente', NOW()) ON CONFLICT (page_id) DO UPDATE SET mensagem_gerada = EXCLUDED.mensagem_gerada, prospectado_em = NOW();",
+          "query": "INSERT INTO prospectos_ativos (page_name, page_id, ad_id, mensagem_gerada, status, prospectado_em) VALUES ('{{ $('Filtrar Prospectos').item.json.page_name }}', '{{ $('Filtrar Prospectos').item.json.page_id }}', '{{ $('Filtrar Prospectos').item.json.ad_id }}', '{{ ($json.choices?.[0]?.message?.content || '').replace(/'/g, \"''\") }}', 'pendente', NOW()) ON CONFLICT (page_id) DO UPDATE SET mensagem_gerada = EXCLUDED.mensagem_gerada, prospectado_em = NOW();",
           "options": {}
         },
         "id": "96cab6c2-e792-41c7-a335-6dd13eacbe27",
@@ -2794,7 +2796,7 @@
       },
       {
         "parameters": {
-          "jsCode": "const items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const nome = (item.json.nome || 'amigo(a)').split(' ')[0];\n  const empresa = item.json.nome_empresa || 'nossa loja';\n  \n  const msgs = [\n    `Oi ${nome}! ?? Faz um tempinho que não te vejo por aqui na ${empresa}. Temos novidades incríveis que acho que você vai amar! Quer dar uma olhada?`,\n    `${nome}, tudo bem? Aqui é da ${empresa}! Separei umas novidades especiais que combinam com você. Posso te mostrar? ??`,\n    `Oi ${nome}! Passando pra te contar que temos condições especiais essa semana na ${empresa}. Bora aproveitar? ??`,\n    `${nome}, sentimos sua falta! ?? A ${empresa} tem ofertas imperd?veis agora. Posso te ajudar a encontrar algo especial?`\n  ];\n  \n  const msg = msgs[Math.floor(Math.random() * msgs.length)];\n  const delay = 30000 + Math.floor(Math.random() * 270000);\n  \n  results.push({ json: { ...item.json, mensagem_recover: msg, delayMs: delay } });\n}\n\nfor (let i = results.length - 1; i > 0; i--) {\n  const j = Math.floor(Math.random() * (i + 1));\n  [results[i], results[j]] = [results[j], results[i]];\n}\n\nreturn results;"
+          "jsCode": "const items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const nome = (item.json.nome || 'amigo(a)').split(' ')[0];\n  const empresa = item.json.nome_empresa || 'nossa loja';\n  \n  const msgs = [\n    `Oi ${nome}! 👋 Faz um tempinho que não te vejo por aqui na ${empresa}. Temos novidades incríveis que acho que você vai amar! Quer dar uma olhada?`,\n    `${nome}, tudo bem? Aqui é da ${empresa}! Separei umas novidades especiais que combinam com você. Posso te mostrar? 😊`,\n    `Oi ${nome}! Passando pra te contar que temos condições especiais essa semana na ${empresa}. Bora aproveitar? 🎉`,\n    `${nome}, sentimos sua falta! 💔 A ${empresa} tem ofertas imperdíveis agora. Posso te ajudar a encontrar algo especial?`\n  ];\n  \n  const msg = msgs[Math.floor(Math.random() * msgs.length)];\n  const delay = 30000 + Math.floor(Math.random() * 270000);\n  \n  results.push({ json: { ...item.json, mensagem_recover: msg, delayMs: delay } });\n}\n\nfor (let i = results.length - 1; i > 0; i--) {\n  const j = Math.floor(Math.random() * (i + 1));\n  [results[i], results[j]] = [results[j], results[i]];\n}\n\nreturn results;"
         },
         "id": "dd9d35ca-9582-4567-8278-d5ee38da723f",
         "name": "Preparar Recuperação",
@@ -2865,7 +2867,7 @@
           },
           "sendBody": true,
           "specifyBody": "json",
-          "jsonBody": "={\n  \"model\": \"gpt-4.1-mini\",\n  \"messages\": [\n    {\"role\": \"system\", \"content\": \"Voc? ? especialista em prospec??o ativa B2B. Crie uma mensagem de abordagem no WhatsApp para o neg?cio informado. Seja direto, personalizado e propositivo. M?ximo 3 frases. Sem markdown.\"},\n    {\"role\": \"user\", \"content\": \"Neg?cio: {{ $json.page_name }}. An?ncio: {{ $json.ad_body }}. Crie uma mensagem apresentando nossa solu??o de agente de vendas com IA para WhatsApp.\"}\n  ],\n  \"max_tokens\": 200\n}",
+          "jsonBody": "={\n  \"model\": \"gpt-4.1-mini\",\n  \"messages\": [\n    {\"role\": \"system\", \"content\": \"Você é especialista em prospecção ativa B2B. Crie uma mensagem de abordagem no WhatsApp para o negócio informado. Seja direto, personalizado e propositivo. Máximo 3 frases. Sem markdown.\"},\n    {\"role\": \"user\", \"content\": \"Negócio: {{ $json.page_name }}. Anúncio: {{ $json.ad_body }}. Crie uma mensagem apresentando nossa solução de agente de vendas com IA para WhatsApp.\"}\n  ],\n  \"max_tokens\": 200\n}",
           "options": {}
         },
         "id": "1998e019-f73b-472a-b2ab-d6451795a29b",
@@ -2924,7 +2926,8 @@
           12992,
           3776
         ],
-        "typeVersion": 1.2
+        "typeVersion": 1.2,
+        "disabled": true
       },
       {
         "parameters": {
@@ -3004,7 +3007,7 @@
       },
       {
         "parameters": {
-          "jsCode": "const cliente = $('Loop Clientes Balanço').first().json;\nconst stats = $input.first().json;\n\nconst mesAnterior = new Date();\nmesAnterior.setMonth(mesAnterior.getMonth() - 1);\nconst nomeMes = mesAnterior.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });\n\nconst relatorio = `Balan?o ${nomeMes} - ${cliente.nome_empresa}\\n\\nAtendimentos realizados: ${stats.total_mensagens || 0}\\nContatos ?nicos: ${stats.total_contatos || 0}\\nCarrinhos abertos: ${stats.carrinhos_ativos || 0}\\n\\nSeu agente de vendas trabalhou o m?s inteiro pra voc?! Qualquer d?vida estou aqui. ??`;\n\nreturn [{ json: {\n  cliente_id: cliente.cliente_id,\n  instancia: cliente.instancia_whatsapp,\n  evo_api_url: cliente.evo_api_url || 'https://evo.upviaagentes.com',\n  evo_api_key: cliente.evo_api_key,\n  telefone_proprietario: cliente.telefone_proprietario,\n  nome_empresa: cliente.nome_empresa,\n  relatorio,\n  total_mensagens: Number(stats.total_mensagens) || 0,\n  total_contatos: Number(stats.total_contatos) || 0,\n  carrinhos_ativos: Number(stats.carrinhos_ativos) || 0,\n  mes_referencia: nomeMes\n} }];"
+          "jsCode": "const cliente = $('Loop Clientes Balanço').first().json;\nconst stats = $input.first().json;\n\nconst mesAnterior = new Date();\nmesAnterior.setMonth(mesAnterior.getMonth() - 1);\nconst nomeMes = mesAnterior.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });\n\nconst relatorio = `Balanço ${nomeMes} - ${cliente.nome_empresa}\\n\\nAtendimentos realizados: ${stats.total_mensagens || 0}\\nContatos únicos: ${stats.total_contatos || 0}\\nCarrinhos abertos: ${stats.carrinhos_ativos || 0}\\n\\nSeu agente de vendas trabalhou o mês inteiro pra você! Qualquer dúvida estou aqui. 😊`;\n\nreturn [{ json: {\n  cliente_id: cliente.cliente_id,\n  instancia: cliente.instancia_whatsapp,\n  evo_api_url: cliente.evo_api_url || 'https://evo.upviaagentes.com',\n  evo_api_key: cliente.evo_api_key,\n  telefone_proprietario: cliente.telefone_proprietario,\n  nome_empresa: cliente.nome_empresa,\n  relatorio,\n  total_mensagens: Number(stats.total_mensagens) || 0,\n  total_contatos: Number(stats.total_contatos) || 0,\n  carrinhos_ativos: Number(stats.carrinhos_ativos) || 0,\n  mes_referencia: nomeMes\n} }];"
         },
         "id": "5b377f8c-4b0b-4729-a691-b4fb6f70dad3",
         "name": "Montar Relatório Balanço",
@@ -3061,6 +3064,48 @@
         "position": [
           14336,
           4080
+        ],
+        "typeVersion": 4.2,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "amount": "={{ $json.delayMs / 1000 }}"
+        },
+        "id": "fdb497a1-f9cd-4e80-8c54-8ed5c2a1e857",
+        "name": "Anti-Spam Delay Carrinho",
+        "type": "n8n-nodes-base.wait",
+        "position": [
+          13888,
+          3040
+        ],
+        "typeVersion": 1.1,
+        "webhookId": "b98e2b16-2eff-4baf-9861-b0200847de72"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "={{ $json.evo_api_url }}/message/sendText/{{ $json.instancia }}",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "={{ $json.evo_api_key }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"number\": \"{{ $json.telefone }}\",\n  \"text\": {{ JSON.stringify($json.mensagem_followup) }}\n}",
+          "options": {}
+        },
+        "id": "d7c6c243-3fff-4669-9c69-c4de3bdad186",
+        "name": "Enviar Followup Carrinho",
+        "type": "n8n-nodes-base.httpRequest",
+        "position": [
+          14112,
+          3040
         ],
         "typeVersion": 4.2,
         "onError": "continueRegularOutput"
@@ -3585,19 +3630,61 @@
             }
           ]
         ]
+      },
+      "Loop Carrinho": {
+        "main": [
+          [
+            {
+              "node": "Anti-Spam Delay Carrinho",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          []
+        ]
+      },
+      "Anti-Spam Delay Carrinho": {
+        "main": [
+          [
+            {
+              "node": "Enviar Followup Carrinho",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Enviar Followup Carrinho": {
+        "main": [
+          [
+            {
+              "node": "Marcar Followup 1h",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
       }
     },
     "authors": "Elisa Silveira de Moura Andrade",
-    "name": "Version 1cfe70bb",
-    "description": "",
-    "autosaved": true,
+    "name": null,
+    "description": null,
+    "autosaved": false,
     "workflowPublishHistory": [
       {
-        "createdAt": "2026-06-03T19:34:56.621Z",
-        "id": 354,
+        "createdAt": "2026-06-11T01:57:32.579Z",
+        "id": 492,
         "workflowId": "Jkt0vu99AsQnEs6a",
-        "versionId": "1cfe70bb-5ee2-4a50-9fa6-a9a04c67f0b9",
+        "versionId": "fbbbbb57-4e93-4a9e-a086-bfc8ddba7070",
         "event": "activated",
+        "userId": "63b6bda0-d1aa-4abc-beaa-0fbb599f2288"
+      },
+      {
+        "createdAt": "2026-06-11T01:57:32.540Z",
+        "id": 491,
+        "workflowId": "Jkt0vu99AsQnEs6a",
+        "versionId": "fbbbbb57-4e93-4a9e-a086-bfc8ddba7070",
+        "event": "deactivated",
         "userId": "63b6bda0-d1aa-4abc-beaa-0fbb599f2288"
       }
     ]
