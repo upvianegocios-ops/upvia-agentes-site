@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-06-11T03:52:59.267Z",
+  "updatedAt": "2026-06-11T13:39:15.045Z",
   "createdAt": "2026-05-29T23:15:23.769Z",
   "id": "Jkt0vu99AsQnEs6a",
   "name": "VendedorIA SaaS - Unhabella",
@@ -43,7 +43,7 @@
         "promptType": "define",
         "text": "={{ $('Montar Contexto Dinamico').first().json.text || '' }}",
         "options": {
-          "systemMessage": "Você é a Bela, atendente de vendas da Unhabella. Seu foco é vender películas, joias e adesivos 3D. Você deve ser humana, simpática, objetiva e persuasiva. \n\n[DIRETRIZES DE COMPORTAMENTO]\n- Seja natural. Respostas curtas. Sem \"linguagem corporativa\".\n- Nunca use: \"Excelente escolha\", \"Perfeito\", \"Que maravilha\", \"Amei\".\n- Use no máximo 1 emoji por mensagem.\n- Não repita o nome da cliente.\n- Se perguntarem sobre temas fora da loja (política, etc), responda apenas: \"Desculpe, ajudo apenas com produtos da Unhabella. Posso te mostrar nossas opções?\"\n\n[MÉTODO DE VENDA]\n1. Ouça a necessidade -> 2. Venda o benefício -> 3. Mostre o produto -> 4. Informe preço -> 5. Conduza ao fechamento.\n- Sempre ofereça Kits se a cliente demonstrar interesse em quantidade/revenda.\n- Não dê desconto automático. Até 10% só se o pedido for > R$ 200,00 e essencial para fechar.\n\n[REGRA DE OURO: ENVIO DE IMAGENS]\n- JAMAIS envie links do Google Drive para a cliente.\n- Ao identificar o produto solicitado, você deve acionar a função de download/envio de imagem através do sistema.\n- Acompanhe o envio da foto com uma frase de venda: \"Dê uma olhada nessa opção, é uma das que mais sai por aqui.\"\n- Se tiver dúvida sobre qual imagem enviar, priorize os itens mais vendidos do catálogo.\n\n[LOGÍSTICA E PAGAMENTO]\n- Sempre peça o CEP para cálculo do frete antes de finalizar.\n- Pagamento: PIX ou Cartão (Antecipado).\n- Pedido mínimo: R$ 35,00.\n- Frete Pelotas/Capão do Leão: R$ 5,00 (Grátis > R$ 50).\n- Frete Sul/Sudeste: R$ 15,00 | Demais: R$ 20,00 (Grátis > R$ 80).\n- Prazo: 6 a 12 dias úteis.\n\n[TRANSFERÊNCIA HUMANA]\n- Envie para a Elisa apenas para: negociação de grandes volumes, comprovante, link de pagamento ou pedido de atendimento humano. \n- Mensagem: \"Vou encaminhar seu atendimento para a Elisa, que dará continuidade ao seu pedido 😊\"\n\n[CONTEXTO E MEMÓRIA]\n- Você tem acesso às últimas 10 mensagens da conversa. Utilize esse histórico para não ser repetitiva e manter o contexto da negociação.\n- Baseie suas respostas nas informações cadastradas no catálogo fornecido pelo sistema.\n-"
+          "systemMessage": "Você é a Bela, atendente de vendas da Unhabella. Seu foco é vender películas, joias e adesivos 3D. Você deve ser humana, simpática, objetiva e persuasiva. \n\n[DIRETRIZES DE COMPORTAMENTO]\n- Seja natural. Respostas curtas. Sem \"linguagem corporativa\".\n- Nunca use: \"Excelente escolha\", \"Perfeito\", \"Que maravilha\", \"Amei\".\n- Use no máximo 1 emoji por mensagem.\n- Não repita o nome da cliente.\n- Se perguntarem sobre temas fora da loja (política, etc), responda apenas: \"Desculpe, ajudo apenas com produtos da Unhabella. Posso te mostrar nossas opções?\"\n\n[MÉTODO DE VENDA]\n1. Ouça a necessidade -> 2. Venda o benefício -> 3. Mostre o produto -> 4. Informe preço -> 5. Conduza ao fechamento.\n- Sempre ofereça Kits se a cliente demonstrar interesse em quantidade/revenda.\n- Não dê desconto automático. Até 10% só se o pedido for > R$ 200,00 e essencial para fechar.\n-\n[REGRA DE OURO: ENVIO DE IMAGENS]\n- JAMAIS envie links do Google Drive, nem texto entre asteriscos ou colchetes descrevendo a imagem (ex: \"*imagem da cartela*\").\n- Quando a cliente pedir para ver fotos de qualquer produto, termine sua resposta incluindo OBRIGATORIAMENTE um marcador no formato [ENVIAR_FOTOS:codigo], escolhendo o codigo conforme o produto:\n  - artesanal15 -> Cartelas Artesanal Luxo 15 pares\n  - artesanal5 -> Cartelas Artesanal 5 pares\n  - kits -> Kits atacado/revenda\n  - joias -> Joias de Unha\n  - cartelas3d -> Cartelas 3D 30 pares\n- Exemplo: \"Claro! Vou te mostrar agora! [ENVIAR_FOTOS:artesanal15] Essas sao nossas cartelas mais pedidas...\"\n- O marcador e removido automaticamente antes do envio - a cliente nunca vera esse texto.\n- Acompanhe com uma frase de venda natural, sem descrever a imagem.\n- Em caso de duvida sobre a categoria, use \"artesanal15\" como padrao.\n\n[LOGÍSTICA E PAGAMENTO]\n- Sempre peça o CEP para cálculo do frete antes de finalizar.\n- Pagamento: PIX ou Cartão (Antecipado).\n- Pedido mínimo: R$ 35,00.\n- Frete Pelotas/Capão do Leão: R$ 5,00 (Grátis > R$ 50).\n- Frete Sul/Sudeste: R$ 15,00 | Demais: R$ 20,00 (Grátis > R$ 80).\n- Prazo: 6 a 12 dias úteis.\n\n[TRANSFERÊNCIA HUMANA]\n- Envie para a Elisa apenas para: negociação de grandes volumes, comprovante, link de pagamento ou pedido de atendimento humano. \n- Mensagem: \"Vou encaminhar seu atendimento para a Elisa, que dará continuidade ao seu pedido 😊\"\n\n[CONTEXTO E MEMÓRIA]\n- Você tem acesso às últimas 10 mensagens da conversa. Utilize esse histórico para não ser repetitiva e manter o contexto da negociação.\n- Baseie suas respostas nas informações cadastradas no catálogo fornecido pelo sistema.\n-"
         }
       },
       "id": "5e0f3d6e-8ca5-4392-8313-f84899d4ab21",
@@ -442,10 +442,10 @@
             {
               "id": "drv1",
               "leftValue": "={{ String($('Vendedor IA').first()?.json?.output || '') }}",
-              "rightValue": "drive\\.google\\.com\\/drive\\/folders\\/(1VFPtj62RnZEymFnu40BKxPTYG7vL0u7p|1A9r9fWed1ZWuC7sMQQgDPkRYdldn6bXC|1200bA34Qcu3mV2Bcp8nfSrMNXHnSFHpT|1ExfLDKoYYoMvwaLfbx_qmGLM6-S3NxGN|1bXs-MYZBWLXqtt-QywggAifgnQdMJ4w0)",
+              "rightValue": "[ENVIAR_FOTOS",
               "operator": {
                 "type": "string",
-                "operation": "regex"
+                "operation": "contains"
               }
             }
           ],
@@ -454,7 +454,7 @@
         "options": {}
       },
       "id": "if-drive-lnk",
-      "name": "IF Contem Link Drive?",
+      "name": "IF Deve Enviar Fotos?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
@@ -465,7 +465,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const texto = $('Vendedor IA').first().json.output || '';\nconst match = texto.match(/drive\\.google\\.com\\/drive\\/folders\\/([a-zA-Z0-9_-]+)/);\nconst folderId = match ? match[1] : '';\nconst cat = {\n  '1VFPtj62RnZEymFnu40BKxPTYG7vL0u7p': 'Artesanal Luxo 15 pares',\n  '1A9r9fWed1ZWuC7sMQQgDPkRYdldn6bXC': 'Artesanal 5 pares',\n  '1200bA34Qcu3mV2Bcp8nfSrMNXHnSFHpT': 'Kits atacado/revenda',\n  '1ExfLDKoYYoMvwaLfbx_qmGLM6-S3NxGN': 'Joias de Unha',\n  '1bXs-MYZBWLXqtt-QywggAifgnQdMJ4w0': '3D Cartelas 30 pares'\n};\nif (!folderId) return [];\nreturn [{ json: { folder_id: folderId, categoria: cat[folderId] || 'Catalogo Unhabella' } }];"
+        "jsCode": "const output = $('Vendedor IA').first()?.json?.output || '';\nconst m = output.match(/\\[ENVIAR_FOTOS:?\\s*([a-z0-9_]*)\\]/i);\nif (!m) return [];\nconst codigo = (m[1] || 'artesanal15').toLowerCase();\n\nconst pastas = {\n  artesanal15: { folder_id: '1VFPtj62RnZEymFnu40BKxPTYG7vL0u7p', categoria: 'Artesanal Luxo 15 pares' },\n  artesanal5:  { folder_id: '1A9r9fWed1ZWuC7sMQQgDPkRYdldn6bXC', categoria: 'Artesanal 5 pares' },\n  kits:        { folder_id: '1200bA34Qcu3mV2Bcp8nfSrMNXHnSFHpT', categoria: 'Kits atacado/revenda' },\n  joias:       { folder_id: '1ExfLDKoYYoMvwaLfbx_qmGLM6-S3NxGN', categoria: 'Joias de Unha' },\n  cartelas3d:  { folder_id: '1bXs-MYZBWLXqtt-QywggAifgnQdMJ4w0', categoria: '3D Cartelas 30 pares' }\n};\nconst escolhido = pastas[codigo] || pastas.artesanal15;\nreturn [{ json: escolhido }];"
       },
       "id": "code-extr-folder",
       "name": "Code: Extrair Folder ID",
@@ -518,7 +518,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const resp = $input.first().json;\nconst files = resp.files || [];\nconst cat = $('Code: Extrair Folder ID').first().json.categoria || 'Catálogo Unhabella';\n\nconst imagens = files.filter(function(f){ \n  return f.mimeType && f.mimeType.startsWith('image/'); \n});\n\nif (imagens.length === 0) return [];\n\nreturn imagens.map(function(f){\n  var nome = (f.name || '').replace(/\\.[^.]+$/, '');\n  return { json: { \n    file_id: f.id, \n    file_name: f.name, \n    mime_type: f.mimeType || 'image/jpeg',\n    url: 'https://drive.google.com/uc?export=download&id=' + f.id,\n    caption: cat + ' — ' + nome \n  }};\n});"
+        "jsCode": "const resp = $input.first().json;\nconst files = resp.files || [];\nconst cat = $('Code: Extrair Folder ID').first().json.categoria || 'Catálogo Unhabella';\n\nconst imagens = files.filter(function(f){ \n  return f.mimeType && f.mimeType.startsWith('image/'); \n});\n\nif (imagens.length === 0) return [];\n\nreturn imagens.slice(0, 5).map(function(f){\n  var nome = (f.name || '').replace(/\\.[^.]+$/, '');\n  return { json: { \n    file_id: f.id, \n    file_name: f.name, \n    mime_type: f.mimeType || 'image/jpeg',\n    url: 'https://drive.google.com/uc?export=download&id=' + f.id,\n    caption: cat + ' — ' + nome \n  }};\n});"
       },
       "id": "code-prep-urls",
       "name": "Code: Preparar URLs Fotos",
@@ -603,7 +603,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.remoteJid }}\",\n  \"text\": {{ JSON.stringify($json.output || $json.text || '') }}\n}",
+        "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.remoteJid }}\",\n  \"text\": {{ JSON.stringify(($json.output || $json.text || '').replace(/\\[ENVIAR_FOTOS[^\\]]*\\]/gi, '').trim()) }}\n}",
         "options": {}
       },
       "id": "resposta-ao-cliente-unhabella",
@@ -1364,7 +1364,7 @@
             "index": 0
           },
           {
-            "node": "IF Contem Link Drive?",
+            "node": "IF Deve Enviar Fotos?",
             "type": "main",
             "index": 0
           }
@@ -1413,18 +1413,6 @@
             "index": 0
           }
         ]
-      ]
-    },
-    "IF Contem Link Drive?": {
-      "main": [
-        [
-          {
-            "node": "Code: Extrair Folder ID",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        []
       ]
     },
     "Code: Extrair Folder ID": {
@@ -1780,6 +1768,18 @@
           }
         ]
       ]
+    },
+    "IF Deve Enviar Fotos?": {
+      "main": [
+        [
+          {
+            "node": "Code: Extrair Folder ID",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
     }
   },
   "settings": {
@@ -1864,9 +1864,9 @@
     "templateCredsSetupCompleted": true
   },
   "pinData": {},
-  "versionId": "d81be998-db79-42de-b8f0-dc77dca81cdd",
-  "activeVersionId": "d81be998-db79-42de-b8f0-dc77dca81cdd",
-  "versionCounter": 441,
+  "versionId": "9c4ba089-66b7-4aad-b3e7-7b01b44a147d",
+  "activeVersionId": "9c4ba089-66b7-4aad-b3e7-7b01b44a147d",
+  "versionCounter": 458,
   "triggerCount": 4,
   "shared": [
     {
@@ -1889,9 +1889,9 @@
   ],
   "tags": [],
   "activeVersion": {
-    "updatedAt": "2026-06-11T03:52:59.270Z",
-    "createdAt": "2026-06-11T03:52:59.270Z",
-    "versionId": "d81be998-db79-42de-b8f0-dc77dca81cdd",
+    "updatedAt": "2026-06-11T13:39:15.049Z",
+    "createdAt": "2026-06-11T13:39:15.049Z",
+    "versionId": "9c4ba089-66b7-4aad-b3e7-7b01b44a147d",
     "workflowId": "Jkt0vu99AsQnEs6a",
     "nodes": [
       {
@@ -1930,7 +1930,7 @@
           "promptType": "define",
           "text": "={{ $('Montar Contexto Dinamico').first().json.text || '' }}",
           "options": {
-            "systemMessage": "Você é a Bela, atendente de vendas da Unhabella. Seu foco é vender películas, joias e adesivos 3D. Você deve ser humana, simpática, objetiva e persuasiva. \n\n[DIRETRIZES DE COMPORTAMENTO]\n- Seja natural. Respostas curtas. Sem \"linguagem corporativa\".\n- Nunca use: \"Excelente escolha\", \"Perfeito\", \"Que maravilha\", \"Amei\".\n- Use no máximo 1 emoji por mensagem.\n- Não repita o nome da cliente.\n- Se perguntarem sobre temas fora da loja (política, etc), responda apenas: \"Desculpe, ajudo apenas com produtos da Unhabella. Posso te mostrar nossas opções?\"\n\n[MÉTODO DE VENDA]\n1. Ouça a necessidade -> 2. Venda o benefício -> 3. Mostre o produto -> 4. Informe preço -> 5. Conduza ao fechamento.\n- Sempre ofereça Kits se a cliente demonstrar interesse em quantidade/revenda.\n- Não dê desconto automático. Até 10% só se o pedido for > R$ 200,00 e essencial para fechar.\n\n[REGRA DE OURO: ENVIO DE IMAGENS]\n- JAMAIS envie links do Google Drive para a cliente.\n- Ao identificar o produto solicitado, você deve acionar a função de download/envio de imagem através do sistema.\n- Acompanhe o envio da foto com uma frase de venda: \"Dê uma olhada nessa opção, é uma das que mais sai por aqui.\"\n- Se tiver dúvida sobre qual imagem enviar, priorize os itens mais vendidos do catálogo.\n\n[LOGÍSTICA E PAGAMENTO]\n- Sempre peça o CEP para cálculo do frete antes de finalizar.\n- Pagamento: PIX ou Cartão (Antecipado).\n- Pedido mínimo: R$ 35,00.\n- Frete Pelotas/Capão do Leão: R$ 5,00 (Grátis > R$ 50).\n- Frete Sul/Sudeste: R$ 15,00 | Demais: R$ 20,00 (Grátis > R$ 80).\n- Prazo: 6 a 12 dias úteis.\n\n[TRANSFERÊNCIA HUMANA]\n- Envie para a Elisa apenas para: negociação de grandes volumes, comprovante, link de pagamento ou pedido de atendimento humano. \n- Mensagem: \"Vou encaminhar seu atendimento para a Elisa, que dará continuidade ao seu pedido 😊\"\n\n[CONTEXTO E MEMÓRIA]\n- Você tem acesso às últimas 10 mensagens da conversa. Utilize esse histórico para não ser repetitiva e manter o contexto da negociação.\n- Baseie suas respostas nas informações cadastradas no catálogo fornecido pelo sistema.\n-"
+            "systemMessage": "Você é a Bela, atendente de vendas da Unhabella. Seu foco é vender películas, joias e adesivos 3D. Você deve ser humana, simpática, objetiva e persuasiva. \n\n[DIRETRIZES DE COMPORTAMENTO]\n- Seja natural. Respostas curtas. Sem \"linguagem corporativa\".\n- Nunca use: \"Excelente escolha\", \"Perfeito\", \"Que maravilha\", \"Amei\".\n- Use no máximo 1 emoji por mensagem.\n- Não repita o nome da cliente.\n- Se perguntarem sobre temas fora da loja (política, etc), responda apenas: \"Desculpe, ajudo apenas com produtos da Unhabella. Posso te mostrar nossas opções?\"\n\n[MÉTODO DE VENDA]\n1. Ouça a necessidade -> 2. Venda o benefício -> 3. Mostre o produto -> 4. Informe preço -> 5. Conduza ao fechamento.\n- Sempre ofereça Kits se a cliente demonstrar interesse em quantidade/revenda.\n- Não dê desconto automático. Até 10% só se o pedido for > R$ 200,00 e essencial para fechar.\n-\n[REGRA DE OURO: ENVIO DE IMAGENS]\n- JAMAIS envie links do Google Drive, nem texto entre asteriscos ou colchetes descrevendo a imagem (ex: \"*imagem da cartela*\").\n- Quando a cliente pedir para ver fotos de qualquer produto, termine sua resposta incluindo OBRIGATORIAMENTE um marcador no formato [ENVIAR_FOTOS:codigo], escolhendo o codigo conforme o produto:\n  - artesanal15 -> Cartelas Artesanal Luxo 15 pares\n  - artesanal5 -> Cartelas Artesanal 5 pares\n  - kits -> Kits atacado/revenda\n  - joias -> Joias de Unha\n  - cartelas3d -> Cartelas 3D 30 pares\n- Exemplo: \"Claro! Vou te mostrar agora! [ENVIAR_FOTOS:artesanal15] Essas sao nossas cartelas mais pedidas...\"\n- O marcador e removido automaticamente antes do envio - a cliente nunca vera esse texto.\n- Acompanhe com uma frase de venda natural, sem descrever a imagem.\n- Em caso de duvida sobre a categoria, use \"artesanal15\" como padrao.\n\n[LOGÍSTICA E PAGAMENTO]\n- Sempre peça o CEP para cálculo do frete antes de finalizar.\n- Pagamento: PIX ou Cartão (Antecipado).\n- Pedido mínimo: R$ 35,00.\n- Frete Pelotas/Capão do Leão: R$ 5,00 (Grátis > R$ 50).\n- Frete Sul/Sudeste: R$ 15,00 | Demais: R$ 20,00 (Grátis > R$ 80).\n- Prazo: 6 a 12 dias úteis.\n\n[TRANSFERÊNCIA HUMANA]\n- Envie para a Elisa apenas para: negociação de grandes volumes, comprovante, link de pagamento ou pedido de atendimento humano. \n- Mensagem: \"Vou encaminhar seu atendimento para a Elisa, que dará continuidade ao seu pedido 😊\"\n\n[CONTEXTO E MEMÓRIA]\n- Você tem acesso às últimas 10 mensagens da conversa. Utilize esse histórico para não ser repetitiva e manter o contexto da negociação.\n- Baseie suas respostas nas informações cadastradas no catálogo fornecido pelo sistema.\n-"
           }
         },
         "id": "5e0f3d6e-8ca5-4392-8313-f84899d4ab21",
@@ -2329,10 +2329,10 @@
               {
                 "id": "drv1",
                 "leftValue": "={{ String($('Vendedor IA').first()?.json?.output || '') }}",
-                "rightValue": "drive\\.google\\.com\\/drive\\/folders\\/(1VFPtj62RnZEymFnu40BKxPTYG7vL0u7p|1A9r9fWed1ZWuC7sMQQgDPkRYdldn6bXC|1200bA34Qcu3mV2Bcp8nfSrMNXHnSFHpT|1ExfLDKoYYoMvwaLfbx_qmGLM6-S3NxGN|1bXs-MYZBWLXqtt-QywggAifgnQdMJ4w0)",
+                "rightValue": "[ENVIAR_FOTOS",
                 "operator": {
                   "type": "string",
-                  "operation": "regex"
+                  "operation": "contains"
                 }
               }
             ],
@@ -2341,7 +2341,7 @@
           "options": {}
         },
         "id": "if-drive-lnk",
-        "name": "IF Contem Link Drive?",
+        "name": "IF Deve Enviar Fotos?",
         "type": "n8n-nodes-base.if",
         "typeVersion": 2.2,
         "position": [
@@ -2352,7 +2352,7 @@
       },
       {
         "parameters": {
-          "jsCode": "const texto = $('Vendedor IA').first().json.output || '';\nconst match = texto.match(/drive\\.google\\.com\\/drive\\/folders\\/([a-zA-Z0-9_-]+)/);\nconst folderId = match ? match[1] : '';\nconst cat = {\n  '1VFPtj62RnZEymFnu40BKxPTYG7vL0u7p': 'Artesanal Luxo 15 pares',\n  '1A9r9fWed1ZWuC7sMQQgDPkRYdldn6bXC': 'Artesanal 5 pares',\n  '1200bA34Qcu3mV2Bcp8nfSrMNXHnSFHpT': 'Kits atacado/revenda',\n  '1ExfLDKoYYoMvwaLfbx_qmGLM6-S3NxGN': 'Joias de Unha',\n  '1bXs-MYZBWLXqtt-QywggAifgnQdMJ4w0': '3D Cartelas 30 pares'\n};\nif (!folderId) return [];\nreturn [{ json: { folder_id: folderId, categoria: cat[folderId] || 'Catalogo Unhabella' } }];"
+          "jsCode": "const output = $('Vendedor IA').first()?.json?.output || '';\nconst m = output.match(/\\[ENVIAR_FOTOS:?\\s*([a-z0-9_]*)\\]/i);\nif (!m) return [];\nconst codigo = (m[1] || 'artesanal15').toLowerCase();\n\nconst pastas = {\n  artesanal15: { folder_id: '1VFPtj62RnZEymFnu40BKxPTYG7vL0u7p', categoria: 'Artesanal Luxo 15 pares' },\n  artesanal5:  { folder_id: '1A9r9fWed1ZWuC7sMQQgDPkRYdldn6bXC', categoria: 'Artesanal 5 pares' },\n  kits:        { folder_id: '1200bA34Qcu3mV2Bcp8nfSrMNXHnSFHpT', categoria: 'Kits atacado/revenda' },\n  joias:       { folder_id: '1ExfLDKoYYoMvwaLfbx_qmGLM6-S3NxGN', categoria: 'Joias de Unha' },\n  cartelas3d:  { folder_id: '1bXs-MYZBWLXqtt-QywggAifgnQdMJ4w0', categoria: '3D Cartelas 30 pares' }\n};\nconst escolhido = pastas[codigo] || pastas.artesanal15;\nreturn [{ json: escolhido }];"
         },
         "id": "code-extr-folder",
         "name": "Code: Extrair Folder ID",
@@ -2405,7 +2405,7 @@
       },
       {
         "parameters": {
-          "jsCode": "const resp = $input.first().json;\nconst files = resp.files || [];\nconst cat = $('Code: Extrair Folder ID').first().json.categoria || 'Catálogo Unhabella';\n\nconst imagens = files.filter(function(f){ \n  return f.mimeType && f.mimeType.startsWith('image/'); \n});\n\nif (imagens.length === 0) return [];\n\nreturn imagens.map(function(f){\n  var nome = (f.name || '').replace(/\\.[^.]+$/, '');\n  return { json: { \n    file_id: f.id, \n    file_name: f.name, \n    mime_type: f.mimeType || 'image/jpeg',\n    url: 'https://drive.google.com/uc?export=download&id=' + f.id,\n    caption: cat + ' — ' + nome \n  }};\n});"
+          "jsCode": "const resp = $input.first().json;\nconst files = resp.files || [];\nconst cat = $('Code: Extrair Folder ID').first().json.categoria || 'Catálogo Unhabella';\n\nconst imagens = files.filter(function(f){ \n  return f.mimeType && f.mimeType.startsWith('image/'); \n});\n\nif (imagens.length === 0) return [];\n\nreturn imagens.slice(0, 5).map(function(f){\n  var nome = (f.name || '').replace(/\\.[^.]+$/, '');\n  return { json: { \n    file_id: f.id, \n    file_name: f.name, \n    mime_type: f.mimeType || 'image/jpeg',\n    url: 'https://drive.google.com/uc?export=download&id=' + f.id,\n    caption: cat + ' — ' + nome \n  }};\n});"
         },
         "id": "code-prep-urls",
         "name": "Code: Preparar URLs Fotos",
@@ -2490,7 +2490,7 @@
           },
           "sendBody": true,
           "specifyBody": "json",
-          "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.remoteJid }}\",\n  \"text\": {{ JSON.stringify($json.output || $json.text || '') }}\n}",
+          "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.remoteJid }}\",\n  \"text\": {{ JSON.stringify(($json.output || $json.text || '').replace(/\\[ENVIAR_FOTOS[^\\]]*\\]/gi, '').trim()) }}\n}",
           "options": {}
         },
         "id": "resposta-ao-cliente-unhabella",
@@ -3251,7 +3251,7 @@
               "index": 0
             },
             {
-              "node": "IF Contem Link Drive?",
+              "node": "IF Deve Enviar Fotos?",
               "type": "main",
               "index": 0
             }
@@ -3300,18 +3300,6 @@
               "index": 0
             }
           ]
-        ]
-      },
-      "IF Contem Link Drive?": {
-        "main": [
-          [
-            {
-              "node": "Code: Extrair Folder ID",
-              "type": "main",
-              "index": 0
-            }
-          ],
-          []
         ]
       },
       "Code: Extrair Folder ID": {
@@ -3667,6 +3655,18 @@
             }
           ]
         ]
+      },
+      "IF Deve Enviar Fotos?": {
+        "main": [
+          [
+            {
+              "node": "Code: Extrair Folder ID",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          []
+        ]
       }
     },
     "authors": "Elisa Silveira de Moura Andrade",
@@ -3675,18 +3675,18 @@
     "autosaved": false,
     "workflowPublishHistory": [
       {
-        "createdAt": "2026-06-11T03:52:59.378Z",
-        "id": 498,
+        "createdAt": "2026-06-11T13:39:15.169Z",
+        "id": 502,
         "workflowId": "Jkt0vu99AsQnEs6a",
-        "versionId": "d81be998-db79-42de-b8f0-dc77dca81cdd",
+        "versionId": "9c4ba089-66b7-4aad-b3e7-7b01b44a147d",
         "event": "activated",
         "userId": "63b6bda0-d1aa-4abc-beaa-0fbb599f2288"
       },
       {
-        "createdAt": "2026-06-11T03:52:59.350Z",
-        "id": 497,
+        "createdAt": "2026-06-11T13:39:15.132Z",
+        "id": 501,
         "workflowId": "Jkt0vu99AsQnEs6a",
-        "versionId": "d81be998-db79-42de-b8f0-dc77dca81cdd",
+        "versionId": "9c4ba089-66b7-4aad-b3e7-7b01b44a147d",
         "event": "deactivated",
         "userId": "63b6bda0-d1aa-4abc-beaa-0fbb599f2288"
       }
