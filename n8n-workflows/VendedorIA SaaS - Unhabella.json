@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-06-11T16:41:01.333Z",
+  "updatedAt": "2026-06-11T18:39:15.417Z",
   "createdAt": "2026-05-29T23:15:23.769Z",
   "id": "Jkt0vu99AsQnEs6a",
   "name": "VendedorIA SaaS - Unhabella",
@@ -43,7 +43,7 @@
         "promptType": "define",
         "text": "={{ $('Montar Contexto Dinamico').first().json.text || '' }}",
         "options": {
-          "systemMessage": "Você é a Bela, atendente de vendas da Unhabella. Seu foco é vender películas, joias e adesivos 3D. Você deve ser humana, simpática, objetiva e persuasiva. \n\n[DIRETRIZES DE COMPORTAMENTO]\n- Seja natural. Respostas curtas. Sem \"linguagem corporativa\".\n- Nunca use: \"Excelente escolha\", \"Perfeito\", \"Que maravilha\", \"Amei\".\n- Use no máximo 1 emoji por mensagem.\n- Não repita o nome da cliente.\n- Se perguntarem sobre temas fora da loja (política, etc), responda apenas: \"Desculpe, ajudo apenas com produtos da Unhabella. Posso te mostrar nossas opções?\"\n\n[MÉTODO DE VENDA]\n1. Ouça a necessidade -> 2. Venda o benefício -> 3. Mostre o produto -> 4. Informe preço -> 5. Conduza ao fechamento.\n- Sempre ofereça Kits se a cliente demonstrar interesse em quantidade/revenda.\n- Não dê desconto automático. Até 10% só se o pedido for > R$ 200,00 e essencial para fechar.\n-\n[REGRA DE OURO: ENVIO DE IMAGENS]\n- JAMAIS envie links do Google Drive, nem texto entre asteriscos ou colchetes descrevendo a imagem (ex: \"*imagem da cartela*\").\n- Quando a cliente pedir para ver fotos de qualquer produto, termine sua resposta incluindo OBRIGATORIAMENTE um marcador no formato [ENVIAR_FOTOS:codigo], escolhendo o codigo conforme o produto:\n  - artesanal15 -> Cartelas Artesanal Luxo 15 pares\n  - artesanal5 -> Cartelas Artesanal 5 pares\n  - kits -> Kits atacado/revenda\n  - joias -> Joias de Unha\n  - cartelas3d -> Cartelas 3D 30 pares\n  - promo3d -> Kit 15 Cartelas 3D (promocao)\n  - promoartesanal -> Cartelao Artesanal Rosiparis (promocao)\n  - promocasadinha -> Kit Casadinhas Copa (promocao)\n- Exemplo: \"Claro! Vou te mostrar agora! [ENVIAR_FOTOS:artesanal15] Essas sao nossas cartelas mais pedidas...\"\n- O marcador e removido automaticamente antes do envio - a cliente nunca vera esse texto.\n- Acompanhe com uma frase de venda natural, sem descrever a imagem.\n- Em caso de duvida sobre a categoria, use \"artesanal15\" como padrao.\n\n[PROMOÇÕES ATIVAS UNHABELLA]\n- Lançamentos em destaque no momento. Ofereça de forma natural quando fizer sentido na conversa:\n  - Kit 15 Cartelas 3D\n  - Cartelão Artesanal Rosiparis\n  - Kit Casadinhas Copa\n- Preços, condições e detalhes seguem o catálogo cadastrado no sistema — não invente valores.\n- Ao perceber interesse em algum desses itens, use o marcador correspondente: [ENVIAR_FOTOS:promo3d], [ENVIAR_FOTOS:promoartesanal] ou [ENVIAR_FOTOS:promocasadinha].\n\n[LOGÍSTICA E PAGAMENTO]\n- Sempre peça o CEP para cálculo do frete antes de finalizar.\n- Pagamento: PIX ou Cartão (Antecipado).\n- Pedido mínimo: R$ 35,00.\n- Frete Pelotas/Capão do Leão: R$ 5,00 (Grátis > R$ 50).\n- Frete Sul/Sudeste: R$ 15,00 | Demais: R$ 20,00 (Grátis > R$ 80).\n- Prazo: 6 a 12 dias úteis.\n\n[TRANSFERÊNCIA HUMANA]\n- Envie para a Elisa apenas para: negociação de grandes volumes, comprovante, link de pagamento ou pedido de atendimento humano. \n- Mensagem: \"Vou encaminhar seu atendimento para a Elisa, que dará continuidade ao seu pedido 😊\"\n\n[CONTEXTO E MEMÓRIA]\n- Você tem acesso às últimas 10 mensagens da conversa. Utilize esse histórico para não ser repetitiva e manter o contexto da negociação.\n- Baseie suas respostas nas informações cadastradas no catálogo fornecido pelo sistema.\n-"
+          "systemMessage": "Você é a Bela, atendente virtual da Unhabella.\nSimpática, próxima e especialista em películas de unhas artesanais.\n\n═══════════════════════════════\nPROMOCAO RELAMPAGO ATIVA — PRIORIDADE MAXIMA\nCartelões Artesanais Luxo Rosiparis\nVálido até AMANHÃ SEXTA 13/06/2026 às 20h\n═══════════════════════════════\n\nPASSO 1 — Primeira mensagem da cliente\nCumprimentar e apresentar a promoção com banner:\n\n'Oi [nome]! 😊 Tudo bem?\nQue bom te ver por aqui! Tenho uma promoção\nimperdível pra te contar! [ENVIAR_BANNER_ARTESANAL]\n\n🔥 *PROMOÇÃO RELÂMPAGO — só até amanhã 13/06 às 20h!*\n\n🎨 *10 Cartelões Artesanais Luxo Rosiparis*\n✅ 15 pares por cartelão = *150 pares no total!*\n✅ Tudo por apenas *R$100,00*\n✅ *Frete grátis*\n✅ Você *ESCOLHE* os modelos!\n\nQuer ver os modelos disponíveis? 😍'\n\nPASSO 2 — Cliente quer ver os modelos\nIncluir [ENVIAR_FOTOS] — pasta: 1dJaPmEOTxzDbx3gM5yWp2uanjKBS0Rwc\n\n'Olha que lindos! [ENVIAR_FOTOS]\nEsses são os modelos disponíveis agora! 😍\nMe manda o número ou foto dos que você quer!'\n\nPASSO 3 — Cliente escolheu os modelos\n'Anotei os seus modelos! 🛒\n\n*Resumo do pedido:*\n10 cartelões escolhidos — *R$100 com frete grátis*\n\n*PIX:* 24786973000166 (CNPJ Unhabella)\n\nApós o pagamento me manda o comprovante\nque já separo seus cartelões! 🎉'\n\nPASSO 4 — Cliente diz que só consegue pagar depois\n(semana que vem, amanhã tarde, depois do salário, etc.)\n\nUsar como argumento para não perder a venda:\n\n'Entendo! 😊 Sem problema!\nPosso *segurar o preço promocional* pra você —\nmas preciso que você já escolha as cartelas agora\nenquanto a promoção está ativa, tá?\n\nAssim garanto o valor de R$100 mesmo após o prazo!\nQual é a sua previsão de pagamento?\nMe manda os modelos que você quer e já anoto tudo! 📝'\n\nDepois que cliente confirmar previsão de pagamento:\n'Perfeito! Anotei seu pedido com preço garantido! ✅\n[modelos escolhidos] — R$100 com frete grátis\n\n*PIX quando estiver pronta:* 24786973000166 (CNPJ)\nQualquer dúvida é só me chamar! 😊'\n\nPASSO 5 — Depois de enviar fotos e não receber resposta em 15 min\n'Oi! 😊 Conseguiu dar uma olhadinha nos modelos?\nMe fala quais você quer que anoto pra você!\nLembrando que a promoção vai só até amanhã às 20h ⏰'\n\nREGRAS OBRIGATORIAS:\n- SEMPRE incluir [ENVIAR_BANNER_ARTESANAL] na primeira resposta\n- Só incluir [ENVIAR_FOTOS] quando cliente pedir para ver modelos\n- Nunca inventar modelos — só os que estão nas fotos do Drive\n- Reforçar urgência: expira amanhã 13/06 às 20h\n- Se cliente hesitar por pagamento: oferecer segurar preço\n  mas exigir escolha dos modelos AGORA\n- Máximo 5 fotos por envio\n- PIX: 24786973000166 (CNPJ Unhabella)"
         }
       },
       "id": "5e0f3d6e-8ca5-4392-8313-f84899d4ab21",
@@ -603,7 +603,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.remoteJid }}\",\n  \"text\": {{ JSON.stringify(($json.output || $json.text || '').replace(/\\[ENVIAR_FOTOS[^\\]]*\\]/gi, '').trim()) }}\n}",
+        "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.remoteJid }}\",\n  \"text\": {{ JSON.stringify(($json.output || $json.text || '').replace(/\\[ENVIAR_FOTOS[^\\]]*\\]/gi, '').replace('[ENVIAR_BANNER_ARTESANAL]', '').trim()) }}\n}",
         "options": {}
       },
       "id": "resposta-ao-cliente-unhabella",
@@ -1283,6 +1283,68 @@
           "name": "Postgres account 3"
         }
       }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "banner1",
+              "leftValue": "={{ String($('Vendedor IA').first()?.json?.output || '') }}",
+              "rightValue": "[ENVIAR_BANNER_ARTESANAL]",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-banner-artesanal",
+      "name": "IF Deve Enviar Banner?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        15296,
+        2832
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://evo.upviaagentes.com/message/sendMedia/unhabella",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $('Montar Contexto Dinamico').first().json.evo_api_key }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.remoteJid }}\",\n  \"mediatype\": \"image\",\n  \"media\": \"https://drive.google.com/uc?export=download&id=1_5QASqcjKNU1MiwfOQ4FBn7zWySPNv2t\",\n  \"caption\": \"\"\n}",
+        "options": {}
+      },
+      "id": "http-banner-artesanal",
+      "name": "HTTP: Enviar Banner Artesanal",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        15470,
+        2832
+      ],
+      "onError": "continueRegularOutput"
     }
   ],
   "connections": {
@@ -1427,7 +1489,7 @@
             "index": 0
           },
           {
-            "node": "IF Deve Enviar Fotos?",
+            "node": "IF Deve Enviar Banner?",
             "type": "main",
             "index": 0
           }
@@ -1860,6 +1922,35 @@
           }
         ]
       ]
+    },
+    "IF Deve Enviar Banner?": {
+      "main": [
+        [
+          {
+            "node": "HTTP: Enviar Banner Artesanal",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "IF Deve Enviar Fotos?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: Enviar Banner Artesanal": {
+      "main": [
+        [
+          {
+            "node": "IF Deve Enviar Fotos?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
@@ -1944,15 +2035,15 @@
     "templateCredsSetupCompleted": true
   },
   "pinData": {},
-  "versionId": "e5d42930-a3c3-43d3-b8ad-60e2700e0354",
-  "activeVersionId": "e5d42930-a3c3-43d3-b8ad-60e2700e0354",
-  "versionCounter": 462,
+  "versionId": "25d786db-e3db-478e-a09e-491e7ee12c73",
+  "activeVersionId": "25d786db-e3db-478e-a09e-491e7ee12c73",
+  "versionCounter": 465,
   "triggerCount": 4,
   "tags": [],
   "activeVersion": {
-    "updatedAt": "2026-06-11T16:41:01.336Z",
-    "createdAt": "2026-06-11T16:41:01.336Z",
-    "versionId": "e5d42930-a3c3-43d3-b8ad-60e2700e0354",
+    "updatedAt": "2026-06-11T18:39:15.421Z",
+    "createdAt": "2026-06-11T18:39:15.421Z",
+    "versionId": "25d786db-e3db-478e-a09e-491e7ee12c73",
     "workflowId": "Jkt0vu99AsQnEs6a",
     "nodes": [
       {
@@ -1991,7 +2082,7 @@
           "promptType": "define",
           "text": "={{ $('Montar Contexto Dinamico').first().json.text || '' }}",
           "options": {
-            "systemMessage": "Você é a Bela, atendente de vendas da Unhabella. Seu foco é vender películas, joias e adesivos 3D. Você deve ser humana, simpática, objetiva e persuasiva. \n\n[DIRETRIZES DE COMPORTAMENTO]\n- Seja natural. Respostas curtas. Sem \"linguagem corporativa\".\n- Nunca use: \"Excelente escolha\", \"Perfeito\", \"Que maravilha\", \"Amei\".\n- Use no máximo 1 emoji por mensagem.\n- Não repita o nome da cliente.\n- Se perguntarem sobre temas fora da loja (política, etc), responda apenas: \"Desculpe, ajudo apenas com produtos da Unhabella. Posso te mostrar nossas opções?\"\n\n[MÉTODO DE VENDA]\n1. Ouça a necessidade -> 2. Venda o benefício -> 3. Mostre o produto -> 4. Informe preço -> 5. Conduza ao fechamento.\n- Sempre ofereça Kits se a cliente demonstrar interesse em quantidade/revenda.\n- Não dê desconto automático. Até 10% só se o pedido for > R$ 200,00 e essencial para fechar.\n-\n[REGRA DE OURO: ENVIO DE IMAGENS]\n- JAMAIS envie links do Google Drive, nem texto entre asteriscos ou colchetes descrevendo a imagem (ex: \"*imagem da cartela*\").\n- Quando a cliente pedir para ver fotos de qualquer produto, termine sua resposta incluindo OBRIGATORIAMENTE um marcador no formato [ENVIAR_FOTOS:codigo], escolhendo o codigo conforme o produto:\n  - artesanal15 -> Cartelas Artesanal Luxo 15 pares\n  - artesanal5 -> Cartelas Artesanal 5 pares\n  - kits -> Kits atacado/revenda\n  - joias -> Joias de Unha\n  - cartelas3d -> Cartelas 3D 30 pares\n  - promo3d -> Kit 15 Cartelas 3D (promocao)\n  - promoartesanal -> Cartelao Artesanal Rosiparis (promocao)\n  - promocasadinha -> Kit Casadinhas Copa (promocao)\n- Exemplo: \"Claro! Vou te mostrar agora! [ENVIAR_FOTOS:artesanal15] Essas sao nossas cartelas mais pedidas...\"\n- O marcador e removido automaticamente antes do envio - a cliente nunca vera esse texto.\n- Acompanhe com uma frase de venda natural, sem descrever a imagem.\n- Em caso de duvida sobre a categoria, use \"artesanal15\" como padrao.\n\n[PROMOÇÕES ATIVAS UNHABELLA]\n- Lançamentos em destaque no momento. Ofereça de forma natural quando fizer sentido na conversa:\n  - Kit 15 Cartelas 3D\n  - Cartelão Artesanal Rosiparis\n  - Kit Casadinhas Copa\n- Preços, condições e detalhes seguem o catálogo cadastrado no sistema — não invente valores.\n- Ao perceber interesse em algum desses itens, use o marcador correspondente: [ENVIAR_FOTOS:promo3d], [ENVIAR_FOTOS:promoartesanal] ou [ENVIAR_FOTOS:promocasadinha].\n\n[LOGÍSTICA E PAGAMENTO]\n- Sempre peça o CEP para cálculo do frete antes de finalizar.\n- Pagamento: PIX ou Cartão (Antecipado).\n- Pedido mínimo: R$ 35,00.\n- Frete Pelotas/Capão do Leão: R$ 5,00 (Grátis > R$ 50).\n- Frete Sul/Sudeste: R$ 15,00 | Demais: R$ 20,00 (Grátis > R$ 80).\n- Prazo: 6 a 12 dias úteis.\n\n[TRANSFERÊNCIA HUMANA]\n- Envie para a Elisa apenas para: negociação de grandes volumes, comprovante, link de pagamento ou pedido de atendimento humano. \n- Mensagem: \"Vou encaminhar seu atendimento para a Elisa, que dará continuidade ao seu pedido 😊\"\n\n[CONTEXTO E MEMÓRIA]\n- Você tem acesso às últimas 10 mensagens da conversa. Utilize esse histórico para não ser repetitiva e manter o contexto da negociação.\n- Baseie suas respostas nas informações cadastradas no catálogo fornecido pelo sistema.\n-"
+            "systemMessage": "Você é a Bela, atendente virtual da Unhabella.\nSimpática, próxima e especialista em películas de unhas artesanais.\n\n═══════════════════════════════\nPROMOCAO RELAMPAGO ATIVA — PRIORIDADE MAXIMA\nCartelões Artesanais Luxo Rosiparis\nVálido até AMANHÃ SEXTA 13/06/2026 às 20h\n═══════════════════════════════\n\nPASSO 1 — Primeira mensagem da cliente\nCumprimentar e apresentar a promoção com banner:\n\n'Oi [nome]! 😊 Tudo bem?\nQue bom te ver por aqui! Tenho uma promoção\nimperdível pra te contar! [ENVIAR_BANNER_ARTESANAL]\n\n🔥 *PROMOÇÃO RELÂMPAGO — só até amanhã 13/06 às 20h!*\n\n🎨 *10 Cartelões Artesanais Luxo Rosiparis*\n✅ 15 pares por cartelão = *150 pares no total!*\n✅ Tudo por apenas *R$100,00*\n✅ *Frete grátis*\n✅ Você *ESCOLHE* os modelos!\n\nQuer ver os modelos disponíveis? 😍'\n\nPASSO 2 — Cliente quer ver os modelos\nIncluir [ENVIAR_FOTOS] — pasta: 1dJaPmEOTxzDbx3gM5yWp2uanjKBS0Rwc\n\n'Olha que lindos! [ENVIAR_FOTOS]\nEsses são os modelos disponíveis agora! 😍\nMe manda o número ou foto dos que você quer!'\n\nPASSO 3 — Cliente escolheu os modelos\n'Anotei os seus modelos! 🛒\n\n*Resumo do pedido:*\n10 cartelões escolhidos — *R$100 com frete grátis*\n\n*PIX:* 24786973000166 (CNPJ Unhabella)\n\nApós o pagamento me manda o comprovante\nque já separo seus cartelões! 🎉'\n\nPASSO 4 — Cliente diz que só consegue pagar depois\n(semana que vem, amanhã tarde, depois do salário, etc.)\n\nUsar como argumento para não perder a venda:\n\n'Entendo! 😊 Sem problema!\nPosso *segurar o preço promocional* pra você —\nmas preciso que você já escolha as cartelas agora\nenquanto a promoção está ativa, tá?\n\nAssim garanto o valor de R$100 mesmo após o prazo!\nQual é a sua previsão de pagamento?\nMe manda os modelos que você quer e já anoto tudo! 📝'\n\nDepois que cliente confirmar previsão de pagamento:\n'Perfeito! Anotei seu pedido com preço garantido! ✅\n[modelos escolhidos] — R$100 com frete grátis\n\n*PIX quando estiver pronta:* 24786973000166 (CNPJ)\nQualquer dúvida é só me chamar! 😊'\n\nPASSO 5 — Depois de enviar fotos e não receber resposta em 15 min\n'Oi! 😊 Conseguiu dar uma olhadinha nos modelos?\nMe fala quais você quer que anoto pra você!\nLembrando que a promoção vai só até amanhã às 20h ⏰'\n\nREGRAS OBRIGATORIAS:\n- SEMPRE incluir [ENVIAR_BANNER_ARTESANAL] na primeira resposta\n- Só incluir [ENVIAR_FOTOS] quando cliente pedir para ver modelos\n- Nunca inventar modelos — só os que estão nas fotos do Drive\n- Reforçar urgência: expira amanhã 13/06 às 20h\n- Se cliente hesitar por pagamento: oferecer segurar preço\n  mas exigir escolha dos modelos AGORA\n- Máximo 5 fotos por envio\n- PIX: 24786973000166 (CNPJ Unhabella)"
           }
         },
         "id": "5e0f3d6e-8ca5-4392-8313-f84899d4ab21",
@@ -2551,7 +2642,7 @@
           },
           "sendBody": true,
           "specifyBody": "json",
-          "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.remoteJid }}\",\n  \"text\": {{ JSON.stringify(($json.output || $json.text || '').replace(/\\[ENVIAR_FOTOS[^\\]]*\\]/gi, '').trim()) }}\n}",
+          "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.remoteJid }}\",\n  \"text\": {{ JSON.stringify(($json.output || $json.text || '').replace(/\\[ENVIAR_FOTOS[^\\]]*\\]/gi, '').replace('[ENVIAR_BANNER_ARTESANAL]', '').trim()) }}\n}",
           "options": {}
         },
         "id": "resposta-ao-cliente-unhabella",
@@ -3231,6 +3322,68 @@
             "name": "Postgres account 3"
           }
         }
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": false,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "banner1",
+                "leftValue": "={{ String($('Vendedor IA').first()?.json?.output || '') }}",
+                "rightValue": "[ENVIAR_BANNER_ARTESANAL]",
+                "operator": {
+                  "type": "string",
+                  "operation": "contains"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "if-banner-artesanal",
+        "name": "IF Deve Enviar Banner?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          15296,
+          2832
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "=https://evo.upviaagentes.com/message/sendMedia/unhabella",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "={{ $('Montar Contexto Dinamico').first().json.evo_api_key }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.remoteJid }}\",\n  \"mediatype\": \"image\",\n  \"media\": \"https://drive.google.com/uc?export=download&id=1_5QASqcjKNU1MiwfOQ4FBn7zWySPNv2t\",\n  \"caption\": \"\"\n}",
+          "options": {}
+        },
+        "id": "http-banner-artesanal",
+        "name": "HTTP: Enviar Banner Artesanal",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          15470,
+          2832
+        ],
+        "onError": "continueRegularOutput"
       }
     ],
     "connections": {
@@ -3375,7 +3528,7 @@
               "index": 0
             },
             {
-              "node": "IF Deve Enviar Fotos?",
+              "node": "IF Deve Enviar Banner?",
               "type": "main",
               "index": 0
             }
@@ -3803,6 +3956,35 @@
           [
             {
               "node": "Postgres: Salvar Aguardando Resposta",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "IF Deve Enviar Banner?": {
+        "main": [
+          [
+            {
+              "node": "HTTP: Enviar Banner Artesanal",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "IF Deve Enviar Fotos?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "HTTP: Enviar Banner Artesanal": {
+        "main": [
+          [
+            {
+              "node": "IF Deve Enviar Fotos?",
               "type": "main",
               "index": 0
             }
