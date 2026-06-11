@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-06-11T01:57:32.450Z",
+  "updatedAt": "2026-06-11T03:52:59.267Z",
   "createdAt": "2026-05-29T23:15:23.769Z",
   "id": "Jkt0vu99AsQnEs6a",
   "name": "VendedorIA SaaS - Unhabella",
@@ -442,10 +442,10 @@
             {
               "id": "drv1",
               "leftValue": "={{ String($('Vendedor IA').first()?.json?.output || '') }}",
-              "rightValue": "drive.google.com/drive/folders/",
+              "rightValue": "drive\\.google\\.com\\/drive\\/folders\\/(1VFPtj62RnZEymFnu40BKxPTYG7vL0u7p|1A9r9fWed1ZWuC7sMQQgDPkRYdldn6bXC|1200bA34Qcu3mV2Bcp8nfSrMNXHnSFHpT|1ExfLDKoYYoMvwaLfbx_qmGLM6-S3NxGN|1bXs-MYZBWLXqtt-QywggAifgnQdMJ4w0)",
               "operator": {
                 "type": "string",
-                "operation": "contains"
+                "operation": "regex"
               }
             }
           ],
@@ -542,7 +542,8 @@
       "position": [
         16608,
         2640
-      ]
+      ],
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -602,7 +603,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.remoteJid }}\",\\n  \"text\": {{ JSON.stringify($json.output || $json.text || '') }}\\n}",
+        "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.remoteJid }}\",\n  \"text\": {{ JSON.stringify($json.output || $json.text || '') }}\n}",
         "options": {}
       },
       "id": "resposta-ao-cliente-unhabella",
@@ -1863,9 +1864,9 @@
     "templateCredsSetupCompleted": true
   },
   "pinData": {},
-  "versionId": "fbbbbb57-4e93-4a9e-a086-bfc8ddba7070",
-  "activeVersionId": "fbbbbb57-4e93-4a9e-a086-bfc8ddba7070",
-  "versionCounter": 432,
+  "versionId": "d81be998-db79-42de-b8f0-dc77dca81cdd",
+  "activeVersionId": "d81be998-db79-42de-b8f0-dc77dca81cdd",
+  "versionCounter": 441,
   "triggerCount": 4,
   "shared": [
     {
@@ -1888,9 +1889,9 @@
   ],
   "tags": [],
   "activeVersion": {
-    "updatedAt": "2026-06-11T01:57:32.454Z",
-    "createdAt": "2026-06-11T01:57:32.454Z",
-    "versionId": "fbbbbb57-4e93-4a9e-a086-bfc8ddba7070",
+    "updatedAt": "2026-06-11T03:52:59.270Z",
+    "createdAt": "2026-06-11T03:52:59.270Z",
+    "versionId": "d81be998-db79-42de-b8f0-dc77dca81cdd",
     "workflowId": "Jkt0vu99AsQnEs6a",
     "nodes": [
       {
@@ -2327,11 +2328,11 @@
             "conditions": [
               {
                 "id": "drv1",
-                "leftValue": "={{ $('Vendedor IA').first().json.output || '' }}",
-                "rightValue": "drive.google.com/drive/folders/",
+                "leftValue": "={{ String($('Vendedor IA').first()?.json?.output || '') }}",
+                "rightValue": "drive\\.google\\.com\\/drive\\/folders\\/(1VFPtj62RnZEymFnu40BKxPTYG7vL0u7p|1A9r9fWed1ZWuC7sMQQgDPkRYdldn6bXC|1200bA34Qcu3mV2Bcp8nfSrMNXHnSFHpT|1ExfLDKoYYoMvwaLfbx_qmGLM6-S3NxGN|1bXs-MYZBWLXqtt-QywggAifgnQdMJ4w0)",
                 "operator": {
                   "type": "string",
-                  "operation": "contains"
+                  "operation": "regex"
                 }
               }
             ],
@@ -2346,7 +2347,8 @@
         "position": [
           15648,
           2656
-        ]
+        ],
+        "onError": "continueRegularOutput"
       },
       {
         "parameters": {
@@ -2427,7 +2429,8 @@
         "position": [
           16608,
           2640
-        ]
+        ],
+        "onError": "continueRegularOutput"
       },
       {
         "parameters": {
@@ -2487,7 +2490,7 @@
           },
           "sendBody": true,
           "specifyBody": "json",
-          "jsonBody": "={\\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.remoteJid }}\",\\n  \"text\": {{ JSON.stringify($json.output || $json.text || '') }}\\n}",
+          "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.remoteJid }}\",\n  \"text\": {{ JSON.stringify($json.output || $json.text || '') }}\n}",
           "options": {}
         },
         "id": "resposta-ao-cliente-unhabella",
@@ -3672,18 +3675,18 @@
     "autosaved": false,
     "workflowPublishHistory": [
       {
-        "createdAt": "2026-06-11T01:57:32.579Z",
-        "id": 492,
+        "createdAt": "2026-06-11T03:52:59.378Z",
+        "id": 498,
         "workflowId": "Jkt0vu99AsQnEs6a",
-        "versionId": "fbbbbb57-4e93-4a9e-a086-bfc8ddba7070",
+        "versionId": "d81be998-db79-42de-b8f0-dc77dca81cdd",
         "event": "activated",
         "userId": "63b6bda0-d1aa-4abc-beaa-0fbb599f2288"
       },
       {
-        "createdAt": "2026-06-11T01:57:32.540Z",
-        "id": 491,
+        "createdAt": "2026-06-11T03:52:59.350Z",
+        "id": 497,
         "workflowId": "Jkt0vu99AsQnEs6a",
-        "versionId": "fbbbbb57-4e93-4a9e-a086-bfc8ddba7070",
+        "versionId": "d81be998-db79-42de-b8f0-dc77dca81cdd",
         "event": "deactivated",
         "userId": "63b6bda0-d1aa-4abc-beaa-0fbb599f2288"
       }
