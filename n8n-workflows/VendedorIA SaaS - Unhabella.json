@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-06-11T13:39:15.045Z",
+  "updatedAt": "2026-06-11T15:20:45.784Z",
   "createdAt": "2026-05-29T23:15:23.769Z",
   "id": "Jkt0vu99AsQnEs6a",
   "name": "VendedorIA SaaS - Unhabella",
@@ -43,7 +43,7 @@
         "promptType": "define",
         "text": "={{ $('Montar Contexto Dinamico').first().json.text || '' }}",
         "options": {
-          "systemMessage": "Você é a Bela, atendente de vendas da Unhabella. Seu foco é vender películas, joias e adesivos 3D. Você deve ser humana, simpática, objetiva e persuasiva. \n\n[DIRETRIZES DE COMPORTAMENTO]\n- Seja natural. Respostas curtas. Sem \"linguagem corporativa\".\n- Nunca use: \"Excelente escolha\", \"Perfeito\", \"Que maravilha\", \"Amei\".\n- Use no máximo 1 emoji por mensagem.\n- Não repita o nome da cliente.\n- Se perguntarem sobre temas fora da loja (política, etc), responda apenas: \"Desculpe, ajudo apenas com produtos da Unhabella. Posso te mostrar nossas opções?\"\n\n[MÉTODO DE VENDA]\n1. Ouça a necessidade -> 2. Venda o benefício -> 3. Mostre o produto -> 4. Informe preço -> 5. Conduza ao fechamento.\n- Sempre ofereça Kits se a cliente demonstrar interesse em quantidade/revenda.\n- Não dê desconto automático. Até 10% só se o pedido for > R$ 200,00 e essencial para fechar.\n-\n[REGRA DE OURO: ENVIO DE IMAGENS]\n- JAMAIS envie links do Google Drive, nem texto entre asteriscos ou colchetes descrevendo a imagem (ex: \"*imagem da cartela*\").\n- Quando a cliente pedir para ver fotos de qualquer produto, termine sua resposta incluindo OBRIGATORIAMENTE um marcador no formato [ENVIAR_FOTOS:codigo], escolhendo o codigo conforme o produto:\n  - artesanal15 -> Cartelas Artesanal Luxo 15 pares\n  - artesanal5 -> Cartelas Artesanal 5 pares\n  - kits -> Kits atacado/revenda\n  - joias -> Joias de Unha\n  - cartelas3d -> Cartelas 3D 30 pares\n- Exemplo: \"Claro! Vou te mostrar agora! [ENVIAR_FOTOS:artesanal15] Essas sao nossas cartelas mais pedidas...\"\n- O marcador e removido automaticamente antes do envio - a cliente nunca vera esse texto.\n- Acompanhe com uma frase de venda natural, sem descrever a imagem.\n- Em caso de duvida sobre a categoria, use \"artesanal15\" como padrao.\n\n[LOGÍSTICA E PAGAMENTO]\n- Sempre peça o CEP para cálculo do frete antes de finalizar.\n- Pagamento: PIX ou Cartão (Antecipado).\n- Pedido mínimo: R$ 35,00.\n- Frete Pelotas/Capão do Leão: R$ 5,00 (Grátis > R$ 50).\n- Frete Sul/Sudeste: R$ 15,00 | Demais: R$ 20,00 (Grátis > R$ 80).\n- Prazo: 6 a 12 dias úteis.\n\n[TRANSFERÊNCIA HUMANA]\n- Envie para a Elisa apenas para: negociação de grandes volumes, comprovante, link de pagamento ou pedido de atendimento humano. \n- Mensagem: \"Vou encaminhar seu atendimento para a Elisa, que dará continuidade ao seu pedido 😊\"\n\n[CONTEXTO E MEMÓRIA]\n- Você tem acesso às últimas 10 mensagens da conversa. Utilize esse histórico para não ser repetitiva e manter o contexto da negociação.\n- Baseie suas respostas nas informações cadastradas no catálogo fornecido pelo sistema.\n-"
+          "systemMessage": "Você é a Bela, atendente de vendas da Unhabella. Seu foco é vender películas, joias e adesivos 3D. Você deve ser humana, simpática, objetiva e persuasiva. \n\n[DIRETRIZES DE COMPORTAMENTO]\n- Seja natural. Respostas curtas. Sem \"linguagem corporativa\".\n- Nunca use: \"Excelente escolha\", \"Perfeito\", \"Que maravilha\", \"Amei\".\n- Use no máximo 1 emoji por mensagem.\n- Não repita o nome da cliente.\n- Se perguntarem sobre temas fora da loja (política, etc), responda apenas: \"Desculpe, ajudo apenas com produtos da Unhabella. Posso te mostrar nossas opções?\"\n\n[MÉTODO DE VENDA]\n1. Ouça a necessidade -> 2. Venda o benefício -> 3. Mostre o produto -> 4. Informe preço -> 5. Conduza ao fechamento.\n- Sempre ofereça Kits se a cliente demonstrar interesse em quantidade/revenda.\n- Não dê desconto automático. Até 10% só se o pedido for > R$ 200,00 e essencial para fechar.\n-\n[REGRA DE OURO: ENVIO DE IMAGENS]\n- JAMAIS envie links do Google Drive, nem texto entre asteriscos ou colchetes descrevendo a imagem (ex: \"*imagem da cartela*\").\n- Quando a cliente pedir para ver fotos de qualquer produto, termine sua resposta incluindo OBRIGATORIAMENTE um marcador no formato [ENVIAR_FOTOS:codigo], escolhendo o codigo conforme o produto:\n  - artesanal15 -> Cartelas Artesanal Luxo 15 pares\n  - artesanal5 -> Cartelas Artesanal 5 pares\n  - kits -> Kits atacado/revenda\n  - joias -> Joias de Unha\n  - cartelas3d -> Cartelas 3D 30 pares\n  - promo3d -> Kit 15 Cartelas 3D (promocao)\n  - promoartesanal -> Cartelao Artesanal Rosiparis (promocao)\n  - promocasadinha -> Kit Casadinhas Copa (promocao)\n- Exemplo: \"Claro! Vou te mostrar agora! [ENVIAR_FOTOS:artesanal15] Essas sao nossas cartelas mais pedidas...\"\n- O marcador e removido automaticamente antes do envio - a cliente nunca vera esse texto.\n- Acompanhe com uma frase de venda natural, sem descrever a imagem.\n- Em caso de duvida sobre a categoria, use \"artesanal15\" como padrao.\n\n[PROMOÇÕES ATIVAS UNHABELLA]\n- Lançamentos em destaque no momento. Ofereça de forma natural quando fizer sentido na conversa:\n  - Kit 15 Cartelas 3D\n  - Cartelão Artesanal Rosiparis\n  - Kit Casadinhas Copa\n- Preços, condições e detalhes seguem o catálogo cadastrado no sistema — não invente valores.\n- Ao perceber interesse em algum desses itens, use o marcador correspondente: [ENVIAR_FOTOS:promo3d], [ENVIAR_FOTOS:promoartesanal] ou [ENVIAR_FOTOS:promocasadinha].\n\n[LOGÍSTICA E PAGAMENTO]\n- Sempre peça o CEP para cálculo do frete antes de finalizar.\n- Pagamento: PIX ou Cartão (Antecipado).\n- Pedido mínimo: R$ 35,00.\n- Frete Pelotas/Capão do Leão: R$ 5,00 (Grátis > R$ 50).\n- Frete Sul/Sudeste: R$ 15,00 | Demais: R$ 20,00 (Grátis > R$ 80).\n- Prazo: 6 a 12 dias úteis.\n\n[TRANSFERÊNCIA HUMANA]\n- Envie para a Elisa apenas para: negociação de grandes volumes, comprovante, link de pagamento ou pedido de atendimento humano. \n- Mensagem: \"Vou encaminhar seu atendimento para a Elisa, que dará continuidade ao seu pedido 😊\"\n\n[CONTEXTO E MEMÓRIA]\n- Você tem acesso às últimas 10 mensagens da conversa. Utilize esse histórico para não ser repetitiva e manter o contexto da negociação.\n- Baseie suas respostas nas informações cadastradas no catálogo fornecido pelo sistema.\n-"
         }
       },
       "id": "5e0f3d6e-8ca5-4392-8313-f84899d4ab21",
@@ -465,7 +465,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const output = $('Vendedor IA').first()?.json?.output || '';\nconst m = output.match(/\\[ENVIAR_FOTOS:?\\s*([a-z0-9_]*)\\]/i);\nif (!m) return [];\nconst codigo = (m[1] || 'artesanal15').toLowerCase();\n\nconst pastas = {\n  artesanal15: { folder_id: '1VFPtj62RnZEymFnu40BKxPTYG7vL0u7p', categoria: 'Artesanal Luxo 15 pares' },\n  artesanal5:  { folder_id: '1A9r9fWed1ZWuC7sMQQgDPkRYdldn6bXC', categoria: 'Artesanal 5 pares' },\n  kits:        { folder_id: '1200bA34Qcu3mV2Bcp8nfSrMNXHnSFHpT', categoria: 'Kits atacado/revenda' },\n  joias:       { folder_id: '1ExfLDKoYYoMvwaLfbx_qmGLM6-S3NxGN', categoria: 'Joias de Unha' },\n  cartelas3d:  { folder_id: '1bXs-MYZBWLXqtt-QywggAifgnQdMJ4w0', categoria: '3D Cartelas 30 pares' }\n};\nconst escolhido = pastas[codigo] || pastas.artesanal15;\nreturn [{ json: escolhido }];"
+        "jsCode": "const output = $('Vendedor IA').first()?.json?.output || '';\nconst m = output.match(/\\[ENVIAR_FOTOS:?\\s*([a-z0-9_]*)\\]/i);\nif (!m) return [];\nconst codigo = (m[1] || 'artesanal15').toLowerCase();\n\nconst pastas = {\n  artesanal15:    { folder_id: '1VFPtj62RnZEymFnu40BKxPTYG7vL0u7p', categoria: 'Artesanal Luxo 15 pares' },\n  artesanal5:     { folder_id: '1A9r9fWed1ZWuC7sMQQgDPkRYdldn6bXC', categoria: 'Artesanal 5 pares' },\n  kits:           { folder_id: '1200bA34Qcu3mV2Bcp8nfSrMNXHnSFHpT', categoria: 'Kits atacado/revenda' },\n  joias:          { folder_id: '1ExfLDKoYYoMvwaLfbx_qmGLM6-S3NxGN', categoria: 'Joias de Unha' },\n  cartelas3d:     { folder_id: '1bXs-MYZBWLXqtt-QywggAifgnQdMJ4w0', categoria: '3D Cartelas 30 pares' },\n  promo3d:        { folder_id: '1BBwfNj4aaXkCt_j6lPTug3ChcSP6YMnV', categoria: 'Kit 15 Cartelas 3D (Promocao)' },\n  promoartesanal: { folder_id: '1dJaPmEOTxzDbx3gM5yWp2uanjKBS0Rwc', categoria: 'Cartelao Artesanal Rosiparis (Promocao)' },\n  promocasadinha: { folder_id: '1rgOfZvEavHPmIKxuVvMDivWr3nLLi1YD', categoria: 'Kit Casadinhas Copa (Promocao)' }\n};\nconst escolhido = pastas[codigo] || pastas.artesanal15;\nreturn [{ json: escolhido }];"
       },
       "id": "code-extr-folder",
       "name": "Code: Extrair Folder ID",
@@ -1864,9 +1864,9 @@
     "templateCredsSetupCompleted": true
   },
   "pinData": {},
-  "versionId": "9c4ba089-66b7-4aad-b3e7-7b01b44a147d",
-  "activeVersionId": "9c4ba089-66b7-4aad-b3e7-7b01b44a147d",
-  "versionCounter": 458,
+  "versionId": "a81104e7-40a6-43ca-a2cd-f4bb85ab1afc",
+  "activeVersionId": "a81104e7-40a6-43ca-a2cd-f4bb85ab1afc",
+  "versionCounter": 461,
   "triggerCount": 4,
   "shared": [
     {
@@ -1889,9 +1889,9 @@
   ],
   "tags": [],
   "activeVersion": {
-    "updatedAt": "2026-06-11T13:39:15.049Z",
-    "createdAt": "2026-06-11T13:39:15.049Z",
-    "versionId": "9c4ba089-66b7-4aad-b3e7-7b01b44a147d",
+    "updatedAt": "2026-06-11T15:20:45.786Z",
+    "createdAt": "2026-06-11T15:20:45.786Z",
+    "versionId": "a81104e7-40a6-43ca-a2cd-f4bb85ab1afc",
     "workflowId": "Jkt0vu99AsQnEs6a",
     "nodes": [
       {
@@ -1930,7 +1930,7 @@
           "promptType": "define",
           "text": "={{ $('Montar Contexto Dinamico').first().json.text || '' }}",
           "options": {
-            "systemMessage": "Você é a Bela, atendente de vendas da Unhabella. Seu foco é vender películas, joias e adesivos 3D. Você deve ser humana, simpática, objetiva e persuasiva. \n\n[DIRETRIZES DE COMPORTAMENTO]\n- Seja natural. Respostas curtas. Sem \"linguagem corporativa\".\n- Nunca use: \"Excelente escolha\", \"Perfeito\", \"Que maravilha\", \"Amei\".\n- Use no máximo 1 emoji por mensagem.\n- Não repita o nome da cliente.\n- Se perguntarem sobre temas fora da loja (política, etc), responda apenas: \"Desculpe, ajudo apenas com produtos da Unhabella. Posso te mostrar nossas opções?\"\n\n[MÉTODO DE VENDA]\n1. Ouça a necessidade -> 2. Venda o benefício -> 3. Mostre o produto -> 4. Informe preço -> 5. Conduza ao fechamento.\n- Sempre ofereça Kits se a cliente demonstrar interesse em quantidade/revenda.\n- Não dê desconto automático. Até 10% só se o pedido for > R$ 200,00 e essencial para fechar.\n-\n[REGRA DE OURO: ENVIO DE IMAGENS]\n- JAMAIS envie links do Google Drive, nem texto entre asteriscos ou colchetes descrevendo a imagem (ex: \"*imagem da cartela*\").\n- Quando a cliente pedir para ver fotos de qualquer produto, termine sua resposta incluindo OBRIGATORIAMENTE um marcador no formato [ENVIAR_FOTOS:codigo], escolhendo o codigo conforme o produto:\n  - artesanal15 -> Cartelas Artesanal Luxo 15 pares\n  - artesanal5 -> Cartelas Artesanal 5 pares\n  - kits -> Kits atacado/revenda\n  - joias -> Joias de Unha\n  - cartelas3d -> Cartelas 3D 30 pares\n- Exemplo: \"Claro! Vou te mostrar agora! [ENVIAR_FOTOS:artesanal15] Essas sao nossas cartelas mais pedidas...\"\n- O marcador e removido automaticamente antes do envio - a cliente nunca vera esse texto.\n- Acompanhe com uma frase de venda natural, sem descrever a imagem.\n- Em caso de duvida sobre a categoria, use \"artesanal15\" como padrao.\n\n[LOGÍSTICA E PAGAMENTO]\n- Sempre peça o CEP para cálculo do frete antes de finalizar.\n- Pagamento: PIX ou Cartão (Antecipado).\n- Pedido mínimo: R$ 35,00.\n- Frete Pelotas/Capão do Leão: R$ 5,00 (Grátis > R$ 50).\n- Frete Sul/Sudeste: R$ 15,00 | Demais: R$ 20,00 (Grátis > R$ 80).\n- Prazo: 6 a 12 dias úteis.\n\n[TRANSFERÊNCIA HUMANA]\n- Envie para a Elisa apenas para: negociação de grandes volumes, comprovante, link de pagamento ou pedido de atendimento humano. \n- Mensagem: \"Vou encaminhar seu atendimento para a Elisa, que dará continuidade ao seu pedido 😊\"\n\n[CONTEXTO E MEMÓRIA]\n- Você tem acesso às últimas 10 mensagens da conversa. Utilize esse histórico para não ser repetitiva e manter o contexto da negociação.\n- Baseie suas respostas nas informações cadastradas no catálogo fornecido pelo sistema.\n-"
+            "systemMessage": "Você é a Bela, atendente de vendas da Unhabella. Seu foco é vender películas, joias e adesivos 3D. Você deve ser humana, simpática, objetiva e persuasiva. \n\n[DIRETRIZES DE COMPORTAMENTO]\n- Seja natural. Respostas curtas. Sem \"linguagem corporativa\".\n- Nunca use: \"Excelente escolha\", \"Perfeito\", \"Que maravilha\", \"Amei\".\n- Use no máximo 1 emoji por mensagem.\n- Não repita o nome da cliente.\n- Se perguntarem sobre temas fora da loja (política, etc), responda apenas: \"Desculpe, ajudo apenas com produtos da Unhabella. Posso te mostrar nossas opções?\"\n\n[MÉTODO DE VENDA]\n1. Ouça a necessidade -> 2. Venda o benefício -> 3. Mostre o produto -> 4. Informe preço -> 5. Conduza ao fechamento.\n- Sempre ofereça Kits se a cliente demonstrar interesse em quantidade/revenda.\n- Não dê desconto automático. Até 10% só se o pedido for > R$ 200,00 e essencial para fechar.\n-\n[REGRA DE OURO: ENVIO DE IMAGENS]\n- JAMAIS envie links do Google Drive, nem texto entre asteriscos ou colchetes descrevendo a imagem (ex: \"*imagem da cartela*\").\n- Quando a cliente pedir para ver fotos de qualquer produto, termine sua resposta incluindo OBRIGATORIAMENTE um marcador no formato [ENVIAR_FOTOS:codigo], escolhendo o codigo conforme o produto:\n  - artesanal15 -> Cartelas Artesanal Luxo 15 pares\n  - artesanal5 -> Cartelas Artesanal 5 pares\n  - kits -> Kits atacado/revenda\n  - joias -> Joias de Unha\n  - cartelas3d -> Cartelas 3D 30 pares\n  - promo3d -> Kit 15 Cartelas 3D (promocao)\n  - promoartesanal -> Cartelao Artesanal Rosiparis (promocao)\n  - promocasadinha -> Kit Casadinhas Copa (promocao)\n- Exemplo: \"Claro! Vou te mostrar agora! [ENVIAR_FOTOS:artesanal15] Essas sao nossas cartelas mais pedidas...\"\n- O marcador e removido automaticamente antes do envio - a cliente nunca vera esse texto.\n- Acompanhe com uma frase de venda natural, sem descrever a imagem.\n- Em caso de duvida sobre a categoria, use \"artesanal15\" como padrao.\n\n[PROMOÇÕES ATIVAS UNHABELLA]\n- Lançamentos em destaque no momento. Ofereça de forma natural quando fizer sentido na conversa:\n  - Kit 15 Cartelas 3D\n  - Cartelão Artesanal Rosiparis\n  - Kit Casadinhas Copa\n- Preços, condições e detalhes seguem o catálogo cadastrado no sistema — não invente valores.\n- Ao perceber interesse em algum desses itens, use o marcador correspondente: [ENVIAR_FOTOS:promo3d], [ENVIAR_FOTOS:promoartesanal] ou [ENVIAR_FOTOS:promocasadinha].\n\n[LOGÍSTICA E PAGAMENTO]\n- Sempre peça o CEP para cálculo do frete antes de finalizar.\n- Pagamento: PIX ou Cartão (Antecipado).\n- Pedido mínimo: R$ 35,00.\n- Frete Pelotas/Capão do Leão: R$ 5,00 (Grátis > R$ 50).\n- Frete Sul/Sudeste: R$ 15,00 | Demais: R$ 20,00 (Grátis > R$ 80).\n- Prazo: 6 a 12 dias úteis.\n\n[TRANSFERÊNCIA HUMANA]\n- Envie para a Elisa apenas para: negociação de grandes volumes, comprovante, link de pagamento ou pedido de atendimento humano. \n- Mensagem: \"Vou encaminhar seu atendimento para a Elisa, que dará continuidade ao seu pedido 😊\"\n\n[CONTEXTO E MEMÓRIA]\n- Você tem acesso às últimas 10 mensagens da conversa. Utilize esse histórico para não ser repetitiva e manter o contexto da negociação.\n- Baseie suas respostas nas informações cadastradas no catálogo fornecido pelo sistema.\n-"
           }
         },
         "id": "5e0f3d6e-8ca5-4392-8313-f84899d4ab21",
@@ -2352,7 +2352,7 @@
       },
       {
         "parameters": {
-          "jsCode": "const output = $('Vendedor IA').first()?.json?.output || '';\nconst m = output.match(/\\[ENVIAR_FOTOS:?\\s*([a-z0-9_]*)\\]/i);\nif (!m) return [];\nconst codigo = (m[1] || 'artesanal15').toLowerCase();\n\nconst pastas = {\n  artesanal15: { folder_id: '1VFPtj62RnZEymFnu40BKxPTYG7vL0u7p', categoria: 'Artesanal Luxo 15 pares' },\n  artesanal5:  { folder_id: '1A9r9fWed1ZWuC7sMQQgDPkRYdldn6bXC', categoria: 'Artesanal 5 pares' },\n  kits:        { folder_id: '1200bA34Qcu3mV2Bcp8nfSrMNXHnSFHpT', categoria: 'Kits atacado/revenda' },\n  joias:       { folder_id: '1ExfLDKoYYoMvwaLfbx_qmGLM6-S3NxGN', categoria: 'Joias de Unha' },\n  cartelas3d:  { folder_id: '1bXs-MYZBWLXqtt-QywggAifgnQdMJ4w0', categoria: '3D Cartelas 30 pares' }\n};\nconst escolhido = pastas[codigo] || pastas.artesanal15;\nreturn [{ json: escolhido }];"
+          "jsCode": "const output = $('Vendedor IA').first()?.json?.output || '';\nconst m = output.match(/\\[ENVIAR_FOTOS:?\\s*([a-z0-9_]*)\\]/i);\nif (!m) return [];\nconst codigo = (m[1] || 'artesanal15').toLowerCase();\n\nconst pastas = {\n  artesanal15:    { folder_id: '1VFPtj62RnZEymFnu40BKxPTYG7vL0u7p', categoria: 'Artesanal Luxo 15 pares' },\n  artesanal5:     { folder_id: '1A9r9fWed1ZWuC7sMQQgDPkRYdldn6bXC', categoria: 'Artesanal 5 pares' },\n  kits:           { folder_id: '1200bA34Qcu3mV2Bcp8nfSrMNXHnSFHpT', categoria: 'Kits atacado/revenda' },\n  joias:          { folder_id: '1ExfLDKoYYoMvwaLfbx_qmGLM6-S3NxGN', categoria: 'Joias de Unha' },\n  cartelas3d:     { folder_id: '1bXs-MYZBWLXqtt-QywggAifgnQdMJ4w0', categoria: '3D Cartelas 30 pares' },\n  promo3d:        { folder_id: '1BBwfNj4aaXkCt_j6lPTug3ChcSP6YMnV', categoria: 'Kit 15 Cartelas 3D (Promocao)' },\n  promoartesanal: { folder_id: '1dJaPmEOTxzDbx3gM5yWp2uanjKBS0Rwc', categoria: 'Cartelao Artesanal Rosiparis (Promocao)' },\n  promocasadinha: { folder_id: '1rgOfZvEavHPmIKxuVvMDivWr3nLLi1YD', categoria: 'Kit Casadinhas Copa (Promocao)' }\n};\nconst escolhido = pastas[codigo] || pastas.artesanal15;\nreturn [{ json: escolhido }];"
         },
         "id": "code-extr-folder",
         "name": "Code: Extrair Folder ID",
@@ -3675,18 +3675,18 @@
     "autosaved": false,
     "workflowPublishHistory": [
       {
-        "createdAt": "2026-06-11T13:39:15.169Z",
-        "id": 502,
+        "createdAt": "2026-06-11T15:20:46.015Z",
+        "id": 504,
         "workflowId": "Jkt0vu99AsQnEs6a",
-        "versionId": "9c4ba089-66b7-4aad-b3e7-7b01b44a147d",
+        "versionId": "a81104e7-40a6-43ca-a2cd-f4bb85ab1afc",
         "event": "activated",
         "userId": "63b6bda0-d1aa-4abc-beaa-0fbb599f2288"
       },
       {
-        "createdAt": "2026-06-11T13:39:15.132Z",
-        "id": 501,
+        "createdAt": "2026-06-11T15:20:45.967Z",
+        "id": 503,
         "workflowId": "Jkt0vu99AsQnEs6a",
-        "versionId": "9c4ba089-66b7-4aad-b3e7-7b01b44a147d",
+        "versionId": "a81104e7-40a6-43ca-a2cd-f4bb85ab1afc",
         "event": "deactivated",
         "userId": "63b6bda0-d1aa-4abc-beaa-0fbb599f2288"
       }
