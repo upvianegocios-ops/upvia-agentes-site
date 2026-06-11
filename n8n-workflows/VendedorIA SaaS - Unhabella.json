@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-06-11T15:20:45.784Z",
+  "updatedAt": "2026-06-11T16:41:01.333Z",
   "createdAt": "2026-05-29T23:15:23.769Z",
   "id": "Jkt0vu99AsQnEs6a",
   "name": "VendedorIA SaaS - Unhabella",
@@ -465,7 +465,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const output = $('Vendedor IA').first()?.json?.output || '';\nconst m = output.match(/\\[ENVIAR_FOTOS:?\\s*([a-z0-9_]*)\\]/i);\nif (!m) return [];\nconst codigo = (m[1] || 'artesanal15').toLowerCase();\n\nconst pastas = {\n  artesanal15:    { folder_id: '1VFPtj62RnZEymFnu40BKxPTYG7vL0u7p', categoria: 'Artesanal Luxo 15 pares' },\n  artesanal5:     { folder_id: '1A9r9fWed1ZWuC7sMQQgDPkRYdldn6bXC', categoria: 'Artesanal 5 pares' },\n  kits:           { folder_id: '1200bA34Qcu3mV2Bcp8nfSrMNXHnSFHpT', categoria: 'Kits atacado/revenda' },\n  joias:          { folder_id: '1ExfLDKoYYoMvwaLfbx_qmGLM6-S3NxGN', categoria: 'Joias de Unha' },\n  cartelas3d:     { folder_id: '1bXs-MYZBWLXqtt-QywggAifgnQdMJ4w0', categoria: '3D Cartelas 30 pares' },\n  promo3d:        { folder_id: '1BBwfNj4aaXkCt_j6lPTug3ChcSP6YMnV', categoria: 'Kit 15 Cartelas 3D (Promocao)' },\n  promoartesanal: { folder_id: '1dJaPmEOTxzDbx3gM5yWp2uanjKBS0Rwc', categoria: 'Cartelao Artesanal Rosiparis (Promocao)' },\n  promocasadinha: { folder_id: '1rgOfZvEavHPmIKxuVvMDivWr3nLLi1YD', categoria: 'Kit Casadinhas Copa (Promocao)' }\n};\nconst escolhido = pastas[codigo] || pastas.artesanal15;\nreturn [{ json: escolhido }];"
+        "jsCode": "const output = $('Vendedor IA').first()?.json?.output || '';\nconst m = output.match(/\\[ENVIAR_FOTOS:?\\s*([a-z0-9_]*)\\]/i);\nif (!m) return [];\nconst codigo = (m[1] || 'artesanal15').toLowerCase();\n\nconst pastas = {\n  artesanal15:    { folder_id: '1VFPtj62RnZEymFnu40BKxPTYG7vL0u7p', categoria: 'Artesanal Luxo 15 pares' },\n  artesanal5:     { folder_id: '1A9r9fWed1ZWuC7sMQQgDPkRYdldn6bXC', categoria: 'Artesanal 5 pares' },\n  kits:           { folder_id: '1200bA34Qcu3mV2Bcp8nfSrMNXHnSFHpT', categoria: 'Kits atacado/revenda' },\n  joias:          { folder_id: '1ExfLDKoYYoMvwaLfbx_qmGLM6-S3NxGN', categoria: 'Joias de Unha' },\n  cartelas3d:     { folder_id: '1bXs-MYZBWLXqtt-QywggAifgnQdMJ4w0', categoria: '3D Cartelas 30 pares' },\n  promo3d:        { folder_id: '1BBwfNj4aaXkCt_j6lPTug3ChcSP6YMnV', categoria: 'Kit 15 Cartelas 3D (Promocao)' },\n  promoartesanal: { folder_id: '1dJaPmEOTxzDbx3gM5yWp2uanjKBS0Rwc', categoria: 'Cartelao Artesanal Rosiparis (Promocao)' },\n  promocasadinha: { folder_id: '1rgOfZvEavHPmIKxuVvMDivWr3nLLi1YD', categoria: 'Kit Casadinhas Copa (Promocao)' }\n};\nconst escolhido = pastas[codigo] || pastas.artesanal15;\nreturn [{ json: { ...escolhido, codigo } }];"
       },
       "id": "code-extr-folder",
       "name": "Code: Extrair Folder ID",
@@ -1225,6 +1225,64 @@
       ],
       "typeVersion": 4.2,
       "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const codigo = $('Code: Extrair Folder ID').first().json.codigo || '';\nconst mapa = { promo3d: '3d', promoartesanal: 'artesanal', promocasadinha: 'copa' };\nconst produto_interesse = mapa[codigo];\nif (!produto_interesse) return [];\n\nconst ctx = $('Montar Contexto Dinamico').first().json;\nconst agora = new Date();\nconst f1 = new Date(agora.getTime() + 15 * 60000);\nconst f2 = new Date(agora.getTime() + 60 * 60000);\nconst f3 = new Date(agora);\nf3.setHours(18, 0, 0, 0);\nif (agora.getHours() >= 17) f3.setDate(f3.getDate() + 1);\n\nreturn [{\n  json: {\n    telefone: ctx.telefone,\n    instancia: 'unhabella',\n    status: 'fotos_enviadas',\n    produto_interesse,\n    ultima_interacao: agora.toISOString(),\n    proximo_followup_1: f1.toISOString(),\n    proximo_followup_2: f2.toISOString(),\n    proximo_followup_3: f3.toISOString()\n  }\n}];"
+      },
+      "id": "531c79cc-8d82-48e0-b08a-05ce2e57cd7e",
+      "name": "Code: Montar Dados Followup",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        16848,
+        2880
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO unhabella_leads (telefone, instancia, status, produto_interesse, ultima_interacao, proximo_followup_1, proximo_followup_2, proximo_followup_3, followup_1_enviado, followup_2_enviado, followup_3_enviado)\nVALUES ('{{ $json.telefone }}', '{{ $json.instancia }}', '{{ $json.status }}', '{{ $json.produto_interesse }}', '{{ $json.ultima_interacao }}', '{{ $json.proximo_followup_1 }}', '{{ $json.proximo_followup_2 }}', '{{ $json.proximo_followup_3 }}', false, false, false)\nON CONFLICT (telefone, instancia) DO UPDATE SET\n  status = EXCLUDED.status,\n  produto_interesse = EXCLUDED.produto_interesse,\n  ultima_interacao = EXCLUDED.ultima_interacao,\n  proximo_followup_1 = EXCLUDED.proximo_followup_1,\n  proximo_followup_2 = EXCLUDED.proximo_followup_2,\n  proximo_followup_3 = EXCLUDED.proximo_followup_3,\n  followup_1_enviado = false,\n  followup_2_enviado = false,\n  followup_3_enviado = false;",
+        "options": {}
+      },
+      "id": "6d9fab48-0184-467e-a221-7702cdca977b",
+      "name": "Postgres: Salvar Aguardando Resposta",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        17072,
+        2880
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "Dym0Y2qw1VYqERST",
+          "name": "Postgres account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE unhabella_leads SET status='respondeu', followup_1_enviado=true, followup_2_enviado=true, followup_3_enviado=true\nWHERE telefone = '{{ $json.telefone }}' AND instancia='unhabella' AND status='fotos_enviadas';",
+        "options": {}
+      },
+      "id": "4b4c0e97-7d06-45d2-8a8b-bbb73bbd86dc",
+      "name": "Postgres: Cancelar Followups",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        13472,
+        2912
+      ],
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "Dym0Y2qw1VYqERST",
+          "name": "Postgres account 3"
+        }
+      }
     }
   ],
   "connections": {
@@ -1244,6 +1302,11 @@
         [
           {
             "node": "Redis SET Debounce",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Postgres: Cancelar Followups",
             "type": "main",
             "index": 0
           }
@@ -1450,7 +1513,13 @@
     },
     "Split Fotos (10 por vez)": {
       "main": [
-        [],
+        [
+          {
+            "node": "Code: Montar Dados Followup",
+            "type": "main",
+            "index": 0
+          }
+        ],
         [
           {
             "node": "HTTP: Download Foto Drive",
@@ -1780,6 +1849,17 @@
         ],
         []
       ]
+    },
+    "Code: Montar Dados Followup": {
+      "main": [
+        [
+          {
+            "node": "Postgres: Salvar Aguardando Resposta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
@@ -1864,34 +1944,15 @@
     "templateCredsSetupCompleted": true
   },
   "pinData": {},
-  "versionId": "a81104e7-40a6-43ca-a2cd-f4bb85ab1afc",
-  "activeVersionId": "a81104e7-40a6-43ca-a2cd-f4bb85ab1afc",
-  "versionCounter": 461,
+  "versionId": "e5d42930-a3c3-43d3-b8ad-60e2700e0354",
+  "activeVersionId": "e5d42930-a3c3-43d3-b8ad-60e2700e0354",
+  "versionCounter": 462,
   "triggerCount": 4,
-  "shared": [
-    {
-      "updatedAt": "2026-05-29T23:15:23.771Z",
-      "createdAt": "2026-05-29T23:15:23.771Z",
-      "role": "workflow:owner",
-      "workflowId": "Jkt0vu99AsQnEs6a",
-      "projectId": "wvVR5bxXzTLlLBhJ",
-      "project": {
-        "updatedAt": "2026-05-23T22:50:01.526Z",
-        "createdAt": "2026-05-23T22:44:43.627Z",
-        "id": "wvVR5bxXzTLlLBhJ",
-        "name": "Elisa Silveira de Moura Andrade <upvianegocios@gmail.com>",
-        "type": "personal",
-        "icon": null,
-        "description": null,
-        "creatorId": "63b6bda0-d1aa-4abc-beaa-0fbb599f2288"
-      }
-    }
-  ],
   "tags": [],
   "activeVersion": {
-    "updatedAt": "2026-06-11T15:20:45.786Z",
-    "createdAt": "2026-06-11T15:20:45.786Z",
-    "versionId": "a81104e7-40a6-43ca-a2cd-f4bb85ab1afc",
+    "updatedAt": "2026-06-11T16:41:01.336Z",
+    "createdAt": "2026-06-11T16:41:01.336Z",
+    "versionId": "e5d42930-a3c3-43d3-b8ad-60e2700e0354",
     "workflowId": "Jkt0vu99AsQnEs6a",
     "nodes": [
       {
@@ -2352,7 +2413,7 @@
       },
       {
         "parameters": {
-          "jsCode": "const output = $('Vendedor IA').first()?.json?.output || '';\nconst m = output.match(/\\[ENVIAR_FOTOS:?\\s*([a-z0-9_]*)\\]/i);\nif (!m) return [];\nconst codigo = (m[1] || 'artesanal15').toLowerCase();\n\nconst pastas = {\n  artesanal15:    { folder_id: '1VFPtj62RnZEymFnu40BKxPTYG7vL0u7p', categoria: 'Artesanal Luxo 15 pares' },\n  artesanal5:     { folder_id: '1A9r9fWed1ZWuC7sMQQgDPkRYdldn6bXC', categoria: 'Artesanal 5 pares' },\n  kits:           { folder_id: '1200bA34Qcu3mV2Bcp8nfSrMNXHnSFHpT', categoria: 'Kits atacado/revenda' },\n  joias:          { folder_id: '1ExfLDKoYYoMvwaLfbx_qmGLM6-S3NxGN', categoria: 'Joias de Unha' },\n  cartelas3d:     { folder_id: '1bXs-MYZBWLXqtt-QywggAifgnQdMJ4w0', categoria: '3D Cartelas 30 pares' },\n  promo3d:        { folder_id: '1BBwfNj4aaXkCt_j6lPTug3ChcSP6YMnV', categoria: 'Kit 15 Cartelas 3D (Promocao)' },\n  promoartesanal: { folder_id: '1dJaPmEOTxzDbx3gM5yWp2uanjKBS0Rwc', categoria: 'Cartelao Artesanal Rosiparis (Promocao)' },\n  promocasadinha: { folder_id: '1rgOfZvEavHPmIKxuVvMDivWr3nLLi1YD', categoria: 'Kit Casadinhas Copa (Promocao)' }\n};\nconst escolhido = pastas[codigo] || pastas.artesanal15;\nreturn [{ json: escolhido }];"
+          "jsCode": "const output = $('Vendedor IA').first()?.json?.output || '';\nconst m = output.match(/\\[ENVIAR_FOTOS:?\\s*([a-z0-9_]*)\\]/i);\nif (!m) return [];\nconst codigo = (m[1] || 'artesanal15').toLowerCase();\n\nconst pastas = {\n  artesanal15:    { folder_id: '1VFPtj62RnZEymFnu40BKxPTYG7vL0u7p', categoria: 'Artesanal Luxo 15 pares' },\n  artesanal5:     { folder_id: '1A9r9fWed1ZWuC7sMQQgDPkRYdldn6bXC', categoria: 'Artesanal 5 pares' },\n  kits:           { folder_id: '1200bA34Qcu3mV2Bcp8nfSrMNXHnSFHpT', categoria: 'Kits atacado/revenda' },\n  joias:          { folder_id: '1ExfLDKoYYoMvwaLfbx_qmGLM6-S3NxGN', categoria: 'Joias de Unha' },\n  cartelas3d:     { folder_id: '1bXs-MYZBWLXqtt-QywggAifgnQdMJ4w0', categoria: '3D Cartelas 30 pares' },\n  promo3d:        { folder_id: '1BBwfNj4aaXkCt_j6lPTug3ChcSP6YMnV', categoria: 'Kit 15 Cartelas 3D (Promocao)' },\n  promoartesanal: { folder_id: '1dJaPmEOTxzDbx3gM5yWp2uanjKBS0Rwc', categoria: 'Cartelao Artesanal Rosiparis (Promocao)' },\n  promocasadinha: { folder_id: '1rgOfZvEavHPmIKxuVvMDivWr3nLLi1YD', categoria: 'Kit Casadinhas Copa (Promocao)' }\n};\nconst escolhido = pastas[codigo] || pastas.artesanal15;\nreturn [{ json: { ...escolhido, codigo } }];"
         },
         "id": "code-extr-folder",
         "name": "Code: Extrair Folder ID",
@@ -3112,6 +3173,64 @@
         ],
         "typeVersion": 4.2,
         "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "const codigo = $('Code: Extrair Folder ID').first().json.codigo || '';\nconst mapa = { promo3d: '3d', promoartesanal: 'artesanal', promocasadinha: 'copa' };\nconst produto_interesse = mapa[codigo];\nif (!produto_interesse) return [];\n\nconst ctx = $('Montar Contexto Dinamico').first().json;\nconst agora = new Date();\nconst f1 = new Date(agora.getTime() + 15 * 60000);\nconst f2 = new Date(agora.getTime() + 60 * 60000);\nconst f3 = new Date(agora);\nf3.setHours(18, 0, 0, 0);\nif (agora.getHours() >= 17) f3.setDate(f3.getDate() + 1);\n\nreturn [{\n  json: {\n    telefone: ctx.telefone,\n    instancia: 'unhabella',\n    status: 'fotos_enviadas',\n    produto_interesse,\n    ultima_interacao: agora.toISOString(),\n    proximo_followup_1: f1.toISOString(),\n    proximo_followup_2: f2.toISOString(),\n    proximo_followup_3: f3.toISOString()\n  }\n}];"
+        },
+        "id": "531c79cc-8d82-48e0-b08a-05ce2e57cd7e",
+        "name": "Code: Montar Dados Followup",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          16848,
+          2880
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "INSERT INTO unhabella_leads (telefone, instancia, status, produto_interesse, ultima_interacao, proximo_followup_1, proximo_followup_2, proximo_followup_3, followup_1_enviado, followup_2_enviado, followup_3_enviado)\nVALUES ('{{ $json.telefone }}', '{{ $json.instancia }}', '{{ $json.status }}', '{{ $json.produto_interesse }}', '{{ $json.ultima_interacao }}', '{{ $json.proximo_followup_1 }}', '{{ $json.proximo_followup_2 }}', '{{ $json.proximo_followup_3 }}', false, false, false)\nON CONFLICT (telefone, instancia) DO UPDATE SET\n  status = EXCLUDED.status,\n  produto_interesse = EXCLUDED.produto_interesse,\n  ultima_interacao = EXCLUDED.ultima_interacao,\n  proximo_followup_1 = EXCLUDED.proximo_followup_1,\n  proximo_followup_2 = EXCLUDED.proximo_followup_2,\n  proximo_followup_3 = EXCLUDED.proximo_followup_3,\n  followup_1_enviado = false,\n  followup_2_enviado = false,\n  followup_3_enviado = false;",
+          "options": {}
+        },
+        "id": "6d9fab48-0184-467e-a221-7702cdca977b",
+        "name": "Postgres: Salvar Aguardando Resposta",
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.5,
+        "position": [
+          17072,
+          2880
+        ],
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput",
+        "credentials": {
+          "postgres": {
+            "id": "Dym0Y2qw1VYqERST",
+            "name": "Postgres account 3"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "UPDATE unhabella_leads SET status='respondeu', followup_1_enviado=true, followup_2_enviado=true, followup_3_enviado=true\nWHERE telefone = '{{ $json.telefone }}' AND instancia='unhabella' AND status='fotos_enviadas';",
+          "options": {}
+        },
+        "id": "4b4c0e97-7d06-45d2-8a8b-bbb73bbd86dc",
+        "name": "Postgres: Cancelar Followups",
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.5,
+        "position": [
+          13472,
+          2912
+        ],
+        "onError": "continueRegularOutput",
+        "credentials": {
+          "postgres": {
+            "id": "Dym0Y2qw1VYqERST",
+            "name": "Postgres account 3"
+          }
+        }
       }
     ],
     "connections": {
@@ -3131,6 +3250,11 @@
           [
             {
               "node": "Redis SET Debounce",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Postgres: Cancelar Followups",
               "type": "main",
               "index": 0
             }
@@ -3337,7 +3461,13 @@
       },
       "Split Fotos (10 por vez)": {
         "main": [
-          [],
+          [
+            {
+              "node": "Code: Montar Dados Followup",
+              "type": "main",
+              "index": 0
+            }
+          ],
           [
             {
               "node": "HTTP: Download Foto Drive",
@@ -3667,29 +3797,22 @@
           ],
           []
         ]
+      },
+      "Code: Montar Dados Followup": {
+        "main": [
+          [
+            {
+              "node": "Postgres: Salvar Aguardando Resposta",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
       }
     },
     "authors": "Elisa Silveira de Moura Andrade",
     "name": null,
     "description": null,
-    "autosaved": false,
-    "workflowPublishHistory": [
-      {
-        "createdAt": "2026-06-11T15:20:46.015Z",
-        "id": 504,
-        "workflowId": "Jkt0vu99AsQnEs6a",
-        "versionId": "a81104e7-40a6-43ca-a2cd-f4bb85ab1afc",
-        "event": "activated",
-        "userId": "63b6bda0-d1aa-4abc-beaa-0fbb599f2288"
-      },
-      {
-        "createdAt": "2026-06-11T15:20:45.967Z",
-        "id": 503,
-        "workflowId": "Jkt0vu99AsQnEs6a",
-        "versionId": "a81104e7-40a6-43ca-a2cd-f4bb85ab1afc",
-        "event": "deactivated",
-        "userId": "63b6bda0-d1aa-4abc-beaa-0fbb599f2288"
-      }
-    ]
+    "autosaved": false
   }
 }
