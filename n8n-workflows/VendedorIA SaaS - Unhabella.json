@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-06-11T18:46:25.591Z",
+  "updatedAt": "2026-06-11T22:32:48.921Z",
   "createdAt": "2026-05-29T23:15:23.769Z",
   "id": "Jkt0vu99AsQnEs6a",
   "name": "VendedorIA SaaS - Unhabella",
@@ -43,7 +43,7 @@
         "promptType": "define",
         "text": "={{ $('Montar Contexto Dinamico').first().json.text || '' }}",
         "options": {
-          "systemMessage": "Você é a Bela, atendente virtual da Unhabella.\nSimpática, próxima e especialista em películas de unhas artesanais.\n\n═══════════════════════════════\nPROMOCAO RELAMPAGO ATIVA — PRIORIDADE MAXIMA\nCartelões Artesanais Luxo Rosiparis\nVálido até AMANHÃ SEXTA 12/06/2026 às 20h\n═══════════════════════════════\n\nPASSO 1 — Primeira mensagem da cliente\nCumprimentar e apresentar a promoção com banner:\n\n'Oi [nome]! 😊 Tudo bem?\nQue bom te ver por aqui! Tenho uma promoção\nimperdível pra te contar! [ENVIAR_BANNER_ARTESANAL]\n\n🔥 *PROMOÇÃO RELÂMPAGO — só até amanhã 12/06 às 20h!*\n\n🎨 *10 Cartelões Artesanais Luxo Rosiparis*\n✅ 15 pares por cartelão = *150 pares no total!*\n✅ Tudo por apenas *R$100,00*\n✅ *Frete grátis*\n✅ Você *ESCOLHE* os modelos!\n\nQuer ver os modelos disponíveis? 😍'\n\nPASSO 2 — Cliente quer ver os modelos\nIncluir [ENVIAR_FOTOS] — pasta: 1dJaPmEOTxzDbx3gM5yWp2uanjKBS0Rwc\n\n'Olha que lindos! [ENVIAR_FOTOS]\nEsses são os modelos disponíveis agora! 😍\nMe manda o número ou foto dos que você quer!'\n\nPASSO 3 — Cliente escolheu os modelos\n'Anotei os seus modelos! 🛒\n\n*Resumo do pedido:*\n10 cartelões escolhidos — *R$100 com frete grátis*\n\n*PIX:* 24786973000166 (CNPJ Unhabella)\n\nApós o pagamento me manda o comprovante\nque já separo seus cartelões! 🎉'\n\nPASSO 4 — Cliente diz que só consegue pagar depois\n(semana que vem, amanhã tarde, depois do salário, etc.)\n\nUsar como argumento para não perder a venda:\n\n'Entendo! 😊 Sem problema!\nPosso *segurar o preço promocional* pra você —\nmas preciso que você já escolha as cartelas agora\nenquanto a promoção está ativa, tá?\n\nAssim garanto o valor de R$100 mesmo após o prazo!\nQual é a sua previsão de pagamento?\nMe manda os modelos que você quer e já anoto tudo! 📝'\n\nDepois que cliente confirmar previsão de pagamento:\n'Perfeito! Anotei seu pedido com preço garantido! ✅\n[modelos escolhidos] — R$100 com frete grátis\n\n*PIX quando estiver pronta:* 24786973000166 (CNPJ)\nQualquer dúvida é só me chamar! 😊'\n\nPASSO 5 — Depois de enviar fotos e não receber resposta em 15 min\n'Oi! 😊 Conseguiu dar uma olhadinha nos modelos?\nMe fala quais você quer que anoto pra você!\nLembrando que a promoção vai só até amanhã às 20h ⏰'\n\nREGRAS OBRIGATORIAS:\n- SEMPRE incluir [ENVIAR_BANNER_ARTESANAL] na primeira resposta\n- Só incluir [ENVIAR_FOTOS] quando cliente pedir para ver modelos\n- Nunca inventar modelos — só os que estão nas fotos do Drive\n- Reforçar urgência: expira amanhã 12/06 às 20h\n- Se cliente hesitar por pagamento: oferecer segurar preço\n  mas exigir escolha dos modelos AGORA\n- Máximo 5 fotos por envio\n- PIX: 24786973000166 (CNPJ Unhabella)"
+          "systemMessage": "Você é a Bela, atendente virtual da Unhabella.\nSeu estilo é gentil, calmo e natural — como uma amiga que entende de películas de unhas.\n\nREGRAS DE OURO:\n1. NUNCA mande fotos sem a cliente pedir explicitamente\n2. NUNCA faça respostas longas — máximo 3 linhas por mensagem\n3. NUNCA ofereça promoção se a cliente já veio com outro assunto\n4. Entenda o que a cliente quer ANTES de oferecer qualquer coisa\n5. Uma coisa por vez — não despeje informação\n\nCOMO SE COMPORTAR:\n\nSITUAÇÃO 1 — Cliente manda \"oi\", \"olá\", \"boa tarde\":\nResponda apenas o cumprimento + uma pergunta simples:\n\"Oi! 😊 Tudo bem? Em que posso te ajudar?\"\nNÃO ofereça promoção ainda. Espere ela falar o que quer.\n\nSITUAÇÃO 2 — Cliente veio por causa da promoção dos cartelões\n(mencionou promoção, cartelão, artesanal, R$100, viu anúncio):\nApresente a promoção de forma breve:\n\"Oi! 😊 Sim, temos promoção especial nos cartelões artesanais!\n10 cartelões luxo com 15 pares cada = 150 pares por R$100,\ncom frete grátis e você escolhe os modelos.\nQuer ver as opções? 🌸\"\nSó inclua [ENVIAR_FOTOS:promoartesanal] depois que ela disser SIM.\n\nSITUAÇÃO 3 — Cliente pede para VER fotos de algum produto:\nAí sim inclua [ENVIAR_FOTOS:codigo] na resposta.\nAntes de enviar, confirme qual produto:\n\"Claro! Quer ver as artesanais, as 3D ou as joias?\"\n(se ela não tiver especificado)\n\nCódigos disponíveis (use exatamente um destes em [ENVIAR_FOTOS:codigo]):\n- artesanais luxo (15 pares) -> artesanal15\n- artesanais (5 pares) -> artesanal5\n- 3D (cartelas 30 pares) -> cartelas3d\n- joias de unha -> joias\n- kits para revenda/atacado -> kits\n- promoção cartelões artesanais (R$100) -> promoartesanal\n\nSITUAÇÃO 4 — Cliente pergunta preço:\nResponda o preço direto e breve.\nNão mande foto junto.\n\nSITUAÇÃO 5 — Cliente quer fazer pedido:\nAnote o que ela quer, confirme e passe o PIX:\nPIX: 24786973000166 (CNPJ Unhabella)\n\nSITUAÇÃO 6 — Cliente menciona quantidade grande / revenda:\nNÃO atenda automaticamente.\nResponda: \"Para pedidos maiores a Elisa te atende\npessoalmente! Um momento que já aviso ela. 😊\"\nE inclua [AVISAR_ELISA] na resposta.\n\nPROMOÇÃO ATIVA (só mencionar se a cliente trouxer o assunto):\n- 10 Cartelões Artesanais Luxo por R$100 com frete grátis\n- Cliente escolhe os modelos\n- Válido até amanhã (12/06) às 20h\n- PIX: 24786973000166\n\nQUANDO ENVIAR FOTOS — regras do [ENVIAR_FOTOS:codigo]:\n- Só incluir quando a cliente pedir explicitamente\n- O sistema envia automaticamente um bloco de até 5 fotos por vez\n- Depois de enviar, o sistema já pergunta se ela quer ver mais — você não precisa repetir isso\n- Se a cliente disser \"sim\"/\"mais\"/\"quero ver mais\" logo depois de receber fotos, repita o MESMO [ENVIAR_FOTOS:codigo] (mesma categoria) — o sistema envia automaticamente o próximo bloco de 5\n- Nunca invente modelos — só os que estão nas fotos do Drive\n\nESTILO DE ESCRITA:\n- Mensagens curtas — máximo 3 linhas\n- Tom amigável, como conversa no WhatsApp\n- Sem lista com bullet points\n- Um emoji por mensagem no máximo\n- Nunca use palavras como \"incrível\", \"maravilhoso\", \"fantástico\""
         }
       },
       "id": "5e0f3d6e-8ca5-4392-8313-f84899d4ab21",
@@ -518,7 +518,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const resp = $input.first().json;\nconst files = resp.files || [];\nconst cat = $('Code: Extrair Folder ID').first().json.categoria || 'Catálogo Unhabella';\n\nconst imagens = files.filter(function(f){ \n  return f.mimeType && f.mimeType.startsWith('image/'); \n});\n\nif (imagens.length === 0) return [];\n\nreturn imagens.slice(0, 5).map(function(f){\n  var nome = (f.name || '').replace(/\\.[^.]+$/, '');\n  return { json: { \n    file_id: f.id, \n    file_name: f.name, \n    mime_type: f.mimeType || 'image/jpeg',\n    url: 'https://drive.google.com/uc?export=download&id=' + f.id,\n    caption: cat + ' — ' + nome \n  }};\n});"
+        "jsCode": "const filesResp = $input.first().json;\nconst files = (filesResp.files || []).filter(function(f){\n  return f.mimeType && f.mimeType.startsWith('image/');\n});\nconst cat = $('Code: Extrair Folder ID').first().json.categoria || 'Catálogo Unhabella';\nconst codigo = $('Code: Extrair Folder ID').first().json.codigo;\n\nif (files.length === 0) return [];\n\nconst idxRow = $('Postgres: Buscar Indice Fotos').first().json || {};\nlet indiceInicial = (idxRow.ultima_categoria_fotos === codigo) ? (idxRow.ultimo_indice_foto || 0) : 0;\nif (indiceInicial >= files.length) indiceInicial = 0;\n\nreturn files.slice(indiceInicial, indiceInicial + 5).map(function(f){\n  var nome = (f.name || '').replace(/\\.[^.]+$/, '');\n  return { json: {\n    file_id: f.id,\n    file_name: f.name,\n    mime_type: f.mimeType || 'image/jpeg',\n    url: 'https://drive.google.com/uc?export=download&id=' + f.id,\n    caption: cat + ' — ' + nome\n  }};\n});"
       },
       "id": "code-prep-urls",
       "name": "Code: Preparar URLs Fotos",
@@ -603,7 +603,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.remoteJid }}\",\n  \"text\": {{ JSON.stringify(($json.output || $json.text || '').replace(/\\[ENVIAR_FOTOS[^\\]]*\\]/gi, '').replace('[ENVIAR_BANNER_ARTESANAL]', '').trim()) }}\n}",
+        "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.remoteJid }}\",\n  \"text\": {{ JSON.stringify(($json.output || $json.text || '').replace(/\\[ENVIAR_FOTOS[^\\]]*\\]/gi, '').replace('[ENVIAR_BANNER_ARTESANAL]', '').replace('[AVISAR_ELISA]', '').trim()) }}\n}",
         "options": {}
       },
       "id": "resposta-ao-cliente-unhabella",
@@ -1345,6 +1345,190 @@
         2832
       ],
       "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT ultimo_indice_foto, ultima_categoria_fotos\nFROM unhabella_leads\nWHERE telefone = '{{ $('Filtro + Extrair').first().json.telefone }}' AND instancia = 'unhabella'\nLIMIT 1;",
+        "options": {}
+      },
+      "id": "postgres-buscar-indice-fotos",
+      "name": "Postgres: Buscar Indice Fotos",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        16000,
+        2480
+      ],
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "Dym0Y2qw1VYqERST",
+          "name": "Postgres account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const filesResp = $('HTTP: Listar Fotos Drive').first().json;\nconst files = (filesResp.files || []).filter(function(f){\n  return f.mimeType && f.mimeType.startsWith('image/');\n});\nconst codigo = $('Code: Extrair Folder ID').first().json.codigo;\n\nif (files.length === 0) return [];\n\nconst idxRow = $('Postgres: Buscar Indice Fotos').first().json || {};\nlet indiceInicial = (idxRow.ultima_categoria_fotos === codigo) ? (idxRow.ultimo_indice_foto || 0) : 0;\nif (indiceInicial >= files.length) indiceInicial = 0;\n\nconst proximoIndice = Math.min(indiceInicial + 5, files.length);\nconst temMais = proximoIndice < files.length;\n\nreturn [{ json: { proximo_indice: proximoIndice, codigo: codigo, tem_mais: temMais } }];"
+      },
+      "id": "code-calcular-salvar-indice",
+      "name": "Code: Calcular e Salvar Indice",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        16608,
+        3120
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO unhabella_leads (telefone, instancia, ultimo_indice_foto, ultima_categoria_fotos, ultima_interacao)\nVALUES ('{{ $('Filtro + Extrair').first().json.telefone }}', 'unhabella', {{ $json.proximo_indice }}, '{{ $json.codigo }}', NOW())\nON CONFLICT (telefone, instancia) DO UPDATE SET\n  ultimo_indice_foto = EXCLUDED.ultimo_indice_foto,\n  ultima_categoria_fotos = EXCLUDED.ultima_categoria_fotos,\n  ultima_interacao = NOW();",
+        "options": {}
+      },
+      "id": "postgres-salvar-indice-fotos",
+      "name": "Postgres: Salvar Indice Fotos",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        16848,
+        3120
+      ],
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "Dym0Y2qw1VYqERST",
+          "name": "Postgres account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "temmais1",
+              "leftValue": "={{ $json.tem_mais }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-tem-mais-fotos",
+      "name": "IF Tem Mais Fotos?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        17072,
+        3120
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://evo.upviaagentes.com/message/sendText/unhabella",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $('Montar Contexto Dinamico').first().json.evo_api_key }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.remoteJid }}\",\n  \"text\": \"Gostou de alguma? Tem mais modelos! Quer ver mais? 😊\"\n}",
+        "options": {}
+      },
+      "id": "http-avisar-mais-fotos",
+      "name": "HTTP: Avisar Mais Fotos",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        17296,
+        3120
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "avisaelisa1",
+              "leftValue": "={{ String($('Vendedor IA').first()?.json?.output || '') }}",
+              "rightValue": "[AVISAR_ELISA]",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-avisar-elisa",
+      "name": "IF Avisar Elisa?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        15296,
+        3008
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Montar Contexto Dinamico').first().json.evo_api_url }}/message/sendText/{{ $('Montar Contexto Dinamico').first().json.instancia_evo }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $('Montar Contexto Dinamico').first().json.evo_api_key }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.telefone_proprietario }}@s.whatsapp.net\",\n  \"text\": {{ JSON.stringify('⚠️ Pedido grande/revenda!\\nCliente: ' + ($('Montar Contexto Dinamico').first().json.pushName || 'sem nome') + ' (' + $('Montar Contexto Dinamico').first().json.telefone + ')\\nMensagem: ' + $('Montar Contexto Dinamico').first().json.text + '\\n\\nA Bela direcionou para atendimento pessoal.') }}\n}",
+        "options": {}
+      },
+      "id": "http-avisar-elisa",
+      "name": "HTTP: Avisar Elisa",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        15470,
+        3008
+      ],
+      "onError": "continueRegularOutput"
     }
   ],
   "connections": {
@@ -1492,6 +1676,11 @@
             "node": "IF Deve Enviar Banner?",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "IF Avisar Elisa?",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -1544,7 +1733,7 @@
       "main": [
         [
           {
-            "node": "HTTP: Listar Fotos Drive",
+            "node": "Postgres: Buscar Indice Fotos",
             "type": "main",
             "index": 0
           }
@@ -1567,6 +1756,11 @@
         [
           {
             "node": "Split Fotos (10 por vez)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Code: Calcular e Salvar Indice",
             "type": "main",
             "index": 0
           }
@@ -1951,6 +2145,63 @@
           }
         ]
       ]
+    },
+    "Postgres: Buscar Indice Fotos": {
+      "main": [
+        [
+          {
+            "node": "HTTP: Listar Fotos Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Calcular e Salvar Indice": {
+      "main": [
+        [
+          {
+            "node": "Postgres: Salvar Indice Fotos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres: Salvar Indice Fotos": {
+      "main": [
+        [
+          {
+            "node": "IF Tem Mais Fotos?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Tem Mais Fotos?": {
+      "main": [
+        [
+          {
+            "node": "HTTP: Avisar Mais Fotos",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "IF Avisar Elisa?": {
+      "main": [
+        [
+          {
+            "node": "HTTP: Avisar Elisa",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
     }
   },
   "settings": {
@@ -2035,15 +2286,15 @@
     "templateCredsSetupCompleted": true
   },
   "pinData": {},
-  "versionId": "0f3de1ed-b55d-4690-9e4b-c0102748e29e",
-  "activeVersionId": "0f3de1ed-b55d-4690-9e4b-c0102748e29e",
-  "versionCounter": 468,
+  "versionId": "a8f67f20-0528-4bf7-82b9-6efe27dc3bc0",
+  "activeVersionId": "a8f67f20-0528-4bf7-82b9-6efe27dc3bc0",
+  "versionCounter": 471,
   "triggerCount": 4,
   "tags": [],
   "activeVersion": {
-    "updatedAt": "2026-06-11T18:46:25.593Z",
-    "createdAt": "2026-06-11T18:46:25.593Z",
-    "versionId": "0f3de1ed-b55d-4690-9e4b-c0102748e29e",
+    "updatedAt": "2026-06-11T22:32:48.924Z",
+    "createdAt": "2026-06-11T22:32:48.924Z",
+    "versionId": "a8f67f20-0528-4bf7-82b9-6efe27dc3bc0",
     "workflowId": "Jkt0vu99AsQnEs6a",
     "nodes": [
       {
@@ -2082,7 +2333,7 @@
           "promptType": "define",
           "text": "={{ $('Montar Contexto Dinamico').first().json.text || '' }}",
           "options": {
-            "systemMessage": "Você é a Bela, atendente virtual da Unhabella.\nSimpática, próxima e especialista em películas de unhas artesanais.\n\n═══════════════════════════════\nPROMOCAO RELAMPAGO ATIVA — PRIORIDADE MAXIMA\nCartelões Artesanais Luxo Rosiparis\nVálido até AMANHÃ SEXTA 12/06/2026 às 20h\n═══════════════════════════════\n\nPASSO 1 — Primeira mensagem da cliente\nCumprimentar e apresentar a promoção com banner:\n\n'Oi [nome]! 😊 Tudo bem?\nQue bom te ver por aqui! Tenho uma promoção\nimperdível pra te contar! [ENVIAR_BANNER_ARTESANAL]\n\n🔥 *PROMOÇÃO RELÂMPAGO — só até amanhã 12/06 às 20h!*\n\n🎨 *10 Cartelões Artesanais Luxo Rosiparis*\n✅ 15 pares por cartelão = *150 pares no total!*\n✅ Tudo por apenas *R$100,00*\n✅ *Frete grátis*\n✅ Você *ESCOLHE* os modelos!\n\nQuer ver os modelos disponíveis? 😍'\n\nPASSO 2 — Cliente quer ver os modelos\nIncluir [ENVIAR_FOTOS] — pasta: 1dJaPmEOTxzDbx3gM5yWp2uanjKBS0Rwc\n\n'Olha que lindos! [ENVIAR_FOTOS]\nEsses são os modelos disponíveis agora! 😍\nMe manda o número ou foto dos que você quer!'\n\nPASSO 3 — Cliente escolheu os modelos\n'Anotei os seus modelos! 🛒\n\n*Resumo do pedido:*\n10 cartelões escolhidos — *R$100 com frete grátis*\n\n*PIX:* 24786973000166 (CNPJ Unhabella)\n\nApós o pagamento me manda o comprovante\nque já separo seus cartelões! 🎉'\n\nPASSO 4 — Cliente diz que só consegue pagar depois\n(semana que vem, amanhã tarde, depois do salário, etc.)\n\nUsar como argumento para não perder a venda:\n\n'Entendo! 😊 Sem problema!\nPosso *segurar o preço promocional* pra você —\nmas preciso que você já escolha as cartelas agora\nenquanto a promoção está ativa, tá?\n\nAssim garanto o valor de R$100 mesmo após o prazo!\nQual é a sua previsão de pagamento?\nMe manda os modelos que você quer e já anoto tudo! 📝'\n\nDepois que cliente confirmar previsão de pagamento:\n'Perfeito! Anotei seu pedido com preço garantido! ✅\n[modelos escolhidos] — R$100 com frete grátis\n\n*PIX quando estiver pronta:* 24786973000166 (CNPJ)\nQualquer dúvida é só me chamar! 😊'\n\nPASSO 5 — Depois de enviar fotos e não receber resposta em 15 min\n'Oi! 😊 Conseguiu dar uma olhadinha nos modelos?\nMe fala quais você quer que anoto pra você!\nLembrando que a promoção vai só até amanhã às 20h ⏰'\n\nREGRAS OBRIGATORIAS:\n- SEMPRE incluir [ENVIAR_BANNER_ARTESANAL] na primeira resposta\n- Só incluir [ENVIAR_FOTOS] quando cliente pedir para ver modelos\n- Nunca inventar modelos — só os que estão nas fotos do Drive\n- Reforçar urgência: expira amanhã 12/06 às 20h\n- Se cliente hesitar por pagamento: oferecer segurar preço\n  mas exigir escolha dos modelos AGORA\n- Máximo 5 fotos por envio\n- PIX: 24786973000166 (CNPJ Unhabella)"
+            "systemMessage": "Você é a Bela, atendente virtual da Unhabella.\nSeu estilo é gentil, calmo e natural — como uma amiga que entende de películas de unhas.\n\nREGRAS DE OURO:\n1. NUNCA mande fotos sem a cliente pedir explicitamente\n2. NUNCA faça respostas longas — máximo 3 linhas por mensagem\n3. NUNCA ofereça promoção se a cliente já veio com outro assunto\n4. Entenda o que a cliente quer ANTES de oferecer qualquer coisa\n5. Uma coisa por vez — não despeje informação\n\nCOMO SE COMPORTAR:\n\nSITUAÇÃO 1 — Cliente manda \"oi\", \"olá\", \"boa tarde\":\nResponda apenas o cumprimento + uma pergunta simples:\n\"Oi! 😊 Tudo bem? Em que posso te ajudar?\"\nNÃO ofereça promoção ainda. Espere ela falar o que quer.\n\nSITUAÇÃO 2 — Cliente veio por causa da promoção dos cartelões\n(mencionou promoção, cartelão, artesanal, R$100, viu anúncio):\nApresente a promoção de forma breve:\n\"Oi! 😊 Sim, temos promoção especial nos cartelões artesanais!\n10 cartelões luxo com 15 pares cada = 150 pares por R$100,\ncom frete grátis e você escolhe os modelos.\nQuer ver as opções? 🌸\"\nSó inclua [ENVIAR_FOTOS:promoartesanal] depois que ela disser SIM.\n\nSITUAÇÃO 3 — Cliente pede para VER fotos de algum produto:\nAí sim inclua [ENVIAR_FOTOS:codigo] na resposta.\nAntes de enviar, confirme qual produto:\n\"Claro! Quer ver as artesanais, as 3D ou as joias?\"\n(se ela não tiver especificado)\n\nCódigos disponíveis (use exatamente um destes em [ENVIAR_FOTOS:codigo]):\n- artesanais luxo (15 pares) -> artesanal15\n- artesanais (5 pares) -> artesanal5\n- 3D (cartelas 30 pares) -> cartelas3d\n- joias de unha -> joias\n- kits para revenda/atacado -> kits\n- promoção cartelões artesanais (R$100) -> promoartesanal\n\nSITUAÇÃO 4 — Cliente pergunta preço:\nResponda o preço direto e breve.\nNão mande foto junto.\n\nSITUAÇÃO 5 — Cliente quer fazer pedido:\nAnote o que ela quer, confirme e passe o PIX:\nPIX: 24786973000166 (CNPJ Unhabella)\n\nSITUAÇÃO 6 — Cliente menciona quantidade grande / revenda:\nNÃO atenda automaticamente.\nResponda: \"Para pedidos maiores a Elisa te atende\npessoalmente! Um momento que já aviso ela. 😊\"\nE inclua [AVISAR_ELISA] na resposta.\n\nPROMOÇÃO ATIVA (só mencionar se a cliente trouxer o assunto):\n- 10 Cartelões Artesanais Luxo por R$100 com frete grátis\n- Cliente escolhe os modelos\n- Válido até amanhã (12/06) às 20h\n- PIX: 24786973000166\n\nQUANDO ENVIAR FOTOS — regras do [ENVIAR_FOTOS:codigo]:\n- Só incluir quando a cliente pedir explicitamente\n- O sistema envia automaticamente um bloco de até 5 fotos por vez\n- Depois de enviar, o sistema já pergunta se ela quer ver mais — você não precisa repetir isso\n- Se a cliente disser \"sim\"/\"mais\"/\"quero ver mais\" logo depois de receber fotos, repita o MESMO [ENVIAR_FOTOS:codigo] (mesma categoria) — o sistema envia automaticamente o próximo bloco de 5\n- Nunca invente modelos — só os que estão nas fotos do Drive\n\nESTILO DE ESCRITA:\n- Mensagens curtas — máximo 3 linhas\n- Tom amigável, como conversa no WhatsApp\n- Sem lista com bullet points\n- Um emoji por mensagem no máximo\n- Nunca use palavras como \"incrível\", \"maravilhoso\", \"fantástico\""
           }
         },
         "id": "5e0f3d6e-8ca5-4392-8313-f84899d4ab21",
@@ -2557,7 +2808,7 @@
       },
       {
         "parameters": {
-          "jsCode": "const resp = $input.first().json;\nconst files = resp.files || [];\nconst cat = $('Code: Extrair Folder ID').first().json.categoria || 'Catálogo Unhabella';\n\nconst imagens = files.filter(function(f){ \n  return f.mimeType && f.mimeType.startsWith('image/'); \n});\n\nif (imagens.length === 0) return [];\n\nreturn imagens.slice(0, 5).map(function(f){\n  var nome = (f.name || '').replace(/\\.[^.]+$/, '');\n  return { json: { \n    file_id: f.id, \n    file_name: f.name, \n    mime_type: f.mimeType || 'image/jpeg',\n    url: 'https://drive.google.com/uc?export=download&id=' + f.id,\n    caption: cat + ' — ' + nome \n  }};\n});"
+          "jsCode": "const filesResp = $input.first().json;\nconst files = (filesResp.files || []).filter(function(f){\n  return f.mimeType && f.mimeType.startsWith('image/');\n});\nconst cat = $('Code: Extrair Folder ID').first().json.categoria || 'Catálogo Unhabella';\nconst codigo = $('Code: Extrair Folder ID').first().json.codigo;\n\nif (files.length === 0) return [];\n\nconst idxRow = $('Postgres: Buscar Indice Fotos').first().json || {};\nlet indiceInicial = (idxRow.ultima_categoria_fotos === codigo) ? (idxRow.ultimo_indice_foto || 0) : 0;\nif (indiceInicial >= files.length) indiceInicial = 0;\n\nreturn files.slice(indiceInicial, indiceInicial + 5).map(function(f){\n  var nome = (f.name || '').replace(/\\.[^.]+$/, '');\n  return { json: {\n    file_id: f.id,\n    file_name: f.name,\n    mime_type: f.mimeType || 'image/jpeg',\n    url: 'https://drive.google.com/uc?export=download&id=' + f.id,\n    caption: cat + ' — ' + nome\n  }};\n});"
         },
         "id": "code-prep-urls",
         "name": "Code: Preparar URLs Fotos",
@@ -2642,7 +2893,7 @@
           },
           "sendBody": true,
           "specifyBody": "json",
-          "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.remoteJid }}\",\n  \"text\": {{ JSON.stringify(($json.output || $json.text || '').replace(/\\[ENVIAR_FOTOS[^\\]]*\\]/gi, '').replace('[ENVIAR_BANNER_ARTESANAL]', '').trim()) }}\n}",
+          "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.remoteJid }}\",\n  \"text\": {{ JSON.stringify(($json.output || $json.text || '').replace(/\\[ENVIAR_FOTOS[^\\]]*\\]/gi, '').replace('[ENVIAR_BANNER_ARTESANAL]', '').replace('[AVISAR_ELISA]', '').trim()) }}\n}",
           "options": {}
         },
         "id": "resposta-ao-cliente-unhabella",
@@ -3384,6 +3635,190 @@
           2832
         ],
         "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "SELECT ultimo_indice_foto, ultima_categoria_fotos\nFROM unhabella_leads\nWHERE telefone = '{{ $('Filtro + Extrair').first().json.telefone }}' AND instancia = 'unhabella'\nLIMIT 1;",
+          "options": {}
+        },
+        "id": "postgres-buscar-indice-fotos",
+        "name": "Postgres: Buscar Indice Fotos",
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.5,
+        "position": [
+          16000,
+          2480
+        ],
+        "onError": "continueRegularOutput",
+        "alwaysOutputData": true,
+        "credentials": {
+          "postgres": {
+            "id": "Dym0Y2qw1VYqERST",
+            "name": "Postgres account 3"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const filesResp = $('HTTP: Listar Fotos Drive').first().json;\nconst files = (filesResp.files || []).filter(function(f){\n  return f.mimeType && f.mimeType.startsWith('image/');\n});\nconst codigo = $('Code: Extrair Folder ID').first().json.codigo;\n\nif (files.length === 0) return [];\n\nconst idxRow = $('Postgres: Buscar Indice Fotos').first().json || {};\nlet indiceInicial = (idxRow.ultima_categoria_fotos === codigo) ? (idxRow.ultimo_indice_foto || 0) : 0;\nif (indiceInicial >= files.length) indiceInicial = 0;\n\nconst proximoIndice = Math.min(indiceInicial + 5, files.length);\nconst temMais = proximoIndice < files.length;\n\nreturn [{ json: { proximo_indice: proximoIndice, codigo: codigo, tem_mais: temMais } }];"
+        },
+        "id": "code-calcular-salvar-indice",
+        "name": "Code: Calcular e Salvar Indice",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          16608,
+          3120
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "INSERT INTO unhabella_leads (telefone, instancia, ultimo_indice_foto, ultima_categoria_fotos, ultima_interacao)\nVALUES ('{{ $('Filtro + Extrair').first().json.telefone }}', 'unhabella', {{ $json.proximo_indice }}, '{{ $json.codigo }}', NOW())\nON CONFLICT (telefone, instancia) DO UPDATE SET\n  ultimo_indice_foto = EXCLUDED.ultimo_indice_foto,\n  ultima_categoria_fotos = EXCLUDED.ultima_categoria_fotos,\n  ultima_interacao = NOW();",
+          "options": {}
+        },
+        "id": "postgres-salvar-indice-fotos",
+        "name": "Postgres: Salvar Indice Fotos",
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.5,
+        "position": [
+          16848,
+          3120
+        ],
+        "onError": "continueRegularOutput",
+        "credentials": {
+          "postgres": {
+            "id": "Dym0Y2qw1VYqERST",
+            "name": "Postgres account 3"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": false,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "temmais1",
+                "leftValue": "={{ $json.tem_mais }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "if-tem-mais-fotos",
+        "name": "IF Tem Mais Fotos?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          17072,
+          3120
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "=https://evo.upviaagentes.com/message/sendText/unhabella",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "={{ $('Montar Contexto Dinamico').first().json.evo_api_key }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.remoteJid }}\",\n  \"text\": \"Gostou de alguma? Tem mais modelos! Quer ver mais? 😊\"\n}",
+          "options": {}
+        },
+        "id": "http-avisar-mais-fotos",
+        "name": "HTTP: Avisar Mais Fotos",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          17296,
+          3120
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": false,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "avisaelisa1",
+                "leftValue": "={{ String($('Vendedor IA').first()?.json?.output || '') }}",
+                "rightValue": "[AVISAR_ELISA]",
+                "operator": {
+                  "type": "string",
+                  "operation": "contains"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "if-avisar-elisa",
+        "name": "IF Avisar Elisa?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          15296,
+          3008
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "={{ $('Montar Contexto Dinamico').first().json.evo_api_url }}/message/sendText/{{ $('Montar Contexto Dinamico').first().json.instancia_evo }}",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "={{ $('Montar Contexto Dinamico').first().json.evo_api_key }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"number\": \"{{ $('Montar Contexto Dinamico').first().json.telefone_proprietario }}@s.whatsapp.net\",\n  \"text\": {{ JSON.stringify('⚠️ Pedido grande/revenda!\\nCliente: ' + ($('Montar Contexto Dinamico').first().json.pushName || 'sem nome') + ' (' + $('Montar Contexto Dinamico').first().json.telefone + ')\\nMensagem: ' + $('Montar Contexto Dinamico').first().json.text + '\\n\\nA Bela direcionou para atendimento pessoal.') }}\n}",
+          "options": {}
+        },
+        "id": "http-avisar-elisa",
+        "name": "HTTP: Avisar Elisa",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          15470,
+          3008
+        ],
+        "onError": "continueRegularOutput"
       }
     ],
     "connections": {
@@ -3531,6 +3966,11 @@
               "node": "IF Deve Enviar Banner?",
               "type": "main",
               "index": 0
+            },
+            {
+              "node": "IF Avisar Elisa?",
+              "type": "main",
+              "index": 0
             }
           ]
         ]
@@ -3583,7 +4023,7 @@
         "main": [
           [
             {
-              "node": "HTTP: Listar Fotos Drive",
+              "node": "Postgres: Buscar Indice Fotos",
               "type": "main",
               "index": 0
             }
@@ -3606,6 +4046,11 @@
           [
             {
               "node": "Split Fotos (10 por vez)",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Code: Calcular e Salvar Indice",
               "type": "main",
               "index": 0
             }
@@ -3989,6 +4434,63 @@
               "index": 0
             }
           ]
+        ]
+      },
+      "Postgres: Buscar Indice Fotos": {
+        "main": [
+          [
+            {
+              "node": "HTTP: Listar Fotos Drive",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Code: Calcular e Salvar Indice": {
+        "main": [
+          [
+            {
+              "node": "Postgres: Salvar Indice Fotos",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Postgres: Salvar Indice Fotos": {
+        "main": [
+          [
+            {
+              "node": "IF Tem Mais Fotos?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "IF Tem Mais Fotos?": {
+        "main": [
+          [
+            {
+              "node": "HTTP: Avisar Mais Fotos",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          []
+        ]
+      },
+      "IF Avisar Elisa?": {
+        "main": [
+          [
+            {
+              "node": "HTTP: Avisar Elisa",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          []
         ]
       }
     },

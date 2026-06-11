@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-06-11T16:47:42.221Z",
+  "updatedAt": "2026-06-11T22:35:29.463Z",
   "createdAt": "2026-06-11T16:47:42.221Z",
   "id": "zkRCSIVak4oTIBBU",
   "name": "followup-unhabella",
@@ -126,7 +126,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "CREATE TABLE IF NOT EXISTS unhabella_leads (\n  id bigserial PRIMARY KEY,\n  telefone text NOT NULL,\n  instancia text NOT NULL DEFAULT 'unhabella',\n  status text DEFAULT 'novo',\n  created_at timestamptz DEFAULT now(),\n  updated_at timestamptz DEFAULT now()\n);\nALTER TABLE unhabella_leads\n  ADD COLUMN IF NOT EXISTS instancia text DEFAULT 'unhabella',\n  ADD COLUMN IF NOT EXISTS status text DEFAULT 'novo',\n  ADD COLUMN IF NOT EXISTS produto_interesse text,\n  ADD COLUMN IF NOT EXISTS ultima_interacao timestamptz,\n  ADD COLUMN IF NOT EXISTS proximo_followup_1 timestamptz,\n  ADD COLUMN IF NOT EXISTS proximo_followup_2 timestamptz,\n  ADD COLUMN IF NOT EXISTS proximo_followup_3 timestamptz,\n  ADD COLUMN IF NOT EXISTS followup_1_enviado boolean DEFAULT false,\n  ADD COLUMN IF NOT EXISTS followup_2_enviado boolean DEFAULT false,\n  ADD COLUMN IF NOT EXISTS followup_3_enviado boolean DEFAULT false;\nUPDATE unhabella_leads SET instancia='unhabella' WHERE instancia IS NULL;\nCREATE UNIQUE INDEX IF NOT EXISTS idx_unhabella_leads_telefone_instancia ON unhabella_leads(telefone, instancia);",
+        "query": "CREATE TABLE IF NOT EXISTS unhabella_leads (\n  id bigserial PRIMARY KEY,\n  telefone text NOT NULL,\n  instancia text NOT NULL DEFAULT 'unhabella',\n  status text DEFAULT 'novo',\n  created_at timestamptz DEFAULT now(),\n  updated_at timestamptz DEFAULT now()\n);\nALTER TABLE unhabella_leads\n  ADD COLUMN IF NOT EXISTS instancia text DEFAULT 'unhabella',\n  ADD COLUMN IF NOT EXISTS status text DEFAULT 'novo',\n  ADD COLUMN IF NOT EXISTS produto_interesse text,\n  ADD COLUMN IF NOT EXISTS ultima_interacao timestamptz,\n  ADD COLUMN IF NOT EXISTS proximo_followup_1 timestamptz,\n  ADD COLUMN IF NOT EXISTS proximo_followup_2 timestamptz,\n  ADD COLUMN IF NOT EXISTS proximo_followup_3 timestamptz,\n  ADD COLUMN IF NOT EXISTS followup_1_enviado boolean DEFAULT false,\n  ADD COLUMN IF NOT EXISTS followup_2_enviado boolean DEFAULT false,\n  ADD COLUMN IF NOT EXISTS followup_3_enviado boolean DEFAULT false,\n  ADD COLUMN IF NOT EXISTS ultimo_indice_foto integer DEFAULT 0,\n  ADD COLUMN IF NOT EXISTS ultima_categoria_fotos text;\nUPDATE unhabella_leads SET instancia='unhabella' WHERE instancia IS NULL;\nCREATE UNIQUE INDEX IF NOT EXISTS idx_unhabella_leads_telefone_instancia ON unhabella_leads(telefone, instancia);",
         "options": {}
       },
       "id": "85af1d67-48cc-47ae-9fae-1d5029d89460",
@@ -205,33 +205,222 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "staticData": null,
+  "staticData": {
+    "node:Schedule Trigger": {
+      "recurrenceRules": []
+    }
+  },
   "meta": null,
   "pinData": null,
-  "versionId": "aeb30568-ce4f-4443-91eb-f8803517cf97",
-  "activeVersionId": null,
-  "versionCounter": 1,
-  "triggerCount": 0,
-  "shared": [
-    {
-      "updatedAt": "2026-06-11T16:47:42.223Z",
-      "createdAt": "2026-06-11T16:47:42.223Z",
-      "role": "workflow:owner",
-      "workflowId": "zkRCSIVak4oTIBBU",
-      "projectId": "wvVR5bxXzTLlLBhJ",
-      "project": {
-        "updatedAt": "2026-05-23T22:50:01.526Z",
-        "createdAt": "2026-05-23T22:44:43.627Z",
-        "id": "wvVR5bxXzTLlLBhJ",
-        "name": "Elisa Silveira de Moura Andrade <upvianegocios@gmail.com>",
-        "type": "personal",
-        "icon": null,
-        "description": null,
-        "creatorId": "63b6bda0-d1aa-4abc-beaa-0fbb599f2288"
-      }
-    }
-  ],
+  "versionId": "12435dc0-f41c-4896-8e77-af1d3275e8c3",
+  "activeVersionId": "12435dc0-f41c-4896-8e77-af1d3275e8c3",
+  "versionCounter": 5,
+  "triggerCount": 1,
   "tags": [],
-  "parentFolder": null,
-  "activeVersion": null
+  "activeVersion": {
+    "updatedAt": "2026-06-11T22:35:29.464Z",
+    "createdAt": "2026-06-11T22:35:29.464Z",
+    "versionId": "12435dc0-f41c-4896-8e77-af1d3275e8c3",
+    "workflowId": "zkRCSIVak4oTIBBU",
+    "nodes": [
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "minutes",
+                "minutesInterval": 10
+              }
+            ]
+          }
+        },
+        "id": "e0327ba1-d975-4d5b-8946-abeeb0587be3",
+        "name": "Schedule Trigger",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          0,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "SELECT ul.*, cs.evo_api_url, cs.evo_api_key\nFROM unhabella_leads ul\nJOIN clientes_sistema cs ON cs.instancia_whatsapp = ul.instancia\nWHERE ul.instancia = 'unhabella' AND ul.status = 'fotos_enviadas'\nAND (\n  (ul.followup_1_enviado = false AND ul.proximo_followup_1 <= NOW())\n  OR (ul.followup_2_enviado = false AND ul.proximo_followup_2 <= NOW())\n  OR (ul.followup_3_enviado = false AND ul.proximo_followup_3 <= NOW())\n)\nLIMIT 10;",
+          "options": {}
+        },
+        "id": "63dba19d-3b8a-4848-b036-eabfd9fc87ee",
+        "name": "Postgres: Buscar Leads Followup",
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.5,
+        "position": [
+          240,
+          0
+        ],
+        "credentials": {
+          "postgres": {
+            "id": "Dym0Y2qw1VYqERST",
+            "name": "Postgres account 3"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForEachItem",
+          "jsCode": "const msgs = {\n  '3d': {\n    1: \"Oi! Vi que voce deu uma olhadinha nas cartelas 3D 😍 Ficou com alguma duvida sobre elas? Posso te ajudar a escolher!\",\n    2: \"Ainda dando aquela olhada nas cartelas 3D? 👀 Essa promocao do kit com 15 cartelas e por tempo limitado, nao queria que voce perdesse!\",\n    3: \"Oi! Passando pra lembrar da promocao das cartelas 3D que te mostrei mais cedo 💅 Se quiser garantir, e so me chamar que eu te passo todos os detalhes!\"\n  },\n  artesanal: {\n    1: \"Oi! Curtiu as peliculas artesanais que te mandei? 😍 Qualquer duvida sobre os modelos ou tamanhos, e so falar comigo!\",\n    2: \"Ainda pensando no cartelao artesanal? Essa promocao esta com um preco especial, nao queria que voce perdesse essa oportunidade 💕\",\n    3: \"Oi! So passando pra lembrar da promocao do cartelao artesanal que te mostrei hoje. Se quiser fechar, me chama que eu ja preparo tudo pra voce 😊\"\n  },\n  copa: {\n    1: \"Oi! Gostou do kit de casadinhas tema Copa? Se quiser saber mais sobre tamanhos ou valores, e so me chamar!\",\n    2: \"Ainda dando uma olhada no kit casadinhas da Copa? Essa promocao e por tempo limitado e ta super em alta agora 🔥\",\n    3: \"Oi! Passando pra lembrar do kit casadinhas tema Copa que te mostrei. Se quiser garantir o seu, me chama que eu te ajudo com tudo 💅\"\n  }\n};\n\nconst generico = {\n  1: \"Oi! Vi que te mandei algumas fotos mais cedo 😊 Ficou com alguma duvida? Posso te ajudar!\",\n  2: \"Ainda por ai? Fico a disposicao se quiser saber mais sobre os produtos que te mostrei 💕\",\n  3: \"Oi! So passando pra lembrar das fotos que te enviei hoje. Qualquer duvida, me chama! 😊\"\n};\n\nconst item = $input.item.json;\nconst agora = new Date();\n\nlet followup = 0;\nif (!item.followup_1_enviado && new Date(item.proximo_followup_1) <= agora) followup = 1;\nelse if (!item.followup_2_enviado && new Date(item.proximo_followup_2) <= agora) followup = 2;\nelse if (!item.followup_3_enviado && new Date(item.proximo_followup_3) <= agora) followup = 3;\n\nif (!followup) return null;\n\nconst grupo = msgs[item.produto_interesse] || generico;\nconst mensagem = grupo[followup] || generico[followup];\n\nreturn {\n  json: {\n    mensagem,\n    followup,\n    telefone: item.telefone,\n    lead_id: item.id,\n    evo_api_url: item.evo_api_url,\n    evo_api_key: item.evo_api_key\n  }\n};"
+        },
+        "id": "3f747440-eb7b-48a7-bac9-e0f36a61e908",
+        "name": "Code: Montar Mensagem Followup",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          480,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "={{ $json.evo_api_url }}/message/sendText/unhabella",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "={{ $json.evo_api_key }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"number\": \"{{ $json.telefone }}\",\n  \"text\": {{ JSON.stringify($json.mensagem) }}\n}",
+          "options": {}
+        },
+        "id": "bf6d5b38-dc5f-4c32-8220-c1e5fc4c37ae",
+        "name": "HTTP: Enviar Followup Evolution",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          720,
+          0
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "UPDATE unhabella_leads SET\n  followup_1_enviado = CASE WHEN {{ $json.followup }} = 1 THEN true ELSE followup_1_enviado END,\n  followup_2_enviado = CASE WHEN {{ $json.followup }} = 2 THEN true ELSE followup_2_enviado END,\n  followup_3_enviado = CASE WHEN {{ $json.followup }} = 3 THEN true ELSE followup_3_enviado END,\n  ultima_interacao = NOW()\nWHERE id = {{ $json.lead_id }};",
+          "options": {}
+        },
+        "id": "9253dbee-6170-4cd3-bc43-6b939171d805",
+        "name": "Postgres: Marcar Followup Enviado",
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.5,
+        "position": [
+          960,
+          0
+        ],
+        "onError": "continueRegularOutput",
+        "credentials": {
+          "postgres": {
+            "id": "Dym0Y2qw1VYqERST",
+            "name": "Postgres account 3"
+          }
+        }
+      },
+      {
+        "parameters": {},
+        "id": "91ce8b80-648c-436d-8f36-cfdd51d99ca8",
+        "name": "Quando clicar em Executar (Setup)",
+        "type": "n8n-nodes-base.manualTrigger",
+        "typeVersion": 1,
+        "position": [
+          0,
+          240
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "CREATE TABLE IF NOT EXISTS unhabella_leads (\n  id bigserial PRIMARY KEY,\n  telefone text NOT NULL,\n  instancia text NOT NULL DEFAULT 'unhabella',\n  status text DEFAULT 'novo',\n  created_at timestamptz DEFAULT now(),\n  updated_at timestamptz DEFAULT now()\n);\nALTER TABLE unhabella_leads\n  ADD COLUMN IF NOT EXISTS instancia text DEFAULT 'unhabella',\n  ADD COLUMN IF NOT EXISTS status text DEFAULT 'novo',\n  ADD COLUMN IF NOT EXISTS produto_interesse text,\n  ADD COLUMN IF NOT EXISTS ultima_interacao timestamptz,\n  ADD COLUMN IF NOT EXISTS proximo_followup_1 timestamptz,\n  ADD COLUMN IF NOT EXISTS proximo_followup_2 timestamptz,\n  ADD COLUMN IF NOT EXISTS proximo_followup_3 timestamptz,\n  ADD COLUMN IF NOT EXISTS followup_1_enviado boolean DEFAULT false,\n  ADD COLUMN IF NOT EXISTS followup_2_enviado boolean DEFAULT false,\n  ADD COLUMN IF NOT EXISTS followup_3_enviado boolean DEFAULT false,\n  ADD COLUMN IF NOT EXISTS ultimo_indice_foto integer DEFAULT 0,\n  ADD COLUMN IF NOT EXISTS ultima_categoria_fotos text;\nUPDATE unhabella_leads SET instancia='unhabella' WHERE instancia IS NULL;\nCREATE UNIQUE INDEX IF NOT EXISTS idx_unhabella_leads_telefone_instancia ON unhabella_leads(telefone, instancia);",
+          "options": {}
+        },
+        "id": "85af1d67-48cc-47ae-9fae-1d5029d89460",
+        "name": "Setup: Tabela unhabella_leads",
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.5,
+        "position": [
+          240,
+          240
+        ],
+        "credentials": {
+          "postgres": {
+            "id": "Dym0Y2qw1VYqERST",
+            "name": "Postgres account 3"
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Schedule Trigger": {
+        "main": [
+          [
+            {
+              "node": "Postgres: Buscar Leads Followup",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Postgres: Buscar Leads Followup": {
+        "main": [
+          [
+            {
+              "node": "Code: Montar Mensagem Followup",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Code: Montar Mensagem Followup": {
+        "main": [
+          [
+            {
+              "node": "HTTP: Enviar Followup Evolution",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "HTTP: Enviar Followup Evolution": {
+        "main": [
+          [
+            {
+              "node": "Postgres: Marcar Followup Enviado",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Quando clicar em Executar (Setup)": {
+        "main": [
+          [
+            {
+              "node": "Setup: Tabela unhabella_leads",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Elisa Silveira de Moura Andrade",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  }
 }
