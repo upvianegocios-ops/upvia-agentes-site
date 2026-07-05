@@ -75,9 +75,7 @@
       max-width: 640px; margin-bottom: 48px;
     }
 
-    /* ── FADE IN ── */
-    .fade-in { opacity: 0; transform: translateY(28px); transition: opacity 0.65s ease, transform 0.65s ease; }
-    .fade-in.visible { opacity: 1; transform: translateY(0); }
+
 
     /* ── HERO ── */
     .hero {
@@ -358,7 +356,7 @@
     <img class="hero-fullimg" src="images/gas1.jpg" alt="Revenda de gás com atendimento inteligente">
     <div class="hero-overlay"></div>
     <div class="container" style="position:relative;z-index:2">
-      <div class="fade-in hero-content">
+      <div class="hero-content">
         <span class="hero-badge-pill">Novo produto UpVia Agentes</span>
         <h1>Sua revenda de gás com <span class="grad">atendimento inteligente</span></h1>
         <p>IA que atende seus clientes no WhatsApp 24h, localiza o entregador mais próximo e despacha o pedido automaticamente.</p>
@@ -373,26 +371,26 @@
   <!-- COMO FUNCIONA -->
   <section class="hiw">
     <div class="container">
-      <div class="fade-in" style="text-align:center">
+      <div style="text-align:center">
         <div class="section-tag">Automação completa</div>
         <h2 class="section-title">Como funciona o <span class="accent">UpGásIA</span></h2>
         <p class="section-desc" style="margin:0 auto 48px">3 passos simples que eliminam o trabalho manual da sua revenda</p>
       </div>
 
       <div class="hiw-cards">
-        <div class="hiw-card fade-in" style="transition-delay:0.05s">
+        <div class="hiw-card">
           <span class="hiw-icon">💬</span>
           <div class="hiw-num">01</div>
           <h3>Cliente manda mensagem</h3>
           <p>A IA responde na hora, informa preços, tira dúvidas e conduz o pedido até o fechamento. Tudo automático, 24 horas por dia.</p>
         </div>
-        <div class="hiw-card fade-in" style="transition-delay:0.15s">
+        <div class="hiw-card">
           <span class="hiw-icon">📍</span>
           <div class="hiw-num">02</div>
           <h3>Sistema localiza o entregador</h3>
           <p>Via GPS em tempo real, o sistema identifica automaticamente qual dos seus entregadores está mais próximo do cliente.</p>
         </div>
-        <div class="hiw-card fade-in" style="transition-delay:0.25s">
+        <div class="hiw-card">
           <span class="hiw-icon">🛵</span>
           <div class="hiw-num">03</div>
           <h3>Pedido despachado na hora</h3>
@@ -404,7 +402,7 @@
   </section>
 
   <!-- GAS2 BANNER -->
-  <section class="gas2-banner fade-in">
+  <section class="gas2-banner">
     <img src="images/gas2.jpg" alt="Revenda de gás automatizada">
     <div class="gas2-overlay">
       <div class="gas2-text">
@@ -417,7 +415,7 @@
   <!-- PLANOS -->
   <section class="plans" id="planos">
     <div class="container">
-      <div class="fade-in" style="text-align:center">
+      <div style="text-align:center">
         <div class="section-tag">Preços transparentes</div>
         <h2 class="section-title">Escolha o plano da <span class="accent">sua revenda</span></h2>
         <p class="section-desc" style="margin:0 auto 48px">Sem taxa de implantação. Cancele quando quiser.</p>
@@ -425,7 +423,7 @@
 
       <div class="plans-grid">
         <!-- ESSENCIAL -->
-        <div class="plan-card fade-in" style="transition-delay:0.05s">
+        <div class="plan-card">
           <div class="plan-name">Essencial</div>
           <div class="plan-price">
             <div class="lbl">por apenas</div>
@@ -444,7 +442,7 @@
         </div>
 
         <!-- PRO -->
-        <div class="plan-card featured fade-in" style="transition-delay:0.15s">
+        <div class="plan-card featured">
           <div class="plan-name">Pro</div>
           <div class="plan-price">
             <div class="lbl">por apenas</div>
@@ -463,7 +461,7 @@
         </div>
 
         <!-- PREMIUM -->
-        <div class="plan-card fade-in" style="transition-delay:0.25s">
+        <div class="plan-card">
           <div class="plan-name">Premium</div>
           <div class="plan-price">
             <div class="lbl">por apenas</div>
@@ -487,13 +485,13 @@
   <!-- CADASTRO -->
   <section class="cadastro" id="cadastro">
     <div class="container">
-      <div class="fade-in">
+      <div>
         <div class="section-tag">Comece agora</div>
         <h2 class="section-title">Cadastre sua <span class="accent">revenda agora</span></h2>
         <p class="section-desc" style="margin:0 auto">Nossa equipe entra em contato em até 24h pelo WhatsApp para configurar tudo pra você.</p>
       </div>
 
-      <div class="form-box fade-in" style="transition-delay:0.1s">
+      <div class="form-box">
         <form id="gas-form">
           <div class="form-row">
             <div class="form-group">
@@ -615,11 +613,7 @@
   </a>
 
   <script>
-    // ── FADE IN ON SCROLL ──
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
-    }, { threshold: 0.12 });
-    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
 
     // ── PHONE MASK ──
     document.getElementById('telefone').addEventListener('input', function () {
