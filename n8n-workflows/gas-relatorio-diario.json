@@ -1,0 +1,255 @@
+{
+  "name": "GAS - Relatorio Diario",
+  "settings": {
+    "timezone": "America/Sao_Paulo"
+  },
+  "nodes": [
+    {
+      "id": "gas-node-001",
+      "name": "Disparar Todo Dia 8h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "gas-node-002",
+      "name": "Buscar Todas as Lojas",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        500,
+        300
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/negocios_gas?ativo=eq.true&select=id,nome,instancia_whatsapp,telefone_admin",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "gas-node-003",
+      "name": "Para Cada Loja",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        750,
+        300
+      ],
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      }
+    },
+    {
+      "id": "gas-node-004",
+      "name": "Buscar Pedidos de Ontem",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1000,
+        300
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/pedidos_gas?negocio_id=eq.{{$json.id}}&criado_em=gte.{{$now.minus({days:1}).startOf('day').toISO()}}&criado_em=lt.{{$now.startOf('day').toISO()}}&select=id,cliente_nome,cliente_telefone,endereco,produto_nome,forma_pagamento,valor_total,status,entregador_id,criado_em",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "gas-node-005",
+      "name": "Buscar Entregadores da Loja",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1250,
+        300
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/entregadores_gas?negocio_id=eq.{{$('Para Cada Loja').first().json.id}}&select=id,nome",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "gas-node-006",
+      "name": "Montar Relatorio",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1500,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const loja = $('Para Cada Loja').first().json;\nconst pedidos = $('Buscar Pedidos de Ontem').all().map(i => i.json);\nconst entregadores = $('Buscar Entregadores da Loja').all().map(i => i.json);\n\nconst hoje = new Date();\nconst ontem = new Date(hoje);\nontem.setDate(ontem.getDate() - 1);\nconst dataFormatada = ontem.toLocaleDateString('pt-BR');\n\nif (!pedidos || pedidos.length === 0) {\n  return [{\n    json: {\n      telefone_admin: loja.telefone_admin,\n      instancia: loja.instancia_whatsapp,\n      nome_loja: loja.nome,\n      mensagem: `📊 *Relatorio ${loja.nome} - ${dataFormatada}*\\n\\nNenhum pedido registrado ontem.`\n    }\n  }];\n}\n\nconst porProduto = {};\npedidos.forEach(p => {\n  const prod = p.produto_nome ?? 'Nao informado';\n  porProduto[prod] = (porProduto[prod] ?? 0) + 1;\n});\n\nconst porEntregador = {};\npedidos.forEach(p => {\n  if (p.entregador_id) {\n    const ent = entregadores.find(e => e.id === p.entregador_id);\n    const nome = ent?.nome ?? 'Entregador ' + p.entregador_id;\n    porEntregador[nome] = (porEntregador[nome] ?? 0) + 1;\n  }\n});\n\nconst despachados = pedidos.filter(p => p.status === 'despachado').length;\nconst entregues = pedidos.filter(p => p.status === 'entregue').length;\nconst cancelados = pedidos.filter(p => p.status === 'cancelado').length;\n\nconst faturamento = pedidos.reduce((acc, p) => acc + (parseFloat(p.valor_total) || 0), 0);\n\nconst produtosTexto = Object.entries(porProduto)\n  .map(([nome, qtd]) => `   • ${nome}: ${qtd} pedido${qtd > 1 ? 's' : ''}`)\n  .join('\\n');\n\nconst entregadoresTexto = Object.entries(porEntregador)\n  .map(([nome, qtd]) => `   • ${nome}: ${qtd} entrega${qtd > 1 ? 's' : ''}`)\n  .join('\\n');\n\nconst mensagem = `📊 *Relatorio ${loja.nome}*\n📅 ${dataFormatada}\n\n*Total de pedidos: ${pedidos.length}*\n\n📦 *Por produto:*\n${produtosTexto}\n\n🛵 *Por entregador:*\n${entregadoresTexto || '   • Nao informado'}\n\n📋 *Status:*\n   • Despachados: ${despachados}\n   • Entregues: ${entregues}\n   • Cancelados: ${cancelados}\n\n💰 *Faturamento estimado: R$${faturamento.toFixed(2)}*\n\n_Relatorio gerado automaticamente pela UpGasIA_ 🤖`;\n\nreturn [{\n  json: {\n    telefone_admin: loja.telefone_admin,\n    instancia: loja.instancia_whatsapp,\n    nome_loja: loja.nome,\n    mensagem\n  }\n}];"
+      }
+    },
+    {
+      "id": "gas-node-007",
+      "name": "Enviar Relatorio WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1750,
+        300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://evo.upviaagentes.com/message/sendText/{{$json.instancia}}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"number\": \"{{$json.telefone_admin}}\", \"text\": \"{{$json.mensagem}}\"}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Disparar Todo Dia 8h": {
+      "main": [
+        [
+          {
+            "node": "Buscar Todas as Lojas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Todas as Lojas": {
+      "main": [
+        [
+          {
+            "node": "Para Cada Loja",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Para Cada Loja": {
+      "main": [
+        [
+          {
+            "node": "Buscar Pedidos de Ontem",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Buscar Pedidos de Ontem": {
+      "main": [
+        [
+          {
+            "node": "Buscar Entregadores da Loja",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Entregadores da Loja": {
+      "main": [
+        [
+          {
+            "node": "Montar Relatorio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Relatorio": {
+      "main": [
+        [
+          {
+            "node": "Enviar Relatorio WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Relatorio WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Para Cada Loja",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

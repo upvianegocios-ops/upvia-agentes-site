@@ -1,0 +1,24 @@
+{
+  "rewrites": [
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "gas.upviaagentes.com.br" }],
+      "destination": "/gas/index.html"
+    },
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "gas.upviaagentes.com.br" }],
+      "destination": "/gas/:path*"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+      ]
+    }
+  ]
+}

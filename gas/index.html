@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UpGásIA — Atendimento Inteligente para Sua Revenda de Gás</title>
+  <meta name="description" content="IA que atende seus clientes no WhatsApp 24h, localiza o entregador mais próximo e despacha o pedido automaticamente.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #07070D;
+      --bg2: #0D0D16;
+      --border: #1A1A2E;
+      --text: #E8E8F0;
+      --muted: #8888AA;
+      --nav-text: #CCCCDD;
+      --primary: #6C5CE7;
+      --accent: #A29BFE;
+      --blue: #74B9FF;
+      --green: #00B894;
+      --red: #FF6B6B;
+      --grad: linear-gradient(135deg, #6C5CE7, #A29BFE);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    a { text-decoration: none; color: inherit; }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 48px;
+      background: rgba(7, 7, 13, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .nav-logo { font-size: 20px; font-weight: 800; }
+    .nav-logo span { background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .nav-cta {
+      padding: 10px 24px;
+      background: var(--grad);
+      border-radius: 24px; color: #fff; font-weight: 700; font-size: 15px;
+      border: none; cursor: pointer; font-family: 'Outfit', sans-serif;
+      transition: all 0.2s; text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    }
+    .nav-cta:hover { opacity: 0.88; transform: translateY(-1px); }
+
+    /* ── SECTIONS COMMON ── */
+    section { padding: 100px 0; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+    .section-tag {
+      font-size: 12px; color: var(--accent); font-weight: 600;
+      letter-spacing: 3px; text-transform: uppercase; margin-bottom: 12px;
+    }
+    .section-title {
+      font-size: clamp(28px, 4vw, 44px); font-weight: 800;
+      letter-spacing: -1px; margin-bottom: 16px; line-height: 1.15;
+    }
+    .section-title .accent { color: var(--accent); }
+    .section-desc {
+      font-size: 18px; color: var(--muted); line-height: 1.7;
+      max-width: 640px; margin-bottom: 48px;
+    }
+
+    /* ── FADE IN ── */
+    .fade-in { opacity: 0; transform: translateY(28px); transition: opacity 0.65s ease, transform 0.65s ease; }
+    .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh; display: flex; align-items: center;
+      padding-top: 90px; position: relative; overflow: hidden;
+    }
+    .hero-bg {
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 70% 40%, rgba(108,92,231,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 60px; align-items: center;
+    }
+    .hero-badge-pill {
+      display: inline-block; padding: 8px 20px;
+      background: rgba(108,92,231,0.12); border: 1px solid rgba(108,92,231,0.3);
+      border-radius: 30px; font-size: 13px; color: var(--accent);
+      font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 20px;
+    }
+    .hero h1 {
+      font-size: clamp(32px, 4.5vw, 54px); font-weight: 900;
+      line-height: 1.1; letter-spacing: -2px; margin-bottom: 20px;
+    }
+    .hero h1 .grad {
+      background: var(--grad); -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .hero p {
+      font-size: clamp(16px, 2vw, 18px); color: var(--muted);
+      line-height: 1.7; max-width: 540px; margin-bottom: 36px;
+    }
+    .hero-btns { display: flex; gap: 16px; flex-wrap: wrap; }
+    .btn-primary {
+      padding: 16px 36px;
+      background: var(--grad); border-radius: 14px;
+      color: #fff; font-weight: 700; font-size: 16px;
+      border: none; cursor: pointer; font-family: 'Outfit', sans-serif;
+      transition: all 0.3s; box-shadow: 0 6px 30px rgba(108,92,231,0.35);
+      display: inline-block;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 40px rgba(108,92,231,0.5); }
+    .btn-secondary {
+      padding: 16px 36px;
+      background: transparent; border: 2px solid rgba(108,92,231,0.4);
+      border-radius: 14px; color: var(--accent); font-weight: 600; font-size: 16px;
+      cursor: pointer; font-family: 'Outfit', sans-serif; transition: all 0.3s;
+      display: inline-block;
+    }
+    .btn-secondary:hover { border-color: var(--primary); background: rgba(108,92,231,0.08); }
+    .hero-img-wrap {
+      border-radius: 20px; overflow: hidden;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(108,92,231,0.15);
+      position: relative;
+    }
+    .hero-img-wrap img { width: 100%; height: auto; display: block; }
+    .hero-img-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(180deg, transparent 50%, rgba(7,7,13,0.4) 100%);
+    }
+
+    /* ── HOW IT WORKS ── */
+    .hiw { background: var(--bg); }
+    .hiw .container { text-align: center; }
+    .hiw-cards {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 24px; margin-bottom: 64px;
+    }
+    .hiw-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 20px; padding: 40px 28px; text-align: center;
+      transition: all 0.4s; position: relative; overflow: hidden;
+    }
+    .hiw-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: var(--grad); opacity: 0; transition: opacity 0.3s;
+    }
+    .hiw-card:hover { border-color: rgba(108,92,231,0.4); transform: translateY(-4px); }
+    .hiw-card:hover::before { opacity: 1; }
+    .hiw-icon {
+      font-size: 44px; margin-bottom: 16px; display: block;
+    }
+    .hiw-num {
+      font-size: 48px; font-weight: 900;
+      background: var(--grad); -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent; background-clip: text;
+      line-height: 1; margin-bottom: 12px;
+    }
+    .hiw-card h3 { font-size: 20px; font-weight: 700; margin-bottom: 12px; }
+    .hiw-card p { font-size: 15px; color: var(--muted); line-height: 1.6; }
+
+    .hiw-banner {
+      position: relative; border-radius: 20px; overflow: hidden;
+      min-height: 300px; display: flex; align-items: center; justify-content: center;
+    }
+    .hiw-banner img {
+      position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+    }
+    .hiw-banner-overlay {
+      position: absolute; inset: 0;
+      background: rgba(7, 7, 13, 0.72);
+    }
+    .hiw-banner-text {
+      position: relative; z-index: 2; text-align: center; padding: 48px 32px;
+    }
+    .hiw-banner-text p {
+      font-size: clamp(20px, 3vw, 30px); font-weight: 700;
+      line-height: 1.4; max-width: 680px; margin: 0 auto;
+    }
+    .hiw-banner-text p span { color: var(--accent); }
+
+    /* ── PLANOS ── */
+    .plans { background: var(--bg2); }
+    .plans .container { text-align: center; }
+    .plans-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 24px; align-items: start;
+    }
+    .plan-card {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 20px; padding: 40px 28px;
+      transition: all 0.4s; position: relative; text-align: center;
+    }
+    .plan-card.featured {
+      border-color: var(--primary);
+      background: linear-gradient(135deg, var(--bg), #13102A);
+      transform: scale(1.04);
+    }
+    .plan-card.featured::before {
+      content: 'Mais Popular';
+      position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+      background: var(--grad); padding: 6px 20px;
+      border-radius: 20px; font-size: 11px; font-weight: 700;
+      letter-spacing: 1px; color: #fff;
+    }
+    .plan-name { font-size: 24px; font-weight: 800; margin-bottom: 4px; }
+    .plan-price { margin: 20px 0; }
+    .plan-price .lbl { font-size: 13px; color: var(--muted); }
+    .plan-price .amt {
+      font-size: 48px; font-weight: 900;
+      background: var(--grad); -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .plan-price .per { font-size: 16px; color: var(--muted); }
+    .plan-no-fee { font-size: 13px; color: var(--green); margin-bottom: 24px; }
+    .plan-features { list-style: none; margin-bottom: 32px; text-align: left; }
+    .plan-features li {
+      padding: 9px 0; font-size: 14px; color: #AAAACC;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .plan-features li:last-child { border-bottom: none; }
+    .plan-features li .chk { color: var(--green); font-weight: 700; flex-shrink: 0; }
+    .plan-features li .x { color: var(--muted); flex-shrink: 0; }
+    .plan-btn {
+      width: 100%; padding: 14px;
+      border-radius: 12px; font-size: 16px; font-weight: 700;
+      cursor: pointer; font-family: 'Outfit', sans-serif; transition: all 0.3s;
+      border: none;
+    }
+    .plan-btn.pri {
+      background: var(--grad); color: #fff;
+      box-shadow: 0 4px 20px rgba(108,92,231,0.35);
+    }
+    .plan-btn.pri:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(108,92,231,0.5); }
+    .plan-btn.out {
+      background: transparent; border: 2px solid var(--border); color: var(--accent);
+    }
+    .plan-btn.out:hover { border-color: var(--primary); background: rgba(108,92,231,0.08); }
+
+    /* ── CADASTRO ── */
+    .cadastro { background: var(--bg); }
+    .cadastro .container { max-width: 720px; text-align: center; }
+    .form-box {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 20px; padding: 48px 40px; text-align: left;
+      margin-top: 40px;
+    }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+    .form-group label { font-size: 14px; font-weight: 600; color: var(--nav-text); }
+    .form-group input,
+    .form-group select {
+      padding: 14px 16px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 10px; color: var(--text);
+      font-family: 'Outfit', sans-serif; font-size: 15px;
+      transition: border-color 0.3s; outline: none;
+    }
+    .form-group input::placeholder { color: var(--muted); }
+    .form-group select option { background: #1a1a2e; }
+    .form-group input:focus,
+    .form-group select:focus { border-color: var(--primary); }
+    .form-group input.error { border-color: var(--red); }
+    .submit-btn {
+      width: 100%; padding: 18px;
+      background: var(--grad); border-radius: 14px;
+      color: #fff; font-weight: 700; font-size: 18px;
+      border: none; cursor: pointer; font-family: 'Outfit', sans-serif;
+      transition: all 0.3s; box-shadow: 0 6px 30px rgba(108,92,231,0.35);
+      margin-top: 8px;
+    }
+    .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 40px rgba(108,92,231,0.5); }
+    .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .form-msg {
+      margin-top: 20px; padding: 18px; border-radius: 12px;
+      font-size: 15px; line-height: 1.5; display: none;
+    }
+    .form-msg.success {
+      background: rgba(0,184,148,0.1); border: 1px solid rgba(0,184,148,0.3);
+      color: var(--green); display: block;
+    }
+    .form-msg.error-msg {
+      background: rgba(255,107,107,0.1); border: 1px solid rgba(255,107,107,0.3);
+      color: var(--red); display: block;
+    }
+    #form-success {
+      text-align: center; padding: 40px 0; display: none;
+    }
+    #form-success .check { font-size: 56px; margin-bottom: 16px; }
+    #form-success h3 { font-size: 22px; font-weight: 700; margin-bottom: 12px; color: var(--green); }
+    #form-success p { font-size: 16px; color: var(--muted); line-height: 1.6; }
+
+    /* ── FOOTER ── */
+    footer {
+      padding: 48px 0 32px; border-top: 1px solid var(--border);
+      text-align: center;
+    }
+    .footer-logo { font-size: 20px; font-weight: 800; margin-bottom: 12px; }
+    .footer-logo span { background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .footer-sub { font-size: 14px; color: var(--muted); margin-bottom: 16px; }
+    .footer-link { font-size: 14px; color: var(--accent); transition: opacity 0.2s; }
+    .footer-link:hover { opacity: 0.7; }
+    .footer-bottom { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 13px; color: #444; }
+
+    /* ── FLOAT WPP ── */
+    .wpp-float {
+      position: fixed; bottom: 24px; right: 24px;
+      width: 56px; height: 56px; background: #25D366;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      z-index: 99; box-shadow: 0 4px 20px rgba(37,211,102,0.4);
+      transition: transform 0.3s; cursor: pointer; text-decoration: none;
+    }
+    .wpp-float:hover { transform: scale(1.1); }
+    .wpp-float svg { width: 28px; height: 28px; fill: #fff; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      nav { padding: 16px 24px; }
+      .hero-grid { grid-template-columns: 1fr; gap: 40px; }
+      .hero-img-wrap { order: -1; }
+      .hiw-cards { grid-template-columns: 1fr; }
+      .plans-grid { grid-template-columns: 1fr; gap: 32px; }
+      .plan-card.featured { transform: none; }
+      .form-row { grid-template-columns: 1fr; }
+      .form-box { padding: 32px 24px; }
+      section { padding: 72px 0; }
+    }
+    @media (max-width: 600px) {
+      .hero-btns { flex-direction: column; }
+      .btn-primary, .btn-secondary { text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-logo">Up<span>GásIA</span></div>
+    <a href="#cadastro"><button class="nav-cta">Quero automatizar</button></a>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="container">
+      <div class="hero-grid">
+        <div class="fade-in">
+          <span class="hero-badge-pill">Novo produto UpVia Agentes</span>
+          <h1>Sua revenda de gás com <span class="grad">atendimento inteligente</span></h1>
+          <p>IA que atende seus clientes no WhatsApp 24h, localiza o entregador mais próximo e despacha o pedido automaticamente.</p>
+          <div class="hero-btns">
+            <a href="#cadastro" class="btn-primary">Quero automatizar minha revenda</a>
+            <a href="#planos" class="btn-secondary">Ver planos</a>
+          </div>
+        </div>
+        <div class="fade-in hero-img-wrap" style="transition-delay:0.15s">
+          <img src="images/gas1.jpg" alt="Entregador de gás com atendimento automatizado">
+          <div class="hero-img-overlay"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMO FUNCIONA -->
+  <section class="hiw">
+    <div class="container">
+      <div class="fade-in" style="text-align:center">
+        <div class="section-tag">Automação completa</div>
+        <h2 class="section-title">Como funciona o <span class="accent">UpGásIA</span></h2>
+        <p class="section-desc" style="margin:0 auto 48px">3 passos simples que eliminam o trabalho manual da sua revenda</p>
+      </div>
+
+      <div class="hiw-cards">
+        <div class="hiw-card fade-in" style="transition-delay:0.05s">
+          <span class="hiw-icon">💬</span>
+          <div class="hiw-num">01</div>
+          <h3>Cliente manda mensagem</h3>
+          <p>A IA responde na hora, informa preços, tira dúvidas e conduz o pedido até o fechamento. Tudo automático, 24 horas por dia.</p>
+        </div>
+        <div class="hiw-card fade-in" style="transition-delay:0.15s">
+          <span class="hiw-icon">📍</span>
+          <div class="hiw-num">02</div>
+          <h3>Sistema localiza o entregador</h3>
+          <p>Via GPS em tempo real, o sistema identifica automaticamente qual dos seus entregadores está mais próximo do cliente.</p>
+        </div>
+        <div class="hiw-card fade-in" style="transition-delay:0.25s">
+          <span class="hiw-icon">🛵</span>
+          <div class="hiw-num">03</div>
+          <h3>Pedido despachado na hora</h3>
+          <p>O entregador recebe endereço, produto e forma de pagamento direto no WhatsApp. Sem ligação, sem erro, sem demora.</p>
+        </div>
+      </div>
+
+      <div class="hiw-banner fade-in">
+        <img src="images/gas2.jpg" alt="Revenda de gás automatizada">
+        <div class="hiw-banner-overlay"></div>
+        <div class="hiw-banner-text">
+          <p>"Enquanto você descansa, <span>a IA está trabalhando</span> pela sua revenda"</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PLANOS -->
+  <section class="plans" id="planos">
+    <div class="container">
+      <div class="fade-in" style="text-align:center">
+        <div class="section-tag">Preços transparentes</div>
+        <h2 class="section-title">Escolha o plano da <span class="accent">sua revenda</span></h2>
+        <p class="section-desc" style="margin:0 auto 48px">Sem taxa de implantação. Cancele quando quiser.</p>
+      </div>
+
+      <div class="plans-grid">
+        <!-- ESSENCIAL -->
+        <div class="plan-card fade-in" style="transition-delay:0.05s">
+          <div class="plan-name">Essencial</div>
+          <div class="plan-price">
+            <div class="lbl">por apenas</div>
+            <div><span class="amt">R$297</span><span class="per">/mês</span></div>
+          </div>
+          <div class="plan-no-fee">✓ Sem taxa de implantação</div>
+          <ul class="plan-features">
+            <li><span class="chk">✅</span> Até 2 entregadores</li>
+            <li><span class="chk">✅</span> Até 40 atendimentos por dia</li>
+            <li><span class="chk">✅</span> IA atendendo 24h no WhatsApp</li>
+            <li><span class="chk">✅</span> Despacho automático do pedido</li>
+            <li><span class="chk">✅</span> Sem taxa de implantação</li>
+            <li><span class="x">❌</span> Relatório diário de pedidos</li>
+          </ul>
+          <button class="plan-btn out" onclick="escolherPlano('Essencial - R$297')">Assinar Essencial</button>
+        </div>
+
+        <!-- PRO -->
+        <div class="plan-card featured fade-in" style="transition-delay:0.15s">
+          <div class="plan-name">Pro</div>
+          <div class="plan-price">
+            <div class="lbl">por apenas</div>
+            <div><span class="amt">R$497</span><span class="per">/mês</span></div>
+          </div>
+          <div class="plan-no-fee">✓ Sem taxa de implantação</div>
+          <ul class="plan-features">
+            <li><span class="chk">✅</span> Até 4 entregadores</li>
+            <li><span class="chk">✅</span> Até 80 atendimentos por dia</li>
+            <li><span class="chk">✅</span> IA atendendo 24h no WhatsApp</li>
+            <li><span class="chk">✅</span> Despacho automático do pedido</li>
+            <li><span class="chk">✅</span> Sem taxa de implantação</li>
+            <li><span class="chk">✅</span> Relatório diário de pedidos <em style="font-size:12px;color:var(--muted)">(em breve)</em></li>
+          </ul>
+          <button class="plan-btn pri" onclick="escolherPlano('Pro - R$497')">Assinar Pro</button>
+        </div>
+
+        <!-- PREMIUM -->
+        <div class="plan-card fade-in" style="transition-delay:0.25s">
+          <div class="plan-name">Premium</div>
+          <div class="plan-price">
+            <div class="lbl">por apenas</div>
+            <div><span class="amt">R$597</span><span class="per">/mês</span></div>
+          </div>
+          <div class="plan-no-fee">✓ Sem taxa de implantação</div>
+          <ul class="plan-features">
+            <li><span class="chk">✅</span> Até 8 entregadores</li>
+            <li><span class="chk">✅</span> Até 120 atendimentos por dia</li>
+            <li><span class="chk">✅</span> IA atendendo 24h no WhatsApp</li>
+            <li><span class="chk">✅</span> Despacho automático do pedido</li>
+            <li><span class="chk">✅</span> Sem taxa de implantação</li>
+            <li><span class="chk">✅</span> Relatório diário de pedidos <em style="font-size:12px;color:var(--muted)">(em breve)</em></li>
+          </ul>
+          <button class="plan-btn out" onclick="escolherPlano('Premium - R$597')">Assinar Premium</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CADASTRO -->
+  <section class="cadastro" id="cadastro">
+    <div class="container">
+      <div class="fade-in">
+        <div class="section-tag">Comece agora</div>
+        <h2 class="section-title">Cadastre sua <span class="accent">revenda agora</span></h2>
+        <p class="section-desc" style="margin:0 auto">Nossa equipe entra em contato em até 24h pelo WhatsApp para configurar tudo pra você.</p>
+      </div>
+
+      <div class="form-box fade-in" style="transition-delay:0.1s">
+        <form id="gas-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="nome_responsavel">Nome do responsável *</label>
+              <input type="text" id="nome_responsavel" name="nome_responsavel" placeholder="Seu nome completo" required>
+            </div>
+            <div class="form-group">
+              <label for="nome_loja">Nome da loja *</label>
+              <input type="text" id="nome_loja" name="nome_loja" placeholder="Nome da sua revenda de gás" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="telefone">WhatsApp *</label>
+              <input type="text" id="telefone" name="telefone" placeholder="(53) 99999-9999" maxlength="15" required>
+            </div>
+            <div class="form-group">
+              <label for="email">E-mail</label>
+              <input type="email" id="email" name="email" placeholder="seu@email.com">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="cidade">Cidade *</label>
+              <input type="text" id="cidade" name="cidade" placeholder="Sua cidade" required>
+            </div>
+            <div class="form-group">
+              <label for="estado">Estado</label>
+              <select id="estado" name="estado">
+                <option value="RS" selected>RS — Rio Grande do Sul</option>
+                <option value="AC">AC — Acre</option>
+                <option value="AL">AL — Alagoas</option>
+                <option value="AP">AP — Amapá</option>
+                <option value="AM">AM — Amazonas</option>
+                <option value="BA">BA — Bahia</option>
+                <option value="CE">CE — Ceará</option>
+                <option value="DF">DF — Distrito Federal</option>
+                <option value="ES">ES — Espírito Santo</option>
+                <option value="GO">GO — Goiás</option>
+                <option value="MA">MA — Maranhão</option>
+                <option value="MT">MT — Mato Grosso</option>
+                <option value="MS">MS — Mato Grosso do Sul</option>
+                <option value="MG">MG — Minas Gerais</option>
+                <option value="PA">PA — Pará</option>
+                <option value="PB">PB — Paraíba</option>
+                <option value="PR">PR — Paraná</option>
+                <option value="PE">PE — Pernambuco</option>
+                <option value="PI">PI — Piauí</option>
+                <option value="RJ">RJ — Rio de Janeiro</option>
+                <option value="RN">RN — Rio Grande do Norte</option>
+                <option value="RO">RO — Rondônia</option>
+                <option value="RR">RR — Roraima</option>
+                <option value="SC">SC — Santa Catarina</option>
+                <option value="SP">SP — São Paulo</option>
+                <option value="SE">SE — Sergipe</option>
+                <option value="TO">TO — Tocantins</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="quantidade_entregadores">Quantidade de entregadores</label>
+              <select id="quantidade_entregadores" name="quantidade_entregadores">
+                <option value="1 a 2 entregadores">1 a 2 entregadores</option>
+                <option value="3 a 4 entregadores">3 a 4 entregadores</option>
+                <option value="5 a 8 entregadores">5 a 8 entregadores</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="mensagens_dia_estimado">Volume estimado por dia</label>
+              <select id="mensagens_dia_estimado" name="mensagens_dia_estimado">
+                <option value="Até 40 atendimentos">Até 40 atendimentos</option>
+                <option value="41 a 80 atendimentos">41 a 80 atendimentos</option>
+                <option value="81 a 120 atendimentos">81 a 120 atendimentos</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="plano">Plano escolhido</label>
+            <select id="plano" name="plano">
+              <option value="Essencial - R$297">Essencial — R$297/mês</option>
+              <option value="Pro - R$497" selected>Pro — R$497/mês</option>
+              <option value="Premium - R$597">Premium — R$597/mês</option>
+            </select>
+          </div>
+
+          <button type="submit" class="submit-btn" id="submit-btn">
+            Cadastrar minha revenda →
+          </button>
+          <div class="form-msg" id="form-msg"></div>
+        </form>
+
+        <div id="form-success">
+          <div class="check">✅</div>
+          <h3>Cadastro realizado com sucesso!</h3>
+          <p>Nossa equipe entrará em contato em até 24h pelo WhatsApp.<br>Fique de olho no seu celular!</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="container">
+      <div class="footer-logo">Up<span>GásIA</span></div>
+      <p class="footer-sub">UpGásIA é um produto UpVia Agentes</p>
+      <a href="https://upviaagentes.com.br" class="footer-link" target="_blank" rel="noopener">upviaagentes.com.br</a>
+      <div class="footer-bottom">
+        © 2025 UpVia Agentes · Pelotas, RS · Todos os direitos reservados
+      </div>
+    </div>
+  </footer>
+
+  <!-- FLOAT WPP -->
+  <a class="wpp-float" href="https://wa.me/5553981613729" target="_blank" rel="noopener" title="Falar no WhatsApp">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+    </svg>
+  </a>
+
+  <script>
+    // ── FADE IN ON SCROLL ──
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+    // ── PHONE MASK ──
+    document.getElementById('telefone').addEventListener('input', function () {
+      let v = this.value.replace(/\D/g, '').slice(0, 11);
+      if (v.length > 10) v = v.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
+      else if (v.length > 6) v = v.replace(/^(\d{2})(\d{4})(\d*)$/, '($1) $2-$3');
+      else if (v.length > 2) v = v.replace(/^(\d{2})(\d*)$/, '($1) $2');
+      else if (v.length > 0) v = v.replace(/^(\d*)$/, '($1');
+      this.value = v;
+    });
+
+    // ── ESCOLHER PLANO ──
+    function escolherPlano(plano) {
+      const select = document.getElementById('plano');
+      for (let i = 0; i < select.options.length; i++) {
+        if (select.options[i].value === plano) { select.selectedIndex = i; break; }
+      }
+      document.getElementById('cadastro').scrollIntoView({ behavior: 'smooth' });
+      setTimeout(() => document.getElementById('nome_responsavel').focus(), 600);
+    }
+
+    // ── EXTRAIR VALOR DO PLANO ──
+    function extrairValor(plano) {
+      if (plano.includes('297')) return 297;
+      if (plano.includes('497')) return 497;
+      if (plano.includes('597')) return 597;
+      return 0;
+    }
+
+    // ── SUBMIT ──
+    document.getElementById('gas-form').addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      const obrigatorios = ['nome_responsavel', 'nome_loja', 'telefone', 'cidade'];
+      let valido = true;
+      obrigatorios.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el.value.trim()) { el.classList.add('error'); valido = false; }
+        else el.classList.remove('error');
+      });
+      if (!valido) { mostrarMensagem('Por favor, preencha todos os campos obrigatórios (*).', 'error'); return; }
+
+      const plano = document.getElementById('plano').value;
+      const payload = {
+        nome_responsavel: document.getElementById('nome_responsavel').value.trim(),
+        nome_loja: document.getElementById('nome_loja').value.trim(),
+        telefone: document.getElementById('telefone').value.trim(),
+        email: document.getElementById('email').value.trim() || null,
+        cidade: document.getElementById('cidade').value.trim(),
+        estado: document.getElementById('estado').value,
+        quantidade_entregadores: document.getElementById('quantidade_entregadores').value,
+        mensagens_dia_estimado: document.getElementById('mensagens_dia_estimado').value,
+        plano: plano,
+        valor_plano: extrairValor(plano)
+      };
+
+      const btn = document.getElementById('submit-btn');
+      btn.disabled = true;
+      btn.textContent = 'Enviando...';
+
+      try {
+        const SUPABASE_URL = 'https://clcyyogtvygpehgcmeyj.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M';
+
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/cadastros_gas`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': 'Bearer ' + SUPABASE_KEY,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (res.ok || res.status === 201) {
+          document.getElementById('gas-form').style.display = 'none';
+          document.getElementById('form-success').style.display = 'block';
+        } else {
+          const errText = await res.text();
+          console.error('Supabase error:', errText);
+          mostrarMensagem('Erro ao enviar. Tente novamente ou entre em contato pelo WhatsApp.', 'error');
+          btn.disabled = false;
+          btn.textContent = 'Cadastrar minha revenda →';
+        }
+      } catch (err) {
+        console.error(err);
+        mostrarMensagem('Erro ao enviar. Tente novamente ou entre em contato pelo WhatsApp.', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Cadastrar minha revenda →';
+      }
+    });
+
+    function mostrarMensagem(texto, tipo) {
+      const el = document.getElementById('form-msg');
+      el.textContent = texto;
+      el.className = 'form-msg ' + (tipo === 'error' ? 'error-msg' : 'success');
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  </script>
+</body>
+</html>
