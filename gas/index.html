@@ -170,25 +170,27 @@
     .hiw-card h3 { font-size: 20px; font-weight: 700; margin-bottom: 12px; }
     .hiw-card p { font-size: 15px; color: var(--muted); line-height: 1.6; }
 
-    .hiw-banner {
-      position: relative; border-radius: 20px; overflow: hidden;
-      min-height: 300px; display: flex; align-items: center; justify-content: center;
+    .hiw-split {
+      display: grid; grid-template-columns: 2fr 3fr;
+      gap: 56px; align-items: center; margin-top: 16px;
     }
-    .hiw-banner img {
-      position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+    .hiw-split-img {
+      border-radius: 20px; overflow: hidden;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(108,92,231,0.12);
     }
-    .hiw-banner-overlay {
-      position: absolute; inset: 0;
-      background: rgba(7, 7, 13, 0.72);
+    .hiw-split-img img { width: 100%; height: auto; display: block; }
+    .hiw-split-text { display: flex; flex-direction: column; justify-content: center; }
+    .hiw-split-quote {
+      font-size: 88px; line-height: 0.65; margin-bottom: 20px;
+      background: var(--grad); -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent; background-clip: text;
+      font-family: Georgia, 'Times New Roman', serif; font-weight: 900;
     }
-    .hiw-banner-text {
-      position: relative; z-index: 2; text-align: center; padding: 48px 32px;
+    .hiw-split-text p {
+      font-size: clamp(22px, 2.4vw, 32px); font-weight: 700;
+      line-height: 1.4; color: var(--text);
     }
-    .hiw-banner-text p {
-      font-size: clamp(20px, 3vw, 30px); font-weight: 700;
-      line-height: 1.4; max-width: 680px; margin: 0 auto;
-    }
-    .hiw-banner-text p span { color: var(--accent); }
+    .hiw-split-text p .hl { color: var(--accent); }
 
     /* ── PLANOS ── */
     .plans { background: var(--bg2); }
@@ -330,8 +332,9 @@
     @media (max-width: 900px) {
       nav { padding: 16px 24px; }
       .hero-grid { grid-template-columns: 1fr; gap: 40px; }
-      .hero-img-wrap { order: -1; }
+      .hero-img-wrap { order: 1; }
       .hiw-cards { grid-template-columns: 1fr; }
+      .hiw-split { grid-template-columns: 1fr; gap: 32px; }
       .plans-grid { grid-template-columns: 1fr; gap: 32px; }
       .plan-card.featured { transform: none; }
       .form-row { grid-template-columns: 1fr; }
@@ -404,11 +407,13 @@
         </div>
       </div>
 
-      <div class="hiw-banner fade-in">
-        <img src="images/gas2.jpg" alt="Revenda de gás automatizada">
-        <div class="hiw-banner-overlay"></div>
-        <div class="hiw-banner-text">
-          <p>"Enquanto você descansa, <span>a IA está trabalhando</span> pela sua revenda"</p>
+      <div class="hiw-split fade-in">
+        <div class="hiw-split-img">
+          <img src="images/gas2.jpg" alt="Revenda de gás automatizada">
+        </div>
+        <div class="hiw-split-text">
+          <div class="hiw-split-quote">"</div>
+          <p>Enquanto você descansa, <span class="hl">a IA está trabalhando</span> pela sua revenda</p>
         </div>
       </div>
     </div>
