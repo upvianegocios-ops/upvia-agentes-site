@@ -84,23 +84,24 @@
       min-height: 100vh; display: flex; align-items: center;
       padding-top: 90px; position: relative; overflow: hidden;
     }
-    .hero-bg {
+    .hero-fullimg {
       position: absolute; inset: 0;
-      background: radial-gradient(ellipse 80% 60% at 70% 40%, rgba(108,92,231,0.12) 0%, transparent 70%);
-      pointer-events: none;
+      width: 100%; height: 100%; object-fit: cover; object-position: center;
+      display: block;
     }
-    .hero-grid {
-      display: grid; grid-template-columns: 1fr 1fr;
-      gap: 60px; align-items: center;
+    .hero-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(7,7,13,0.92) 0%, rgba(7,7,13,0.74) 55%, rgba(7,7,13,0.42) 100%);
     }
+    .hero-content { position: relative; z-index: 2; max-width: 640px; }
     .hero-badge-pill {
       display: inline-block; padding: 8px 20px;
-      background: rgba(108,92,231,0.12); border: 1px solid rgba(108,92,231,0.3);
+      background: rgba(108,92,231,0.18); border: 1px solid rgba(108,92,231,0.45);
       border-radius: 30px; font-size: 13px; color: var(--accent);
       font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 20px;
     }
     .hero h1 {
-      font-size: clamp(32px, 4.5vw, 54px); font-weight: 900;
+      font-size: clamp(32px, 4.5vw, 58px); font-weight: 900;
       line-height: 1.1; letter-spacing: -2px; margin-bottom: 20px;
     }
     .hero h1 .grad {
@@ -108,7 +109,7 @@
       -webkit-text-fill-color: transparent; background-clip: text;
     }
     .hero p {
-      font-size: clamp(16px, 2vw, 18px); color: var(--muted);
+      font-size: clamp(16px, 2vw, 18px); color: rgba(255,255,255,0.78);
       line-height: 1.7; max-width: 540px; margin-bottom: 36px;
     }
     .hero-btns { display: flex; gap: 16px; flex-wrap: wrap; }
@@ -117,28 +118,18 @@
       background: var(--grad); border-radius: 14px;
       color: #fff; font-weight: 700; font-size: 16px;
       border: none; cursor: pointer; font-family: 'Outfit', sans-serif;
-      transition: all 0.3s; box-shadow: 0 6px 30px rgba(108,92,231,0.35);
+      transition: all 0.3s; box-shadow: 0 6px 30px rgba(108,92,231,0.45);
       display: inline-block;
     }
-    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 40px rgba(108,92,231,0.5); }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 40px rgba(108,92,231,0.6); }
     .btn-secondary {
       padding: 16px 36px;
-      background: transparent; border: 2px solid rgba(108,92,231,0.4);
-      border-radius: 14px; color: var(--accent); font-weight: 600; font-size: 16px;
+      background: rgba(255,255,255,0.08); border: 2px solid rgba(108,92,231,0.5);
+      border-radius: 14px; color: #fff; font-weight: 600; font-size: 16px;
       cursor: pointer; font-family: 'Outfit', sans-serif; transition: all 0.3s;
-      display: inline-block;
+      display: inline-block; backdrop-filter: blur(4px);
     }
-    .btn-secondary:hover { border-color: var(--primary); background: rgba(108,92,231,0.08); }
-    .hero-img-wrap {
-      border-radius: 20px; overflow: hidden;
-      box-shadow: 0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(108,92,231,0.15);
-      position: relative;
-    }
-    .hero-img-wrap img { width: 100%; height: auto; display: block; }
-    .hero-img-overlay {
-      position: absolute; inset: 0;
-      background: linear-gradient(180deg, transparent 50%, rgba(7,7,13,0.4) 100%);
-    }
+    .btn-secondary:hover { border-color: var(--accent); background: rgba(108,92,231,0.22); }
 
     /* ── HOW IT WORKS ── */
     .hiw { background: var(--bg); }
@@ -170,27 +161,34 @@
     .hiw-card h3 { font-size: 20px; font-weight: 700; margin-bottom: 12px; }
     .hiw-card p { font-size: 15px; color: var(--muted); line-height: 1.6; }
 
-    .hiw-split {
-      display: grid; grid-template-columns: 2fr 3fr;
-      gap: 56px; align-items: center; margin-top: 16px;
+    .gas2-banner {
+      position: relative; overflow: hidden;
+      height: 480px; display: flex; align-items: center; justify-content: center;
     }
-    .hiw-split-img {
-      border-radius: 20px; overflow: hidden;
-      box-shadow: 0 24px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(108,92,231,0.12);
+    .gas2-banner > img {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%; object-fit: cover; object-position: center;
     }
-    .hiw-split-img img { width: 100%; height: auto; display: block; }
-    .hiw-split-text { display: flex; flex-direction: column; justify-content: center; }
-    .hiw-split-quote {
-      font-size: 88px; line-height: 0.65; margin-bottom: 20px;
+    .gas2-overlay {
+      position: absolute; inset: 0;
+      background: rgba(7,7,13,0.65);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .gas2-text {
+      position: relative; z-index: 2; text-align: center;
+      padding: 40px 24px; max-width: 820px;
+    }
+    .gas2-quote {
+      font-size: 96px; line-height: 0.6; margin-bottom: 20px;
       background: var(--grad); -webkit-background-clip: text;
       -webkit-text-fill-color: transparent; background-clip: text;
-      font-family: Georgia, 'Times New Roman', serif; font-weight: 900;
+      font-family: Georgia, serif;
     }
-    .hiw-split-text p {
-      font-size: clamp(22px, 2.4vw, 32px); font-weight: 700;
-      line-height: 1.4; color: var(--text);
+    .gas2-text p {
+      font-size: clamp(22px, 3vw, 38px); font-weight: 700;
+      line-height: 1.4; color: #fff;
     }
-    .hiw-split-text p .hl { color: var(--accent); }
+    .gas2-text p span { color: var(--accent); }
 
     /* ── PLANOS ── */
     .plans { background: var(--bg2); }
@@ -334,7 +332,7 @@
       .hero-grid { grid-template-columns: 1fr; gap: 40px; }
       .hero-img-wrap { order: 1; }
       .hiw-cards { grid-template-columns: 1fr; }
-      .hiw-split { grid-template-columns: 1fr; gap: 32px; }
+      .gas2-banner { height: 320px; }
       .plans-grid { grid-template-columns: 1fr; gap: 32px; }
       .plan-card.featured { transform: none; }
       .form-row { grid-template-columns: 1fr; }
@@ -357,21 +355,16 @@
 
   <!-- HERO -->
   <section class="hero">
-    <div class="hero-bg"></div>
-    <div class="container">
-      <div class="hero-grid">
-        <div class="fade-in">
-          <span class="hero-badge-pill">Novo produto UpVia Agentes</span>
-          <h1>Sua revenda de gás com <span class="grad">atendimento inteligente</span></h1>
-          <p>IA que atende seus clientes no WhatsApp 24h, localiza o entregador mais próximo e despacha o pedido automaticamente.</p>
-          <div class="hero-btns">
-            <a href="#cadastro" class="btn-primary">Quero automatizar minha revenda</a>
-            <a href="#planos" class="btn-secondary">Ver planos</a>
-          </div>
-        </div>
-        <div class="fade-in hero-img-wrap" style="transition-delay:0.15s">
-          <img src="images/gas1.jpg" alt="Entregador de gás com atendimento automatizado">
-          <div class="hero-img-overlay"></div>
+    <img class="hero-fullimg" src="images/gas1.jpg" alt="Revenda de gás com atendimento inteligente">
+    <div class="hero-overlay"></div>
+    <div class="container" style="position:relative;z-index:2">
+      <div class="fade-in hero-content">
+        <span class="hero-badge-pill">Novo produto UpVia Agentes</span>
+        <h1>Sua revenda de gás com <span class="grad">atendimento inteligente</span></h1>
+        <p>IA que atende seus clientes no WhatsApp 24h, localiza o entregador mais próximo e despacha o pedido automaticamente.</p>
+        <div class="hero-btns">
+          <a href="#cadastro" class="btn-primary">Quero automatizar minha revenda</a>
+          <a href="#planos" class="btn-secondary">Ver planos</a>
         </div>
       </div>
     </div>
@@ -407,14 +400,16 @@
         </div>
       </div>
 
-      <div class="hiw-split fade-in">
-        <div class="hiw-split-img">
-          <img src="images/gas2.jpg" alt="Revenda de gás automatizada">
-        </div>
-        <div class="hiw-split-text">
-          <div class="hiw-split-quote">"</div>
-          <p>Enquanto você descansa, <span class="hl">a IA está trabalhando</span> pela sua revenda</p>
-        </div>
+    </div>
+  </section>
+
+  <!-- GAS2 BANNER -->
+  <section class="gas2-banner fade-in">
+    <img src="images/gas2.jpg" alt="Revenda de gás automatizada">
+    <div class="gas2-overlay">
+      <div class="gas2-text">
+        <div class="gas2-quote">"</div>
+        <p>Enquanto você descansa, <span>a IA está trabalhando</span> pela sua revenda</p>
       </div>
     </div>
   </section>
