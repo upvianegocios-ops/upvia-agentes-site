@@ -3964,7 +3964,7 @@
                   {
                       "parameters":  {
                                          "operation":  "executeQuery",
-                                         "query":  "UPDATE dados_cliente SET humano_assumiu = true, humano_assumiu_em = NOW() WHERE telefone = \u0027{{ $json.remoteJid }}\u0027 AND instancia_whatsapp = \u0027{{ $json.instance }}\u0027 AND \u0027{{ $json.remoteJid }}\u0027 \u003c\u003e \u0027\u0027 AND \u0027{{ $json.instance }}\u0027 \u003c\u003e \u0027\u0027;",
+                                         "query":  "UPDATE dados_cliente SET humano_assumiu = true, humano_assumiu_em = NOW() WHERE telefone = \u0027{{ $json.telefone }}\u0027 AND instancia_whatsapp = \u0027{{ $json.instance }}\u0027 AND \u0027{{ $json.telefone }}\u0027 \u003c\u003e \u0027\u0027 AND \u0027{{ $json.instance }}\u0027 \u003c\u003e \u0027\u0027;",
                                          "options":  {
 
                                                      }
@@ -4025,7 +4025,7 @@
                   },
                   {
                       "parameters":  {
-                                         "jsCode":  "const items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const data = item.json;\n  const text = (data.text || \u0027\u0027).trim();\n  const fromMe = data.fromMe === true;\n\n  let acao = \u0027cliente_falou\u0027;\n\n  if (fromMe) {\n    const isPauseCmd = /^#(pausar|humano|pause|parar)\\b/i.test(text);\n    if (isPauseCmd || !text.trim().startsWith(\u0027#\u0027)) {\n      acao = \u0027humano_falou\u0027;\n    } else {\n      acao = \u0027comando_proprietario\u0027;\n    }\n  }\n\n  results.push({ json: { ...data, _acao: acao } });\n}\n\nreturn results;"
+                                         "jsCode":  "const items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const data = item.json;\n  const text = (data.text || \u0027\u0027).trim();\n  const fromMe = data.fromMe === true;\n\n  let acao = \u0027cliente_falou\u0027;\n\n  if (fromMe) {\n    if (text.trim().startsWith(\u0027#\u0027)) {\n      acao = \u0027comando_proprietario\u0027;\n    } else {\n      acao = \u0027humano_falou\u0027;\n    }\n  }\n\n  results.push({ json: { ...data, _acao: acao } });\n}\n\nreturn results;"
                                      },
                       "id":  "abb93618-acbb-4326-b10c-f19f7c644ed4",
                       "name":  "Decisor Central",
