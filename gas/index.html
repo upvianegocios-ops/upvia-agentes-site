@@ -267,6 +267,37 @@
     .form-group input:focus,
     .form-group select:focus { border-color: var(--primary); }
     .form-group input.error { border-color: var(--red); }
+    .dynamic-section { margin-bottom: 24px; }
+    .dynamic-section > label { font-size: 14px; font-weight: 600; color: var(--nav-text); display: block; margin-bottom: 12px; }
+    .dynamic-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 12px; margin-bottom: 12px; align-items: center; }
+    .dynamic-row input {
+      padding: 14px 16px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 10px; color: var(--text);
+      font-family: 'Outfit', sans-serif; font-size: 15px;
+      transition: border-color 0.3s; outline: none;
+      width: 100%;
+    }
+    .dynamic-row input::placeholder { color: var(--muted); }
+    .dynamic-row input:focus { border-color: var(--primary); }
+    .remove-row-btn {
+      background: transparent; border: 1px solid var(--border); color: var(--muted);
+      width: 44px; height: 44px; border-radius: 10px; cursor: pointer; font-size: 18px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      transition: all 0.2s;
+    }
+    .remove-row-btn:hover { border-color: var(--red); color: var(--red); }
+    .add-row-btn {
+      background: transparent; border: 1px dashed var(--primary); color: var(--accent);
+      padding: 12px 18px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600;
+      font-family: 'Outfit', sans-serif; width: 100%; transition: all 0.2s;
+    }
+    .add-row-btn:hover { background: rgba(108,92,231,0.1); }
+    @media (max-width: 640px) {
+      .dynamic-row { grid-template-columns: 1fr; }
+      .remove-row-btn { justify-self: end; width: 100%; }
+    }
     .submit-btn {
       width: 100%; padding: 18px;
       background: var(--grad); border-radius: 14px;
@@ -518,6 +549,26 @@
           </div>
           <div class="form-row">
             <div class="form-group">
+              <label for="rua">Rua *</label>
+              <input type="text" id="rua" name="rua" placeholder="Nome da rua" required>
+            </div>
+            <div class="form-group">
+              <label for="numero">Número *</label>
+              <input type="text" id="numero" name="numero" placeholder="Nº" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="bairro">Bairro *</label>
+              <input type="text" id="bairro" name="bairro" placeholder="Seu bairro" required>
+            </div>
+            <div class="form-group">
+              <label for="cep">CEP *</label>
+              <input type="text" id="cep" name="cep" placeholder="00000-000" maxlength="9" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
               <label for="cidade">Cidade *</label>
               <input type="text" id="cidade" name="cidade" placeholder="Sua cidade" required>
             </div>
@@ -581,6 +632,35 @@
             </select>
           </div>
 
+          <div class="dynamic-section">
+            <label>Produtos e valores *</label>
+            <div id="produtos-list">
+              <div class="dynamic-row produto-row">
+                <input type="text" class="produto-nome" placeholder="Ex: Botijão P13 (13kg)">
+                <input type="text" class="produto-valor" placeholder="Ex: R$120,00">
+                <button type="button" class="remove-row-btn" onclick="removerLinha(this)" title="Remover">×</button>
+              </div>
+              <div class="dynamic-row produto-row">
+                <input type="text" class="produto-nome" placeholder="Ex: Água 20L (galão)">
+                <input type="text" class="produto-valor" placeholder="Ex: R$25,00">
+                <button type="button" class="remove-row-btn" onclick="removerLinha(this)" title="Remover">×</button>
+              </div>
+            </div>
+            <button type="button" class="add-row-btn" onclick="adicionarProduto()">+ Adicionar produto</button>
+          </div>
+
+          <div class="dynamic-section">
+            <label>Entregadores e WhatsApp de cada um *</label>
+            <div id="entregadores-list">
+              <div class="dynamic-row entregador-row">
+                <input type="text" class="entregador-nome" placeholder="Nome do entregador">
+                <input type="text" class="entregador-whatsapp" placeholder="(53) 99999-9999" maxlength="15">
+                <button type="button" class="remove-row-btn" onclick="removerLinha(this)" title="Remover">×</button>
+              </div>
+            </div>
+            <button type="button" class="add-row-btn" onclick="adicionarEntregador()">+ Adicionar entregador</button>
+          </div>
+
           <button type="submit" class="submit-btn" id="submit-btn">
             Cadastrar minha revenda →
           </button>
@@ -619,14 +699,63 @@
 
 
     // ── PHONE MASK ──
-    document.getElementById('telefone').addEventListener('input', function () {
-      let v = this.value.replace(/\D/g, '').slice(0, 11);
-      if (v.length > 10) v = v.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
-      else if (v.length > 6) v = v.replace(/^(\d{2})(\d{4})(\d*)$/, '($1) $2-$3');
-      else if (v.length > 2) v = v.replace(/^(\d{2})(\d*)$/, '($1) $2');
-      else if (v.length > 0) v = v.replace(/^(\d*)$/, '($1');
+    function aplicarMascaraTelefone(input) {
+      input.addEventListener('input', function () {
+        let v = this.value.replace(/\D/g, '').slice(0, 11);
+        if (v.length > 10) v = v.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
+        else if (v.length > 6) v = v.replace(/^(\d{2})(\d{4})(\d*)$/, '($1) $2-$3');
+        else if (v.length > 2) v = v.replace(/^(\d{2})(\d*)$/, '($1) $2');
+        else if (v.length > 0) v = v.replace(/^(\d*)$/, '($1');
+        this.value = v;
+      });
+    }
+    aplicarMascaraTelefone(document.getElementById('telefone'));
+    document.querySelectorAll('.entregador-whatsapp').forEach(aplicarMascaraTelefone);
+
+    // ── CEP MASK ──
+    document.getElementById('cep').addEventListener('input', function () {
+      let v = this.value.replace(/\D/g, '').slice(0, 8);
+      if (v.length > 5) v = v.replace(/^(\d{5})(\d*)$/, '$1-$2');
       this.value = v;
     });
+
+    // ── PRODUTOS DINAMICOS ──
+    function adicionarProduto() {
+      const container = document.getElementById('produtos-list');
+      const row = document.createElement('div');
+      row.className = 'dynamic-row produto-row';
+      row.innerHTML = `
+        <input type="text" class="produto-nome" placeholder="Ex: Botijão P45 (45kg)">
+        <input type="text" class="produto-valor" placeholder="Ex: R$390,00">
+        <button type="button" class="remove-row-btn" onclick="removerLinha(this)" title="Remover">×</button>
+      `;
+      container.appendChild(row);
+    }
+
+    // ── ENTREGADORES DINAMICOS ──
+    function adicionarEntregador() {
+      const container = document.getElementById('entregadores-list');
+      const row = document.createElement('div');
+      row.className = 'dynamic-row entregador-row';
+      row.innerHTML = `
+        <input type="text" class="entregador-nome" placeholder="Nome do entregador">
+        <input type="text" class="entregador-whatsapp" placeholder="(53) 99999-9999" maxlength="15">
+        <button type="button" class="remove-row-btn" onclick="removerLinha(this)" title="Remover">×</button>
+      `;
+      container.appendChild(row);
+      aplicarMascaraTelefone(row.querySelector('.entregador-whatsapp'));
+    }
+
+    // ── REMOVER LINHA (produto ou entregador) ──
+    function removerLinha(btn) {
+      const row = btn.closest('.dynamic-row');
+      const container = row.parentElement;
+      // Mantem pelo menos 1 linha em cada lista
+      if (container.children.length > 1) row.remove();
+      else {
+        row.querySelectorAll('input').forEach(inp => inp.value = '');
+      }
+    }
 
     // ── ESCOLHER PLANO ──
     function escolherPlano(plano) {
@@ -650,13 +779,26 @@
     document.getElementById('gas-form').addEventListener('submit', async function (e) {
       e.preventDefault();
 
-      const obrigatorios = ['nome_responsavel', 'nome_loja', 'telefone', 'cidade'];
+      const obrigatorios = ['nome_responsavel', 'nome_loja', 'telefone', 'rua', 'numero', 'bairro', 'cep', 'cidade'];
       let valido = true;
       obrigatorios.forEach(id => {
         const el = document.getElementById(id);
         if (!el.value.trim()) { el.classList.add('error'); valido = false; }
         else el.classList.remove('error');
       });
+
+      const produtos = Array.from(document.querySelectorAll('.produto-row')).map(row => ({
+        nome: row.querySelector('.produto-nome').value.trim(),
+        valor: row.querySelector('.produto-valor').value.trim()
+      })).filter(p => p.nome && p.valor);
+
+      const entregadores = Array.from(document.querySelectorAll('.entregador-row')).map(row => ({
+        nome: row.querySelector('.entregador-nome').value.trim(),
+        whatsapp: row.querySelector('.entregador-whatsapp').value.trim()
+      })).filter(en => en.nome && en.whatsapp);
+
+      if (produtos.length === 0) { mostrarMensagem('Adicione pelo menos 1 produto com nome e valor.', 'error'); return; }
+      if (entregadores.length === 0) { mostrarMensagem('Adicione pelo menos 1 entregador com nome e WhatsApp.', 'error'); return; }
       if (!valido) { mostrarMensagem('Por favor, preencha todos os campos obrigatórios (*).', 'error'); return; }
 
       const plano = document.getElementById('plano').value;
@@ -665,12 +807,19 @@
         nome_loja: document.getElementById('nome_loja').value.trim(),
         telefone: document.getElementById('telefone').value.trim(),
         email: document.getElementById('email').value.trim() || null,
+        rua: document.getElementById('rua').value.trim(),
+        numero: document.getElementById('numero').value.trim(),
+        bairro: document.getElementById('bairro').value.trim(),
+        cep: document.getElementById('cep').value.trim(),
         cidade: document.getElementById('cidade').value.trim(),
         estado: document.getElementById('estado').value,
+        endereço: `${document.getElementById('rua').value.trim()}, ${document.getElementById('numero').value.trim()} - ${document.getElementById('bairro').value.trim()}`,
         quantidade_entregadores: document.getElementById('quantidade_entregadores').value,
         mensagens_dia_estimado: document.getElementById('mensagens_dia_estimado').value,
         plano: plano,
-        valor_plano: extrairValor(plano)
+        valor_plano: extrairValor(plano),
+        produtos_json: produtos,
+        entregadores_json: entregadores
       };
 
       const btn = document.getElementById('submit-btn');
