@@ -1,6 +1,5 @@
 # 🤖 UpVia Agentes — Contexto do Projeto para Claude Code
-
-> **Versão:** V4 Enterprise | **Atualizado:** Junho 2025
+V4 Enterprise | **Atualizado:** Junho 2025
 > Este arquivo é o contexto principal. Para auditoria, ver `SKILL_AUDITOR_N8N.md`. Para governança e segurança, ver `SKILL_GOVERNANCA.md`.
 
 ---
@@ -10,7 +9,10 @@
 Agência de automação digital fundada por **Elisa e Jean**, com sede em **Pelotas/RS, Brasil**.
 
 **Produtos principais:**
-1. **AtendentIA** — Agente de atendimento WhatsApp com agendamento via Google Calendar (produto principal, já vendável)
+1. **AtendentIA** — Agente de atendimento WhatsApp com agendamento via Google Calendar (produto 
+
+principal, já vendável)
+
 2. **VendedorIA** — Agente de vendas com SPIN Selling e funil de conversão
 3. **Websites e Apps** sob demanda
 
@@ -82,19 +84,23 @@ upvia-agentes/
 | Tabela | Uso |
 |---|---|
 | `clientes_sistema` | Tenants/empresas cadastradas na plataforma |
-| `dados_cliente` | Contatos ativos, com campos `humano_assumiu`, `humano_assumiu_em` |
+| `dados_cliente` | Uma linha por sessão de conversa (`session_id`), **não** é 1 linha por contato — pode haver várias linhas por telefone+instância |
+| `trava_atendimento_humano` | Lock de atendimento humano, 1 linha por `telefone`+`instancia_whatsapp` (constraint `UNIQUE`) — ver abaixo |
 | `contatos_bloqueados` | Contatos que não devem receber atendimento automático |
 | `regras_ia` | Regras de comportamento do agente por tenant — reduz alucinações |
 | `itens_servico` | Catálogo de serviços por tenant — reduz alucinações |
 
 > ⚠️ **Atenção:** O campo `bloqueado` vem de `contatos_bloqueados`. Usar `REPLACE()` ao comparar JID para remover sufixo `@s.whatsapp.net`.
 
-### Colunas críticas em `dados_cliente`
+> ⚠️ **Histórico (11/07):** o lock de humano ficava em `dados_cliente.humano_assumiu`, mas essa tabela cria uma linha nova por sessão — um bug no node "Buscar Contatos" (consultava `clientes_sistema` em vez de `dados_cliente`) fazia isso acontecer a cada mensagem, gerando dezenas de linhas destravadas por contato e derrubando o lock aleatoriamente. Migrado para `trava_atendimento_humano` (1 linha por contato, `UNIQUE(telefone, instancia_whatsapp)`). Ver `supabase/migrations/20260711_create_trava_atendimento_humano.sql`.
+
+### Colunas críticas em `trava_atendimento_humano`
 
 | Coluna | Tipo | Observação |
 |---|---|---|
 | `humano_assumiu` | boolean | Ativa lock de atendimento humano |
-| `humano_assumiu_em` | timestamp | Controla expiração de 2 horas do lock |
+| `humano_assumiu_em` | timestamptz | Controla expiração do lock (2 horas, node "Humano Assumiu?") |
+| `telefone` + `instancia_whatsapp` | text | Chave única do contato — sempre os dois juntos |
 | `tenant_id` | text | **Chave de isolamento multitenant — CRÍTICA** |
 
 ### Projeto VendedorIA (`clcyyogtvygpehgcmeyj`)
