@@ -1,0 +1,521 @@
+﻿{
+    "updatedAt":  "2026-07-01T13:52:57.630Z",
+    "createdAt":  "2026-07-01T13:52:57.630Z",
+    "id":  "D5BKvrcn2BDMfxMk",
+    "name":  "GAS - Roteador Principal",
+    "description":  null,
+    "active":  true,
+    "isArchived":  false,
+    "nodes":  [
+                  {
+                      "parameters":  {
+                                         "httpMethod":  "POST",
+                                         "path":  "gas-principal",
+                                         "responseMode":  "lastNode",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "rr000001-0001-4000-8000-rrrrrrrrrrrr",
+                      "name":  "Webhook",
+                      "type":  "n8n-nodes-base.webhook",
+                      "position":  [
+                                       200,
+                                       400
+                                   ],
+                      "typeVersion":  2,
+                      "webhookId":  "gas-principal-wh"
+                  },
+                  {
+                      "parameters":  {
+                                         "assignments":  {
+                                                             "assignments":  [
+                                                                                 {
+                                                                                     "id":  "e1",
+                                                                                     "name":  "remoteJid",
+                                                                                     "value":  "={{ $json.body.data.key.remoteJid }}",
+                                                                                     "type":  "string"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "e2",
+                                                                                     "name":  "fromMe",
+                                                                                     "value":  "={{ $json.body.data.key.fromMe }}",
+                                                                                     "type":  "boolean"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "e3",
+                                                                                     "name":  "messageType",
+                                                                                     "value":  "={{ $json.body.data.messageType }}",
+                                                                                     "type":  "string"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "e4",
+                                                                                     "name":  "instancia",
+                                                                                     "value":  "={{ $json.body.instance }}",
+                                                                                     "type":  "string"
+                                                                                 }
+                                                                             ]
+                                                         },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "rr000002-0002-4000-8000-rrrrrrrrrrrr",
+                      "name":  "Extrair Identificadores",
+                      "type":  "n8n-nodes-base.set",
+                      "position":  [
+                                       440,
+                                       400
+                                   ],
+                      "typeVersion":  3.4
+                  },
+                  {
+                      "parameters":  {
+                                         "conditions":  {
+                                                            "options":  {
+                                                                            "caseSensitive":  true,
+                                                                            "leftValue":  "",
+                                                                            "typeValidation":  "loose",
+                                                                            "version":  2
+                                                                        },
+                                                            "conditions":  [
+                                                                               {
+                                                                                   "id":  "g1",
+                                                                                   "leftValue":  "={{ $json.remoteJid }}",
+                                                                                   "rightValue":  "@g.us",
+                                                                                   "operator":  {
+                                                                                                    "type":  "string",
+                                                                                                    "operation":  "contains"
+                                                                                                }
+                                                                               }
+                                                                           ],
+                                                            "combinator":  "and"
+                                                        },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "rr000003-0003-4000-8000-rrrrrrrrrrrr",
+                      "name":  "E do Grupo?",
+                      "type":  "n8n-nodes-base.if",
+                      "position":  [
+                                       680,
+                                       400
+                                   ],
+                      "typeVersion":  2.2
+                  },
+                  {
+                      "parameters":  {
+                                         "method":  "POST",
+                                         "url":  "https://n8n.upviaagentes.com/webhook/gas-grupo-localizacao",
+                                         "sendBody":  true,
+                                         "specifyBody":  "json",
+                                         "jsonBody":  "={{ JSON.stringify($(\u0027Extrair Identificadores\u0027).first().json) }}",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "rr000004-0004-4000-8000-rrrrrrrrrrrr",
+                      "name":  "Chamar Fluxo Grupo",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "position":  [
+                                       920,
+                                       200
+                                   ],
+                      "typeVersion":  4.2
+                  },
+                  {
+                      "parameters":  {
+                                         "conditions":  {
+                                                            "options":  {
+                                                                            "caseSensitive":  true,
+                                                                            "leftValue":  "",
+                                                                            "typeValidation":  "loose",
+                                                                            "version":  2
+                                                                        },
+                                                            "conditions":  [
+                                                                               {
+                                                                                   "id":  "f1",
+                                                                                   "leftValue":  "={{ $json.fromMe }}",
+                                                                                   "rightValue":  "false",
+                                                                                   "operator":  {
+                                                                                                    "type":  "string",
+                                                                                                    "operation":  "equals"
+                                                                                                }
+                                                                               }
+                                                                           ],
+                                                            "combinator":  "and"
+                                                        },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "rr000005-0005-4000-8000-rrrrrrrrrrrr",
+                      "name":  "Ignorar fromMe",
+                      "type":  "n8n-nodes-base.if",
+                      "position":  [
+                                       920,
+                                       600
+                                   ],
+                      "typeVersion":  2.2
+                  },
+                  {
+                      "parameters":  {
+                                         "method":  "POST",
+                                         "url":  "https://n8n.upviaagentes.com/webhook/gas-atendente",
+                                         "sendBody":  true,
+                                         "specifyBody":  "json",
+                                         "jsonBody":  "={{ JSON.stringify($(\u0027Extrair Identificadores\u0027).first().json) }}",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "rr000006-0006-4000-8000-rrrrrrrrrrrr",
+                      "name":  "Chamar Fluxo Atendente",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "position":  [
+                                       1160,
+                                       600
+                                   ],
+                      "typeVersion":  4.2
+                  }
+              ],
+    "connections":  {
+                        "Webhook":  {
+                                        "main":  [
+                                                     [
+                                                         {
+                                                             "node":  "Extrair Identificadores",
+                                                             "type":  "main",
+                                                             "index":  0
+                                                         }
+                                                     ]
+                                                 ]
+                                    },
+                        "Extrair Identificadores":  {
+                                                        "main":  [
+                                                                     [
+                                                                         {
+                                                                             "node":  "E do Grupo?",
+                                                                             "type":  "main",
+                                                                             "index":  0
+                                                                         }
+                                                                     ]
+                                                                 ]
+                                                    },
+                        "E do Grupo?":  {
+                                            "main":  [
+                                                         [
+                                                             {
+                                                                 "node":  "Chamar Fluxo Grupo",
+                                                                 "type":  "main",
+                                                                 "index":  0
+                                                             }
+                                                         ],
+                                                         [
+                                                             {
+                                                                 "node":  "Ignorar fromMe",
+                                                                 "type":  "main",
+                                                                 "index":  0
+                                                             }
+                                                         ]
+                                                     ]
+                                        },
+                        "Ignorar fromMe":  {
+                                               "main":  [
+                                                            [
+                                                                {
+                                                                    "node":  "Chamar Fluxo Atendente",
+                                                                    "type":  "main",
+                                                                    "index":  0
+                                                                }
+                                                            ],
+                                                            [
+
+                                                            ]
+                                                        ]
+                                           }
+                    },
+    "settings":  {
+                     "executionOrder":  "v1"
+                 },
+    "staticData":  null,
+    "meta":  null,
+    "pinData":  null,
+    "versionId":  "3cce3439-883d-4cd0-917c-18f44ced25eb",
+    "activeVersionId":  "3cce3439-883d-4cd0-917c-18f44ced25eb",
+    "versionCounter":  3,
+    "triggerCount":  1,
+    "shared":  [
+                   {
+                       "updatedAt":  "2026-07-01T13:52:57.634Z",
+                       "createdAt":  "2026-07-01T13:52:57.634Z",
+                       "role":  "workflow:owner",
+                       "workflowId":  "D5BKvrcn2BDMfxMk",
+                       "projectId":  "wvVR5bxXzTLlLBhJ",
+                       "project":  {
+                                       "updatedAt":  "2026-06-24T13:23:41.357Z",
+                                       "createdAt":  "2026-05-23T22:44:43.627Z",
+                                       "id":  "wvVR5bxXzTLlLBhJ",
+                                       "name":  "Elisa Andrade \u003cupvianegocios@gmail.com\u003e",
+                                       "type":  "personal",
+                                       "icon":  null,
+                                       "description":  null,
+                                       "creatorId":  "63b6bda0-d1aa-4abc-beaa-0fbb599f2288"
+                                   }
+                   }
+               ],
+    "tags":  [
+
+             ],
+    "activeVersion":  {
+                          "updatedAt":  "2026-07-01T13:52:57.635Z",
+                          "createdAt":  "2026-07-01T13:52:57.635Z",
+                          "versionId":  "3cce3439-883d-4cd0-917c-18f44ced25eb",
+                          "workflowId":  "D5BKvrcn2BDMfxMk",
+                          "nodes":  [
+                                        {
+                                            "parameters":  {
+                                                               "httpMethod":  "POST",
+                                                               "path":  "gas-principal",
+                                                               "responseMode":  "lastNode",
+                                                               "options":  {
+
+                                                                           }
+                                                           },
+                                            "id":  "rr000001-0001-4000-8000-rrrrrrrrrrrr",
+                                            "name":  "Webhook",
+                                            "type":  "n8n-nodes-base.webhook",
+                                            "position":  [
+                                                             200,
+                                                             400
+                                                         ],
+                                            "typeVersion":  2,
+                                            "webhookId":  "gas-principal-wh"
+                                        },
+                                        {
+                                            "parameters":  {
+                                                               "assignments":  {
+                                                                                   "assignments":  [
+                                                                                                       {
+                                                                                                           "id":  "e1",
+                                                                                                           "name":  "remoteJid",
+                                                                                                           "value":  "={{ $json.body.data.key.remoteJid }}",
+                                                                                                           "type":  "string"
+                                                                                                       },
+                                                                                                       {
+                                                                                                           "id":  "e2",
+                                                                                                           "name":  "fromMe",
+                                                                                                           "value":  "={{ $json.body.data.key.fromMe }}",
+                                                                                                           "type":  "boolean"
+                                                                                                       },
+                                                                                                       {
+                                                                                                           "id":  "e3",
+                                                                                                           "name":  "messageType",
+                                                                                                           "value":  "={{ $json.body.data.messageType }}",
+                                                                                                           "type":  "string"
+                                                                                                       },
+                                                                                                       {
+                                                                                                           "id":  "e4",
+                                                                                                           "name":  "instancia",
+                                                                                                           "value":  "={{ $json.body.instance }}",
+                                                                                                           "type":  "string"
+                                                                                                       }
+                                                                                                   ]
+                                                                               },
+                                                               "options":  {
+
+                                                                           }
+                                                           },
+                                            "id":  "rr000002-0002-4000-8000-rrrrrrrrrrrr",
+                                            "name":  "Extrair Identificadores",
+                                            "type":  "n8n-nodes-base.set",
+                                            "position":  [
+                                                             440,
+                                                             400
+                                                         ],
+                                            "typeVersion":  3.4
+                                        },
+                                        {
+                                            "parameters":  {
+                                                               "conditions":  {
+                                                                                  "options":  {
+                                                                                                  "caseSensitive":  true,
+                                                                                                  "leftValue":  "",
+                                                                                                  "typeValidation":  "loose",
+                                                                                                  "version":  2
+                                                                                              },
+                                                                                  "conditions":  [
+                                                                                                     {
+                                                                                                         "id":  "g1",
+                                                                                                         "leftValue":  "={{ $json.remoteJid }}",
+                                                                                                         "rightValue":  "@g.us",
+                                                                                                         "operator":  {
+                                                                                                                          "type":  "string",
+                                                                                                                          "operation":  "contains"
+                                                                                                                      }
+                                                                                                     }
+                                                                                                 ],
+                                                                                  "combinator":  "and"
+                                                                              },
+                                                               "options":  {
+
+                                                                           }
+                                                           },
+                                            "id":  "rr000003-0003-4000-8000-rrrrrrrrrrrr",
+                                            "name":  "E do Grupo?",
+                                            "type":  "n8n-nodes-base.if",
+                                            "position":  [
+                                                             680,
+                                                             400
+                                                         ],
+                                            "typeVersion":  2.2
+                                        },
+                                        {
+                                            "parameters":  {
+                                                               "method":  "POST",
+                                                               "url":  "https://n8n.upviaagentes.com/webhook/gas-grupo-localizacao",
+                                                               "sendBody":  true,
+                                                               "specifyBody":  "json",
+                                                               "jsonBody":  "={{ JSON.stringify($(\u0027Extrair Identificadores\u0027).first().json) }}",
+                                                               "options":  {
+
+                                                                           }
+                                                           },
+                                            "id":  "rr000004-0004-4000-8000-rrrrrrrrrrrr",
+                                            "name":  "Chamar Fluxo Grupo",
+                                            "type":  "n8n-nodes-base.httpRequest",
+                                            "position":  [
+                                                             920,
+                                                             200
+                                                         ],
+                                            "typeVersion":  4.2
+                                        },
+                                        {
+                                            "parameters":  {
+                                                               "conditions":  {
+                                                                                  "options":  {
+                                                                                                  "caseSensitive":  true,
+                                                                                                  "leftValue":  "",
+                                                                                                  "typeValidation":  "loose",
+                                                                                                  "version":  2
+                                                                                              },
+                                                                                  "conditions":  [
+                                                                                                     {
+                                                                                                         "id":  "f1",
+                                                                                                         "leftValue":  "={{ $json.fromMe }}",
+                                                                                                         "rightValue":  "false",
+                                                                                                         "operator":  {
+                                                                                                                          "type":  "string",
+                                                                                                                          "operation":  "equals"
+                                                                                                                      }
+                                                                                                     }
+                                                                                                 ],
+                                                                                  "combinator":  "and"
+                                                                              },
+                                                               "options":  {
+
+                                                                           }
+                                                           },
+                                            "id":  "rr000005-0005-4000-8000-rrrrrrrrrrrr",
+                                            "name":  "Ignorar fromMe",
+                                            "type":  "n8n-nodes-base.if",
+                                            "position":  [
+                                                             920,
+                                                             600
+                                                         ],
+                                            "typeVersion":  2.2
+                                        },
+                                        {
+                                            "parameters":  {
+                                                               "method":  "POST",
+                                                               "url":  "https://n8n.upviaagentes.com/webhook/gas-atendente",
+                                                               "sendBody":  true,
+                                                               "specifyBody":  "json",
+                                                               "jsonBody":  "={{ JSON.stringify($(\u0027Extrair Identificadores\u0027).first().json) }}",
+                                                               "options":  {
+
+                                                                           }
+                                                           },
+                                            "id":  "rr000006-0006-4000-8000-rrrrrrrrrrrr",
+                                            "name":  "Chamar Fluxo Atendente",
+                                            "type":  "n8n-nodes-base.httpRequest",
+                                            "position":  [
+                                                             1160,
+                                                             600
+                                                         ],
+                                            "typeVersion":  4.2
+                                        }
+                                    ],
+                          "connections":  {
+                                              "Webhook":  {
+                                                              "main":  [
+                                                                           [
+                                                                               {
+                                                                                   "node":  "Extrair Identificadores",
+                                                                                   "type":  "main",
+                                                                                   "index":  0
+                                                                               }
+                                                                           ]
+                                                                       ]
+                                                          },
+                                              "Extrair Identificadores":  {
+                                                                              "main":  [
+                                                                                           [
+                                                                                               {
+                                                                                                   "node":  "E do Grupo?",
+                                                                                                   "type":  "main",
+                                                                                                   "index":  0
+                                                                                               }
+                                                                                           ]
+                                                                                       ]
+                                                                          },
+                                              "E do Grupo?":  {
+                                                                  "main":  [
+                                                                               [
+                                                                                   {
+                                                                                       "node":  "Chamar Fluxo Grupo",
+                                                                                       "type":  "main",
+                                                                                       "index":  0
+                                                                                   }
+                                                                               ],
+                                                                               [
+                                                                                   {
+                                                                                       "node":  "Ignorar fromMe",
+                                                                                       "type":  "main",
+                                                                                       "index":  0
+                                                                                   }
+                                                                               ]
+                                                                           ]
+                                                              },
+                                              "Ignorar fromMe":  {
+                                                                     "main":  [
+                                                                                  [
+                                                                                      {
+                                                                                          "node":  "Chamar Fluxo Atendente",
+                                                                                          "type":  "main",
+                                                                                          "index":  0
+                                                                                      }
+                                                                                  ],
+                                                                                  [
+
+                                                                                  ]
+                                                                              ]
+                                                                 }
+                                          },
+                          "authors":  "Elisa Andrade",
+                          "name":  null,
+                          "description":  null,
+                          "autosaved":  false,
+                          "workflowPublishHistory":  [
+                                                         {
+                                                             "createdAt":  "2026-07-01T13:52:57.890Z",
+                                                             "id":  560,
+                                                             "workflowId":  "D5BKvrcn2BDMfxMk",
+                                                             "versionId":  "3cce3439-883d-4cd0-917c-18f44ced25eb",
+                                                             "event":  "activated",
+                                                             "userId":  "63b6bda0-d1aa-4abc-beaa-0fbb599f2288"
+                                                         }
+                                                     ]
+                      }
+}

@@ -1,0 +1,589 @@
+﻿{
+    "updatedAt":  "2026-07-05T09:00:30.321Z",
+    "createdAt":  "2026-07-05T09:00:30.321Z",
+    "id":  "Qu292p0WvDMqJAye",
+    "name":  "GAS - Relatorio Diario",
+    "description":  null,
+    "active":  true,
+    "isArchived":  false,
+    "nodes":  [
+                  {
+                      "id":  "gas-node-001",
+                      "name":  "Disparar Todo Dia 8h",
+                      "type":  "n8n-nodes-base.scheduleTrigger",
+                      "typeVersion":  1.2,
+                      "position":  [
+                                       250,
+                                       300
+                                   ],
+                      "parameters":  {
+                                         "rule":  {
+                                                      "interval":  [
+                                                                       {
+                                                                           "field":  "cronExpression",
+                                                                           "expression":  "0 8 * * *"
+                                                                       }
+                                                                   ]
+                                                  }
+                                     }
+                  },
+                  {
+                      "id":  "gas-node-002",
+                      "name":  "Buscar Todas as Lojas",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.2,
+                      "position":  [
+                                       500,
+                                       300
+                                   ],
+                      "parameters":  {
+                                         "method":  "GET",
+                                         "url":  "https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/negocios_gas?ativo=eq.true\u0026select=id,nome,instancia_whatsapp,telefone_admin",
+                                         "authentication":  "none",
+                                         "sendHeaders":  true,
+                                         "headerParameters":  {
+                                                                  "parameters":  [
+                                                                                     {
+                                                                                         "name":  "apikey",
+                                                                                         "value":  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+                                                                                     },
+                                                                                     {
+                                                                                         "name":  "Authorization",
+                                                                                         "value":  "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+                                                                                     }
+                                                                                 ]
+                                                              },
+                                         "options":  {
+
+                                                     }
+                                     }
+                  },
+                  {
+                      "id":  "gas-node-003",
+                      "name":  "Para Cada Loja",
+                      "type":  "n8n-nodes-base.splitInBatches",
+                      "typeVersion":  3,
+                      "position":  [
+                                       750,
+                                       300
+                                   ],
+                      "parameters":  {
+                                         "batchSize":  1,
+                                         "options":  {
+
+                                                     }
+                                     }
+                  },
+                  {
+                      "id":  "gas-node-004",
+                      "name":  "Buscar Pedidos de Ontem",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.2,
+                      "position":  [
+                                       1000,
+                                       300
+                                   ],
+                      "parameters":  {
+                                         "method":  "GET",
+                                         "url":  "=https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/pedidos_gas?negocio_id=eq.{{$json.id}}\u0026criado_em=gte.{{$now.minus({days:1}).startOf(\u0027day\u0027).toISO()}}\u0026criado_em=lt.{{$now.startOf(\u0027day\u0027).toISO()}}\u0026select=id,cliente_nome,cliente_telefone,endereco,produto_nome,forma_pagamento,valor_total,status,entregador_id,criado_em",
+                                         "authentication":  "none",
+                                         "sendHeaders":  true,
+                                         "headerParameters":  {
+                                                                  "parameters":  [
+                                                                                     {
+                                                                                         "name":  "apikey",
+                                                                                         "value":  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+                                                                                     },
+                                                                                     {
+                                                                                         "name":  "Authorization",
+                                                                                         "value":  "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+                                                                                     }
+                                                                                 ]
+                                                              },
+                                         "options":  {
+
+                                                     }
+                                     }
+                  },
+                  {
+                      "id":  "gas-node-005",
+                      "name":  "Buscar Entregadores da Loja",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.2,
+                      "position":  [
+                                       1250,
+                                       300
+                                   ],
+                      "parameters":  {
+                                         "method":  "GET",
+                                         "url":  "=https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/entregadores_gas?negocio_id=eq.{{$(\u0027Para Cada Loja\u0027).first().json.id}}\u0026select=id,nome",
+                                         "authentication":  "none",
+                                         "sendHeaders":  true,
+                                         "headerParameters":  {
+                                                                  "parameters":  [
+                                                                                     {
+                                                                                         "name":  "apikey",
+                                                                                         "value":  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+                                                                                     },
+                                                                                     {
+                                                                                         "name":  "Authorization",
+                                                                                         "value":  "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+                                                                                     }
+                                                                                 ]
+                                                              },
+                                         "options":  {
+
+                                                     }
+                                     }
+                  },
+                  {
+                      "id":  "gas-node-006",
+                      "name":  "Montar Relatorio",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       1500,
+                                       300
+                                   ],
+                      "parameters":  {
+                                         "mode":  "runOnceForAllItems",
+                                         "jsCode":  "const loja = $(\u0027Para Cada Loja\u0027).first().json;\nconst pedidos = $(\u0027Buscar Pedidos de Ontem\u0027).all().map(i =\u003e i.json);\nconst entregadores = $(\u0027Buscar Entregadores da Loja\u0027).all().map(i =\u003e i.json);\n\nconst hoje = new Date();\nconst ontem = new Date(hoje);\nontem.setDate(ontem.getDate() - 1);\nconst dataFormatada = ontem.toLocaleDateString(\u0027pt-BR\u0027);\n\nif (!pedidos || pedidos.length === 0) {\n  return [{\n    json: {\n      telefone_admin: loja.telefone_admin,\n      instancia: loja.instancia_whatsapp,\n      nome_loja: loja.nome,\n      mensagem: `?? *Relatorio ${loja.nome} - ${dataFormatada}*\\n\\nNenhum pedido registrado ontem.`\n    }\n  }];\n}\n\nconst porProduto = {};\npedidos.forEach(p =\u003e {\n  const prod = p.produto_nome ?? \u0027Nao informado\u0027;\n  porProduto[prod] = (porProduto[prod] ?? 0) + 1;\n});\n\nconst porEntregador = {};\npedidos.forEach(p =\u003e {\n  if (p.entregador_id) {\n    const ent = entregadores.find(e =\u003e e.id === p.entregador_id);\n    const nome = ent?.nome ?? \u0027Entregador \u0027 + p.entregador_id;\n    porEntregador[nome] = (porEntregador[nome] ?? 0) + 1;\n  }\n});\n\nconst despachados = pedidos.filter(p =\u003e p.status === \u0027despachado\u0027).length;\nconst entregues = pedidos.filter(p =\u003e p.status === \u0027entregue\u0027).length;\nconst cancelados = pedidos.filter(p =\u003e p.status === \u0027cancelado\u0027).length;\n\nconst faturamento = pedidos.reduce((acc, p) =\u003e acc + (parseFloat(p.valor_total) || 0), 0);\n\nconst produtosTexto = Object.entries(porProduto)\n  .map(([nome, qtd]) =\u003e `   . ${nome}: ${qtd} pedido${qtd \u003e 1 ? \u0027s\u0027 : \u0027\u0027}`)\n  .join(\u0027\\n\u0027);\n\nconst entregadoresTexto = Object.entries(porEntregador)\n  .map(([nome, qtd]) =\u003e `   . ${nome}: ${qtd} entrega${qtd \u003e 1 ? \u0027s\u0027 : \u0027\u0027}`)\n  .join(\u0027\\n\u0027);\n\nconst mensagem = `?? *Relatorio ${loja.nome}*\n?? ${dataFormatada}\n\n*Total de pedidos: ${pedidos.length}*\n\n?? *Por produto:*\n${produtosTexto}\n\n?? *Por entregador:*\n${entregadoresTexto || \u0027   . Nao informado\u0027}\n\n?? *Status:*\n   . Despachados: ${despachados}\n   . Entregues: ${entregues}\n   . Cancelados: ${cancelados}\n\n?? *Faturamento estimado: R$${faturamento.toFixed(2)}*\n\n_Relatorio gerado automaticamente pela UpGasIA_ ??`;\n\nreturn [{\n  json: {\n    telefone_admin: loja.telefone_admin,\n    instancia: loja.instancia_whatsapp,\n    nome_loja: loja.nome,\n    mensagem\n  }\n}];"
+                                     }
+                  },
+                  {
+                      "id":  "gas-node-007",
+                      "name":  "Enviar Relatorio WhatsApp",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.2,
+                      "position":  [
+                                       1750,
+                                       300
+                                   ],
+                      "parameters":  {
+                                         "method":  "POST",
+                                         "url":  "=https://evo.upviaagentes.com/message/sendText/{{$json.instancia}}",
+                                         "authentication":  "none",
+                                         "sendHeaders":  true,
+                                         "headerParameters":  {
+                                                                  "parameters":  [
+                                                                                     {
+                                                                                         "name":  "apikey",
+                                                                                         "value":  "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+                                                                                     },
+                                                                                     {
+                                                                                         "name":  "Content-Type",
+                                                                                         "value":  "application/json"
+                                                                                     }
+                                                                                 ]
+                                                              },
+                                         "sendBody":  true,
+                                         "specifyBody":  "json",
+                                         "jsonBody":  "={\"number\": \"{{$json.telefone_admin}}\", \"text\": \"{{$json.mensagem}}\"}",
+                                         "options":  {
+
+                                                     }
+                                     }
+                  }
+              ],
+    "connections":  {
+                        "Disparar Todo Dia 8h":  {
+                                                     "main":  [
+                                                                  [
+                                                                      {
+                                                                          "node":  "Buscar Todas as Lojas",
+                                                                          "type":  "main",
+                                                                          "index":  0
+                                                                      }
+                                                                  ]
+                                                              ]
+                                                 },
+                        "Buscar Todas as Lojas":  {
+                                                      "main":  [
+                                                                   [
+                                                                       {
+                                                                           "node":  "Para Cada Loja",
+                                                                           "type":  "main",
+                                                                           "index":  0
+                                                                       }
+                                                                   ]
+                                                               ]
+                                                  },
+                        "Para Cada Loja":  {
+                                               "main":  [
+                                                            [
+                                                                {
+                                                                    "node":  "Buscar Pedidos de Ontem",
+                                                                    "type":  "main",
+                                                                    "index":  0
+                                                                }
+                                                            ],
+                                                            [
+
+                                                            ]
+                                                        ]
+                                           },
+                        "Buscar Pedidos de Ontem":  {
+                                                        "main":  [
+                                                                     [
+                                                                         {
+                                                                             "node":  "Buscar Entregadores da Loja",
+                                                                             "type":  "main",
+                                                                             "index":  0
+                                                                         }
+                                                                     ]
+                                                                 ]
+                                                    },
+                        "Buscar Entregadores da Loja":  {
+                                                            "main":  [
+                                                                         [
+                                                                             {
+                                                                                 "node":  "Montar Relatorio",
+                                                                                 "type":  "main",
+                                                                                 "index":  0
+                                                                             }
+                                                                         ]
+                                                                     ]
+                                                        },
+                        "Montar Relatorio":  {
+                                                 "main":  [
+                                                              [
+                                                                  {
+                                                                      "node":  "Enviar Relatorio WhatsApp",
+                                                                      "type":  "main",
+                                                                      "index":  0
+                                                                  }
+                                                              ]
+                                                          ]
+                                             },
+                        "Enviar Relatorio WhatsApp":  {
+                                                          "main":  [
+                                                                       [
+                                                                           {
+                                                                               "node":  "Para Cada Loja",
+                                                                               "type":  "main",
+                                                                               "index":  0
+                                                                           }
+                                                                       ]
+                                                                   ]
+                                                      }
+                    },
+    "settings":  {
+                     "timezone":  "America/Sao_Paulo"
+                 },
+    "staticData":  {
+                       "node:Disparar Todo Dia 8h":  {
+                                                         "recurrenceRules":  [
+
+                                                                             ]
+                                                     }
+                   },
+    "meta":  null,
+    "pinData":  null,
+    "versionId":  "d5ae345c-a5fd-4c66-873c-893580eac371",
+    "activeVersionId":  "d5ae345c-a5fd-4c66-873c-893580eac371",
+    "versionCounter":  4,
+    "triggerCount":  1,
+    "shared":  [
+                   {
+                       "updatedAt":  "2026-07-05T09:00:30.333Z",
+                       "createdAt":  "2026-07-05T09:00:30.333Z",
+                       "role":  "workflow:owner",
+                       "workflowId":  "Qu292p0WvDMqJAye",
+                       "projectId":  "wvVR5bxXzTLlLBhJ",
+                       "project":  {
+                                       "updatedAt":  "2026-06-24T13:23:41.357Z",
+                                       "createdAt":  "2026-05-23T22:44:43.627Z",
+                                       "id":  "wvVR5bxXzTLlLBhJ",
+                                       "name":  "Elisa Andrade \u003cupvianegocios@gmail.com\u003e",
+                                       "type":  "personal",
+                                       "icon":  null,
+                                       "description":  null,
+                                       "creatorId":  "63b6bda0-d1aa-4abc-beaa-0fbb599f2288"
+                                   }
+                   }
+               ],
+    "tags":  [
+
+             ],
+    "activeVersion":  {
+                          "updatedAt":  "2026-07-05T09:00:30.334Z",
+                          "createdAt":  "2026-07-05T09:00:30.334Z",
+                          "versionId":  "d5ae345c-a5fd-4c66-873c-893580eac371",
+                          "workflowId":  "Qu292p0WvDMqJAye",
+                          "nodes":  [
+                                        {
+                                            "id":  "gas-node-001",
+                                            "name":  "Disparar Todo Dia 8h",
+                                            "type":  "n8n-nodes-base.scheduleTrigger",
+                                            "typeVersion":  1.2,
+                                            "position":  [
+                                                             250,
+                                                             300
+                                                         ],
+                                            "parameters":  {
+                                                               "rule":  {
+                                                                            "interval":  [
+                                                                                             {
+                                                                                                 "field":  "cronExpression",
+                                                                                                 "expression":  "0 8 * * *"
+                                                                                             }
+                                                                                         ]
+                                                                        }
+                                                           }
+                                        },
+                                        {
+                                            "id":  "gas-node-002",
+                                            "name":  "Buscar Todas as Lojas",
+                                            "type":  "n8n-nodes-base.httpRequest",
+                                            "typeVersion":  4.2,
+                                            "position":  [
+                                                             500,
+                                                             300
+                                                         ],
+                                            "parameters":  {
+                                                               "method":  "GET",
+                                                               "url":  "https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/negocios_gas?ativo=eq.true\u0026select=id,nome,instancia_whatsapp,telefone_admin",
+                                                               "authentication":  "none",
+                                                               "sendHeaders":  true,
+                                                               "headerParameters":  {
+                                                                                        "parameters":  [
+                                                                                                           {
+                                                                                                               "name":  "apikey",
+                                                                                                               "value":  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+                                                                                                           },
+                                                                                                           {
+                                                                                                               "name":  "Authorization",
+                                                                                                               "value":  "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+                                                                                                           }
+                                                                                                       ]
+                                                                                    },
+                                                               "options":  {
+
+                                                                           }
+                                                           }
+                                        },
+                                        {
+                                            "id":  "gas-node-003",
+                                            "name":  "Para Cada Loja",
+                                            "type":  "n8n-nodes-base.splitInBatches",
+                                            "typeVersion":  3,
+                                            "position":  [
+                                                             750,
+                                                             300
+                                                         ],
+                                            "parameters":  {
+                                                               "batchSize":  1,
+                                                               "options":  {
+
+                                                                           }
+                                                           }
+                                        },
+                                        {
+                                            "id":  "gas-node-004",
+                                            "name":  "Buscar Pedidos de Ontem",
+                                            "type":  "n8n-nodes-base.httpRequest",
+                                            "typeVersion":  4.2,
+                                            "position":  [
+                                                             1000,
+                                                             300
+                                                         ],
+                                            "parameters":  {
+                                                               "method":  "GET",
+                                                               "url":  "=https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/pedidos_gas?negocio_id=eq.{{$json.id}}\u0026criado_em=gte.{{$now.minus({days:1}).startOf(\u0027day\u0027).toISO()}}\u0026criado_em=lt.{{$now.startOf(\u0027day\u0027).toISO()}}\u0026select=id,cliente_nome,cliente_telefone,endereco,produto_nome,forma_pagamento,valor_total,status,entregador_id,criado_em",
+                                                               "authentication":  "none",
+                                                               "sendHeaders":  true,
+                                                               "headerParameters":  {
+                                                                                        "parameters":  [
+                                                                                                           {
+                                                                                                               "name":  "apikey",
+                                                                                                               "value":  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+                                                                                                           },
+                                                                                                           {
+                                                                                                               "name":  "Authorization",
+                                                                                                               "value":  "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+                                                                                                           }
+                                                                                                       ]
+                                                                                    },
+                                                               "options":  {
+
+                                                                           }
+                                                           }
+                                        },
+                                        {
+                                            "id":  "gas-node-005",
+                                            "name":  "Buscar Entregadores da Loja",
+                                            "type":  "n8n-nodes-base.httpRequest",
+                                            "typeVersion":  4.2,
+                                            "position":  [
+                                                             1250,
+                                                             300
+                                                         ],
+                                            "parameters":  {
+                                                               "method":  "GET",
+                                                               "url":  "=https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/entregadores_gas?negocio_id=eq.{{$(\u0027Para Cada Loja\u0027).first().json.id}}\u0026select=id,nome",
+                                                               "authentication":  "none",
+                                                               "sendHeaders":  true,
+                                                               "headerParameters":  {
+                                                                                        "parameters":  [
+                                                                                                           {
+                                                                                                               "name":  "apikey",
+                                                                                                               "value":  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+                                                                                                           },
+                                                                                                           {
+                                                                                                               "name":  "Authorization",
+                                                                                                               "value":  "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+                                                                                                           }
+                                                                                                       ]
+                                                                                    },
+                                                               "options":  {
+
+                                                                           }
+                                                           }
+                                        },
+                                        {
+                                            "id":  "gas-node-006",
+                                            "name":  "Montar Relatorio",
+                                            "type":  "n8n-nodes-base.code",
+                                            "typeVersion":  2,
+                                            "position":  [
+                                                             1500,
+                                                             300
+                                                         ],
+                                            "parameters":  {
+                                                               "mode":  "runOnceForAllItems",
+                                                               "jsCode":  "const loja = $(\u0027Para Cada Loja\u0027).first().json;\nconst pedidos = $(\u0027Buscar Pedidos de Ontem\u0027).all().map(i =\u003e i.json);\nconst entregadores = $(\u0027Buscar Entregadores da Loja\u0027).all().map(i =\u003e i.json);\n\nconst hoje = new Date();\nconst ontem = new Date(hoje);\nontem.setDate(ontem.getDate() - 1);\nconst dataFormatada = ontem.toLocaleDateString(\u0027pt-BR\u0027);\n\nif (!pedidos || pedidos.length === 0) {\n  return [{\n    json: {\n      telefone_admin: loja.telefone_admin,\n      instancia: loja.instancia_whatsapp,\n      nome_loja: loja.nome,\n      mensagem: `?? *Relatorio ${loja.nome} - ${dataFormatada}*\\n\\nNenhum pedido registrado ontem.`\n    }\n  }];\n}\n\nconst porProduto = {};\npedidos.forEach(p =\u003e {\n  const prod = p.produto_nome ?? \u0027Nao informado\u0027;\n  porProduto[prod] = (porProduto[prod] ?? 0) + 1;\n});\n\nconst porEntregador = {};\npedidos.forEach(p =\u003e {\n  if (p.entregador_id) {\n    const ent = entregadores.find(e =\u003e e.id === p.entregador_id);\n    const nome = ent?.nome ?? \u0027Entregador \u0027 + p.entregador_id;\n    porEntregador[nome] = (porEntregador[nome] ?? 0) + 1;\n  }\n});\n\nconst despachados = pedidos.filter(p =\u003e p.status === \u0027despachado\u0027).length;\nconst entregues = pedidos.filter(p =\u003e p.status === \u0027entregue\u0027).length;\nconst cancelados = pedidos.filter(p =\u003e p.status === \u0027cancelado\u0027).length;\n\nconst faturamento = pedidos.reduce((acc, p) =\u003e acc + (parseFloat(p.valor_total) || 0), 0);\n\nconst produtosTexto = Object.entries(porProduto)\n  .map(([nome, qtd]) =\u003e `   . ${nome}: ${qtd} pedido${qtd \u003e 1 ? \u0027s\u0027 : \u0027\u0027}`)\n  .join(\u0027\\n\u0027);\n\nconst entregadoresTexto = Object.entries(porEntregador)\n  .map(([nome, qtd]) =\u003e `   . ${nome}: ${qtd} entrega${qtd \u003e 1 ? \u0027s\u0027 : \u0027\u0027}`)\n  .join(\u0027\\n\u0027);\n\nconst mensagem = `?? *Relatorio ${loja.nome}*\n?? ${dataFormatada}\n\n*Total de pedidos: ${pedidos.length}*\n\n?? *Por produto:*\n${produtosTexto}\n\n?? *Por entregador:*\n${entregadoresTexto || \u0027   . Nao informado\u0027}\n\n?? *Status:*\n   . Despachados: ${despachados}\n   . Entregues: ${entregues}\n   . Cancelados: ${cancelados}\n\n?? *Faturamento estimado: R$${faturamento.toFixed(2)}*\n\n_Relatorio gerado automaticamente pela UpGasIA_ ??`;\n\nreturn [{\n  json: {\n    telefone_admin: loja.telefone_admin,\n    instancia: loja.instancia_whatsapp,\n    nome_loja: loja.nome,\n    mensagem\n  }\n}];"
+                                                           }
+                                        },
+                                        {
+                                            "id":  "gas-node-007",
+                                            "name":  "Enviar Relatorio WhatsApp",
+                                            "type":  "n8n-nodes-base.httpRequest",
+                                            "typeVersion":  4.2,
+                                            "position":  [
+                                                             1750,
+                                                             300
+                                                         ],
+                                            "parameters":  {
+                                                               "method":  "POST",
+                                                               "url":  "=https://evo.upviaagentes.com/message/sendText/{{$json.instancia}}",
+                                                               "authentication":  "none",
+                                                               "sendHeaders":  true,
+                                                               "headerParameters":  {
+                                                                                        "parameters":  [
+                                                                                                           {
+                                                                                                               "name":  "apikey",
+                                                                                                               "value":  "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+                                                                                                           },
+                                                                                                           {
+                                                                                                               "name":  "Content-Type",
+                                                                                                               "value":  "application/json"
+                                                                                                           }
+                                                                                                       ]
+                                                                                    },
+                                                               "sendBody":  true,
+                                                               "specifyBody":  "json",
+                                                               "jsonBody":  "={\"number\": \"{{$json.telefone_admin}}\", \"text\": \"{{$json.mensagem}}\"}",
+                                                               "options":  {
+
+                                                                           }
+                                                           }
+                                        }
+                                    ],
+                          "connections":  {
+                                              "Disparar Todo Dia 8h":  {
+                                                                           "main":  [
+                                                                                        [
+                                                                                            {
+                                                                                                "node":  "Buscar Todas as Lojas",
+                                                                                                "type":  "main",
+                                                                                                "index":  0
+                                                                                            }
+                                                                                        ]
+                                                                                    ]
+                                                                       },
+                                              "Buscar Todas as Lojas":  {
+                                                                            "main":  [
+                                                                                         [
+                                                                                             {
+                                                                                                 "node":  "Para Cada Loja",
+                                                                                                 "type":  "main",
+                                                                                                 "index":  0
+                                                                                             }
+                                                                                         ]
+                                                                                     ]
+                                                                        },
+                                              "Para Cada Loja":  {
+                                                                     "main":  [
+                                                                                  [
+                                                                                      {
+                                                                                          "node":  "Buscar Pedidos de Ontem",
+                                                                                          "type":  "main",
+                                                                                          "index":  0
+                                                                                      }
+                                                                                  ],
+                                                                                  [
+
+                                                                                  ]
+                                                                              ]
+                                                                 },
+                                              "Buscar Pedidos de Ontem":  {
+                                                                              "main":  [
+                                                                                           [
+                                                                                               {
+                                                                                                   "node":  "Buscar Entregadores da Loja",
+                                                                                                   "type":  "main",
+                                                                                                   "index":  0
+                                                                                               }
+                                                                                           ]
+                                                                                       ]
+                                                                          },
+                                              "Buscar Entregadores da Loja":  {
+                                                                                  "main":  [
+                                                                                               [
+                                                                                                   {
+                                                                                                       "node":  "Montar Relatorio",
+                                                                                                       "type":  "main",
+                                                                                                       "index":  0
+                                                                                                   }
+                                                                                               ]
+                                                                                           ]
+                                                                              },
+                                              "Montar Relatorio":  {
+                                                                       "main":  [
+                                                                                    [
+                                                                                        {
+                                                                                            "node":  "Enviar Relatorio WhatsApp",
+                                                                                            "type":  "main",
+                                                                                            "index":  0
+                                                                                        }
+                                                                                    ]
+                                                                                ]
+                                                                   },
+                                              "Enviar Relatorio WhatsApp":  {
+                                                                                "main":  [
+                                                                                             [
+                                                                                                 {
+                                                                                                     "node":  "Para Cada Loja",
+                                                                                                     "type":  "main",
+                                                                                                     "index":  0
+                                                                                                 }
+                                                                                             ]
+                                                                                         ]
+                                                                            }
+                                          },
+                          "authors":  "Elisa Andrade",
+                          "name":  null,
+                          "description":  null,
+                          "autosaved":  false,
+                          "workflowPublishHistory":  [
+                                                         {
+                                                             "createdAt":  "2026-07-05T09:02:45.806Z",
+                                                             "id":  581,
+                                                             "workflowId":  "Qu292p0WvDMqJAye",
+                                                             "versionId":  "d5ae345c-a5fd-4c66-873c-893580eac371",
+                                                             "event":  "activated",
+                                                             "userId":  "63b6bda0-d1aa-4abc-beaa-0fbb599f2288"
+                                                         }
+                                                     ]
+                      }
+}
