@@ -1,0 +1,1973 @@
+{
+  "name": "GAS - Atendente Cliente",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "gas-atendente",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "aa000001-0001-4000-8000-aaaaaaaaaaaa",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        208,
+        624
+      ],
+      "typeVersion": 2,
+      "webhookId": "gas-atendente-wh"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "s1",
+              "name": "remoteJid",
+              "value": "={{ $json.body.data.key.remoteJid }}",
+              "type": "string"
+            },
+            {
+              "id": "s2",
+              "name": "fromMe",
+              "value": "={{ $json.body.data.key.fromMe }}",
+              "type": "boolean"
+            },
+            {
+              "id": "s3",
+              "name": "messageType",
+              "value": "={{ $json.body.data.messageType }}",
+              "type": "string"
+            },
+            {
+              "id": "s4",
+              "name": "mensagem",
+              "value": "={{ $json.body.data.message.conversation ?? $json.body.data.message.extendedTextMessage?.text ?? \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "s5",
+              "name": "instancia",
+              "value": "={{ $json.body.instance }}",
+              "type": "string"
+            },
+            {
+              "id": "s6",
+              "name": "pushName",
+              "value": "={{ $json.body.data.pushName ?? \"Cliente\" }}",
+              "type": "string"
+            },
+            {
+              "id": "s7",
+              "name": "msg_id",
+              "value": "={{ $json.body.data.key.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "aa000002-0002-4000-8000-aaaaaaaaaaaa",
+      "name": "Filtrar e Extrair",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        432,
+        624
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c2",
+              "leftValue": "={{ $json.remoteJid }}",
+              "rightValue": "@g.us",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "antieco1",
+              "leftValue": "={{ !($json.msg_id && $json.msg_id.toString().startsWith('3EB0') && $json.fromMe === false) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "aa000003-0003-4000-8000-aaaaaaaaaaaa",
+      "name": "Ignorar fromMe e Grupos",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        656,
+        624
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "url": "=https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/negocios_gas?instancia_whatsapp=eq.{{ $('Filtrar e Extrair').first().json.instancia }}&select=*",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "aa000004-0004-4000-8000-aaaaaaaaaaaa",
+      "name": "Carregar Dados Negocio",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1104,
+        624
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "url": "=https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/produtos_gas?negocio_id=eq.{{$json.id}}&ativo=eq.true&select=nome,preco",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "aa000005-0005-4000-8000-aaaaaaaaaaaa",
+      "name": "Carregar Produtos",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        3920,
+        952
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "url": "=https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/dados_clientes_gas?remote_jid=eq.{{ $('Filtrar e Extrair').first().json.remoteJid }}&negocio_id=eq.{{$('Carregar Dados Negocio').first().json.id}}&select=*&order=atualizado_em.desc&limit=1",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "aa000006-0006-4000-8000-aaaaaaaaaaaa",
+      "name": "Carregar Historico Cliente",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        4144,
+        952
+      ],
+      "typeVersion": 4.2,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const filtro = $('Filtrar e Extrair').first().json;\nconst negocio = $('Carregar Dados Negocio').first().json;\nconst produtos_items = $('Carregar Produtos').all();\nconst historico_items = $('Carregar Historico Cliente').all();\n\nconst produtos = produtos_items.map(i => i.json);\nconst cliente = historico_items.length > 0 ? historico_items[0].json : null;\n\nconst produtos_texto = produtos.map(p => `- ${p.nome}: R$${parseFloat(p.preco).toFixed(2)}`).join('\\n');\nconst etapa = cliente?.etapa ?? 'inicio';\nconst cliente_id = cliente?.id ?? null;\n\nreturn [{\n  json: {\n    remoteJid: filtro.remoteJid,\n    pushName: filtro.pushName,\n    instancia: filtro.instancia,\n    mensagem: (() => {\n      try {\n        const unificado = $('Unificar Mensagem GAS').first().json;\n        if (unificado && unificado.mensagem) return unificado.mensagem;\n      } catch (e) {}\n      return filtro.mensagem;\n    })(),\n    negocio_id: negocio.id,\n    negocio_nome: negocio.nome ?? 'Gas Moura',\n    nome_atendente: negocio.nome_atendente ?? 'Carol',\n    horario: negocio.horario_funcionamento ?? '',\n    formas_pagamento: negocio.formas_pagamento ?? '',\n    taxa_entrega: negocio.taxa_entrega_descricao ?? '',\n    tempo_entrega: negocio.tempo_estimado_entrega ?? '',\n    boas_vindas: negocio.mensagem_boas_vindas ?? '',\n    observacoes: negocio.observacoes_extras ?? '',\n    produtos_texto,\n    etapa,\n    cliente_id\n  }\n}];"
+      },
+      "id": "aa000007-0007-4000-8000-aaaaaaaaaaaa",
+      "name": "Montar Contexto",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        4368,
+        952
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cp1",
+              "leftValue": "={{ $json.confirmar_pedido }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "aa000010-0010-4000-8000-aaaaaaaaaaaa",
+      "name": "Confirmar Pedido?",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        5280,
+        952
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "url": "=https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/entregadores_gas?negocio_id=eq.{{ $json.negocio_id }}&status=eq.disponivel&select=id,nome,jid_whatsapp,lat,long",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "aa000011-0011-4000-8000-aaaaaaaaaaaa",
+      "name": "Buscar Entregadores",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        5952,
+        880
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "jsCode": "const dados = $('Extrair Coordenadas').first().json;\nconst entregadores = $input.all().map(i => i.json);\n\nif (!entregadores || entregadores.length === 0) {\n  return [{ json: { ...dados, entregador_jid: null, entregador_nome: 'Entregador', entregador_id: null, sem_entregador: true } }];\n}\n\nfunction haversine(lat1, lon1, lat2, lon2) {\n  const R = 6371;\n  const dLat = (lat2 - lat1) * Math.PI / 180;\n  const dLon = (lon2 - lon1) * Math.PI / 180;\n  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;\n  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));\n}\n\nconst clienteLat = parseFloat(dados.lat);\nconst clienteLon = parseFloat(dados.long);\nconst clienteGeoValido = !Number.isNaN(clienteLat) && !Number.isNaN(clienteLon);\n\nlet melhor = null;\nlet menorDist = Infinity;\n\nif (!clienteGeoValido) {\n  console.warn('Geocodificacao do cliente ausente/invalida (lat=' + dados.lat + ', long=' + dados.long + ') - usando primeiro entregador disponivel em vez de distancia.');\n  melhor = entregadores[0];\n  menorDist = null;\n} else {\n  for (const e of entregadores) {\n    const lat = parseFloat(e.lat);\n    const long = parseFloat(e.long);\n    if (Number.isNaN(lat) || Number.isNaN(long)) continue;\n    const dist = haversine(clienteLat, clienteLon, lat, long);\n    if (dist < menorDist) { menorDist = dist; melhor = e; }\n  }\n\n  // Nenhum entregador tem lat/long ainda (nunca compartilhou localizacao ao vivo) -\n  // notifica o primeiro disponivel em vez de nao notificar ninguem.\n  if (!melhor) {\n    melhor = entregadores[0];\n    menorDist = null;\n  }\n}\n\nreturn [{ json: { ...dados, entregador_jid: melhor.jid_whatsapp, entregador_nome: melhor.nome, entregador_id: melhor.id, distancia_km: menorDist !== null ? menorDist.toFixed(1) : null, sem_entregador: false } }];"
+      },
+      "id": "aa000012-0012-4000-8000-aaaaaaaaaaaa",
+      "name": "Calcular Entregador Mais Proximo",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        6176,
+        880
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://evo.upviaagentes.com/message/sendText/{{ $json.instancia }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  number: $json.entregador_jid,\n  text: \"NOVO PEDIDO!\\n\\nCliente: \" + $json.pushName + \"\\nProduto: \" + $json.produto + \"\\nEndereço: \" + $json.endereco + \"\\nPagamento: \" + $json.pagamento + \"\\n\\nMaps: https://maps.google.com/?q=\" + encodeURIComponent($json.endereco)\n}) }}",
+        "options": {}
+      },
+      "id": "aa000013-0013-4000-8000-aaaaaaaaaaaa",
+      "name": "Notificar Entregador",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        6400,
+        880
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/pedidos_gas",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify((() => {\n  const d = $('Calcular Entregador Mais Proximo').first().json;\n  let produtos = [];\n  try { produtos = $('Carregar Produtos').all().map(i => i.json); } catch (e) {}\n  const produtoNome = d.produto || null;\n  const prod = produtoNome ? produtos.find(p => (p.nome || '').toLowerCase().trim() === produtoNome.toLowerCase().trim()) : null;\n  const valor = prod ? parseFloat(prod.preco) : null;\n  return {\n    negocio_id: d.negocio_id,\n    cliente_nome: d.pushName,\n    cliente_telefone: d.remoteJid,\n    endereco: d.endereco,\n    entregador_id: d.entregador_id,\n    status: \"despachado\",\n    lat: d.lat,\n    long: d.long,\n    produto_nome: d.produto || null,\n    forma_pagamento: d.pagamento || null,\n    valor_total: valor,\n    quantidade: 1\n  };\n})()) }}",
+        "options": {}
+      },
+      "id": "aa000014-0014-4000-8000-aaaaaaaaaaaa",
+      "name": "Salvar Pedido",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        6624,
+        880
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://evo.upviaagentes.com/message/sendText/{{ $('Processar Resposta Agent').first().json.instancia }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify((() => {\n  const d = $('Processar Resposta Agent').first().json;\n  return { number: d.remoteJid, text: d.resposta_limpa };\n})()) }}",
+        "options": {}
+      },
+      "id": "aa000015-0015-4000-8000-aaaaaaaaaaaa",
+      "name": "Responder Cliente",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        6848,
+        952
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/dados_clientes_gas?on_conflict=negocio_id,remote_jid",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "negocio_id",
+              "value": "={{ $('Processar Resposta Agent').first().json.negocio_id }}"
+            },
+            {
+              "name": "remote_jid",
+              "value": "={{ $('Processar Resposta Agent').first().json.remoteJid }}"
+            },
+            {
+              "name": "nome",
+              "value": "={{ $('Processar Resposta Agent').first().json.pushName }}"
+            },
+            {
+              "name": "etapa",
+              "value": "={{ $('Processar Resposta Agent').first().json.nova_etapa ?? 'inicio' }}"
+            },
+            {
+              "name": "historico",
+              "value": "={{ [] }}"
+            },
+            {
+              "name": "atualizado_em",
+              "value": "={{ $now.toISO() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "aa000016-0016-4000-8000-aaaaaaaaaaaa",
+      "name": "Salvar Historico",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        7072,
+        952
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "jsCode": "const msgId = $json.msg_id;\nconst mensagem = $json.mensagem;\n\nconst rawMsg = ($('Webhook').first().json.body && $('Webhook').first().json.body.data && $('Webhook').first().json.body.data.message) || {};\nconst hasMedia = !!(rawMsg.audioMessage || rawMsg.imageMessage || rawMsg.documentMessage);\n\nif ((!mensagem || mensagem.trim() === '') && !hasMedia) {\n  return [];\n}\n\nif (!msgId) {\n  return [$input.first()];\n}\n\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.processedMsgIds) staticData.processedMsgIds = [];\n\nif (staticData.processedMsgIds.includes(msgId)) {\n  // Mesma mensagem do WhatsApp reentregue pelo webhook - ignorar\n  return [];\n}\n\nstaticData.processedMsgIds.push(msgId);\nif (staticData.processedMsgIds.length > 200) {\n  staticData.processedMsgIds = staticData.processedMsgIds.slice(-200);\n}\n\nreturn [$input.first()];"
+      },
+      "id": "a1b2c3d4-e5f6-4789-a012-b3c4d5e6f701",
+      "name": "Check Duplicate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "e1a2b3c4-0001-4000-8000-000000000001",
+      "name": "OpenAI Chat Model GAS",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        4592,
+        1176
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "sjemA3sd4BGEaIHJ",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.negocio_id + '_' + $json.remoteJid }}",
+        "contextWindowLength": 20
+      },
+      "id": "e1a2b3c4-0002-4000-8000-000000000002",
+      "name": "Postgres Chat Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.1,
+      "position": [
+        4720,
+        1176
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "Dym0Y2qw1VYqERST",
+          "name": "Postgres account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "Chame esta ferramenta somente quando o cliente ja confirmou produto, endereco de entrega E forma de pagamento.",
+        "jsCode": "return JSON.stringify({ confirmado: true });",
+        "specifyInputSchema": true,
+        "schemaType": "manual",
+        "inputSchema": "{\"type\":\"object\",\"properties\":{\"produto\":{\"type\":\"string\",\"description\":\"Nome do produto confirmado\"},\"endereco\":{\"type\":\"string\",\"description\":\"Endereco de entrega confirmado\"},\"pagamento\":{\"type\":\"string\",\"description\":\"Forma de pagamento confirmada\"}},\"required\":[\"produto\",\"endereco\",\"pagamento\"]}"
+      },
+      "id": "e1a2b3c4-0003-4000-8000-000000000003",
+      "name": "confirmar_pedido",
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.3,
+      "position": [
+        4848,
+        1176
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.mensagem }}",
+        "options": {
+          "systemMessage": "=Voce e {{ $json.nome_atendente }} da {{ $json.negocio_nome }}, atendente de revenda de gas e agua.\nSeja humana, direta e agil.\n\nPRODUTOS:\n{{ $json.produtos_texto }}\n\nGLOSSARIO DE LINGUAGEM DO CLIENTE:\nA maioria dos clientes nao sabe o codigo tecnico do produto. Use este mapeamento pra entender o que a pessoa quer, sem corrigi-la ou pedir o codigo tecnico:\n- \"gas de cozinha\", \"botijao normal\", \"gas pequeno\", \"o de sempre\" -> P13\n- \"gas grande\", \"botijao grande\" -> P20 ou P45 (perguntar de forma natural qual dos dois, sem usar os codigos: \"E pra uso domestico maior ou comercial?\")\n- \"agua\", \"galao\", \"agua mineral\" -> perguntar 20L ou 10L de forma natural\nNunca responda usando o codigo (P13, P20, P45) como se fosse obvio pro cliente - mencione o codigo entre parenteses so como referencia interna, nunca como a forma principal de se dirigir a ele. Ex: \"O gas de cozinha (P13) sai por R$120,00\" em vez de \"O P13 custa R$120,00\".\n\nINFORMACOES:\n- Horario: {{ $json.horario }}\n- Pagamento: {{ $json.formas_pagamento }}\n- Entrega: {{ $json.taxa_entrega }}\n- Tempo estimado: {{ $json.tempo_entrega }}\n\nETAPA ATUAL: {{ $json.etapa }}\n\nNATURALIDADE:\nFale como uma atendente humana de revenda de bairro falaria - direta, simpatica, sem soar como script ou robo. Evite frases engessadas tipo \"Como posso ajuda-lo hoje?\" - prefira algo como \"Oi! Quer pedir gas ou agua?\" ou responder direto se o cliente ja disse o que quer. Varie as frases entre mensagens, nao repita sempre a mesma estrutura. Evite linguagem excessivamente formal ou burocratica.\n\nREGRAS IMPORTANTES:\n1. SO na PRIMEIRA mensagem (ETAPA ATUAL = inicio), comece se apresentando no formato: \"{{ $json.negocio_nome }}, atendente {{ $json.nome_atendente }}! Em que posso te ajudar? Precisa de gas ou agua?\" (pode ajustar a capitalizacao/fraseado pra soar natural, mas mantenha a estrutura: negocio + atendente + pergunta do que precisa)\n2. Nas mensagens seguintes va DIRETO ao assunto, NUNCA repita a apresentacao\n3. Max 1 pergunta por mensagem\n4. Max 2 frases por resposta\n5. Nao invente precos\n6. Fluxo: cliente pede produto > voce confirma preco e pede o endereco completo COM CEP (ex: \"Pode me passar o endereco completo com CEP, por favor?\") > cliente da o endereco > se vier sem CEP, peca especificamente o CEP antes de seguir, nao aceite endereco incompleto > so com endereco + CEP confirmados, pergunta a forma de pagamento (Pix, cartao na entrega ou dinheiro) > cliente confirma > chame a tool confirmar_pedido\n7. Se ETAPA ATUAL ja for 'despachado', esse pedido ja foi confirmado e o entregador ja foi avisado - NAO chame confirmar_pedido de novo. So responda educadamente (ex: \"seu pedido ja esta a caminho\") a menos que o cliente peca explicitamente um pedido NOVO e diferente.\n8. Use o GLOSSARIO DE LINGUAGEM DO CLIENTE pra entender pedidos informais, mas sempre confirme o produto certo antes de fechar o pedido.\n9. NUNCA chame confirmar_pedido com um endereco sem CEP. Se o cliente tentar pular pra forma de pagamento antes de dar o CEP, peca o CEP primeiro.\n\nQuando o cliente ja confirmou produto, endereco de entrega COM CEP E forma de pagamento (e ainda nao havia pedido despachado), chame a tool confirmar_pedido com esses 3 dados. Nao escreva nenhum texto especial na resposta para isso - so chame a tool.",
+          "returnIntermediateSteps": true
+        }
+      },
+      "id": "e1a2b3c4-0004-4000-8000-000000000004",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        4648,
+        952
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const dados = $('Montar Contexto').first().json;\nconst agentOut = $json;\n\nconst resposta_limpa = agentOut.output || '';\nconst steps = Array.isArray(agentOut.intermediateSteps) ? agentOut.intermediateSteps : [];\nconst confirmStep = steps.find(s => s.action?.tool === 'confirmar_pedido');\nconst confirmar_pedido = !!confirmStep;\nconst produto = confirmStep?.action?.toolInput?.produto ?? null;\nconst endereco = confirmStep?.action?.toolInput?.endereco ?? null;\nconst pagamento = confirmStep?.action?.toolInput?.pagamento ?? null;\n\nlet nova_etapa = dados.etapa;\nif (confirmar_pedido) {\n  nova_etapa = 'despachado';\n} else if (dados.etapa === 'inicio' && dados.mensagem) {\n  nova_etapa = 'aguardando_produto';\n} else if (dados.etapa === 'aguardando_produto') {\n  nova_etapa = 'aguardando_endereco';\n} else if (dados.etapa === 'aguardando_endereco') {\n  nova_etapa = 'confirmando_pedido';\n}\n\nreturn [{\n  json: {\n    ...dados,\n    resposta_limpa,\n    confirmar_pedido,\n    produto,\n    endereco,\n    pagamento,\n    nova_etapa\n  }\n}];"
+      },
+      "id": "e1a2b3c4-0005-4000-8000-000000000005",
+      "name": "Processar Resposta Agent",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5056,
+        952
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://maps.googleapis.com/maps/api/geocode/json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "address",
+              "value": "={{ $json.endereco }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "aa000017-0017-4000-8000-aaaaaaaaaaaa",
+      "name": "Geocodificar Endereco",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        5504,
+        880
+      ],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "LRJZhsoMYZsCyf4U",
+          "name": "Google Geocoding API Key v2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const dados = $('Processar Resposta Agent').first().json;\nconst geo = $json;\nconst loc = geo.results && geo.results[0] && geo.results[0].geometry && geo.results[0].geometry.location;\n\nreturn [{\n  json: {\n    ...dados,\n    lat: loc ? loc.lat : null,\n    long: loc ? loc.lng : null\n  }\n}];"
+      },
+      "id": "aa000018-0018-4000-8000-aaaaaaaaaaaa",
+      "name": "Extrair Coordenadas",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5728,
+        880
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const filtro = $('Filtrar e Extrair').first().json;\nconst negocio = $json; // saida de Carregar Dados Negocio\n\nconst text = (filtro.mensagem || '').trim();\nconst fromMe = filtro.fromMe === true;\n\nconst digits = v => (v || '').toString().replace(/\\D/g, '');\nconst telefoneChat = digits(filtro.remoteJid);\nconst telefoneAdmin = digits(negocio.telefone_admin);\n\nlet acao = 'cliente_falou';\n\nif (fromMe) {\n  const ehComando = text.startsWith('#');\n  const ehChatDono = telefoneAdmin && telefoneChat && telefoneChat.endsWith(telefoneAdmin.slice(-8));\n  if (ehComando && ehChatDono) {\n    acao = 'comando_proprietario';\n  } else {\n    acao = 'humano_falou';\n  }\n}\n\nreturn [{ json: { ...negocio, _acao: acao } }];"
+      },
+      "id": "gas-decisor-central-01",
+      "name": "Decisor Central GAS",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1328,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "sa1",
+                    "leftValue": "={{ $json._acao }}",
+                    "rightValue": "humano_falou",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "Humano Falou"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "sa2",
+                    "leftValue": "={{ $json._acao }}",
+                    "rightValue": "cliente_falou",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "Cliente Falou"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "sa3",
+                    "leftValue": "={{ $json._acao }}",
+                    "rightValue": "comando_proprietario",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "Proprietario Falou"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "gas-switch-acao-01",
+      "name": "Switch Acao GAS",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1552,
+        608
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO trava_atendimento_humano_gas (negocio_id, remote_jid, humano_assumiu, humano_assumiu_em)\nSELECT {{ $json.id }}, '{{ $('Filtrar e Extrair').first().json.remoteJid }}', true, NOW()\nWHERE {{ $json.id }} IS NOT NULL AND '{{ $('Filtrar e Extrair').first().json.remoteJid }}' <> ''\nON CONFLICT (negocio_id, remote_jid) DO UPDATE SET humano_assumiu = true, humano_assumiu_em = NOW(), updated_at = NOW();",
+        "options": {}
+      },
+      "id": "gas-trava-ativar-01",
+      "name": "Supabase - Ativar Trava GAS",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1776,
+        624
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "Dym0Y2qw1VYqERST",
+          "name": "Postgres account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM trava_atendimento_humano_gas WHERE negocio_id = {{ $json.id }} AND remote_jid = '{{ $('Filtrar e Extrair').first().json.remoteJid }}' LIMIT 1;",
+        "options": {}
+      },
+      "id": "gas-trava-buscar-01",
+      "name": "Supabase - Buscar Sessao Trava GAS",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1776,
+        888
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "Dym0Y2qw1VYqERST",
+          "name": "Postgres account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "leftValue": "={{ $json.humano_assumiu }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            },
+            {
+              "leftValue": "={{ $json.humano_assumiu_em ? ($now.toMillis() - new Date($json.humano_assumiu_em).getTime()) / 60000 : 9999 }}",
+              "rightValue": 120,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "gas-humano-assumiu-01",
+      "name": "Humano Assumiu? GAS",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2000,
+        888
+      ],
+      "notes": "TRUE = humano assumiu (para o fluxo). FALSE = continua."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "leftValue": "={{ $json.humano_assumiu }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "gas-timeout-expirado-01",
+      "name": "Timeout Expirado? GAS",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2224,
+        888
+      ],
+      "notes": "TRUE = trava expirou (>2h) -> resetar. FALSE = nunca travou -> continua."
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE trava_atendimento_humano_gas SET humano_assumiu = false, humano_assumiu_em = NULL, updated_at = NOW() WHERE negocio_id = {{ $('Carregar Dados Negocio').first().json.id }} AND remote_jid = '{{ $('Filtrar e Extrair').first().json.remoteJid }}';",
+        "options": {}
+      },
+      "id": "gas-trava-resetar-01",
+      "name": "Supabase - Resetar Trava GAS",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        2512,
+        688
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "Dym0Y2qw1VYqERST",
+          "name": "Postgres account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "sm1",
+                    "leftValue": "={{ $('Webhook').first().json.body.data.message.audioMessage }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "object",
+                      "operation": "notEmpty",
+                      "singleValue": true
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "audioMessage"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "sm2",
+                    "leftValue": "={{ $('Webhook').first().json.body.data.message.imageMessage }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "object",
+                      "operation": "notEmpty",
+                      "singleValue": true
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "imageMessage"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "sm3",
+                    "leftValue": "={{ $('Webhook').first().json.body.data.messageType === 'documentMessage' }}",
+                    "rightValue": true,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "documentMessage"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "gas-switch-midia-01",
+      "name": "Switch Midia GAS",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        2800,
+        856
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://evo.upviaagentes.com/chat/getBase64FromMediaMessage/{{ $('Filtrar e Extrair').first().json.instancia }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ message: { key: { id: $('Filtrar e Extrair').first().json.msg_id } }, convertToMp4: true }) }}",
+        "options": {}
+      },
+      "id": "gas-media-audio-fetch-01",
+      "name": "Buscar Audio Base64 GAS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3024,
+        624
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "base64",
+        "options": {
+          "fileName": "audio.ogg",
+          "mimeType": "=audio/ogg"
+        }
+      },
+      "id": "gas-media-audio-conv-01",
+      "name": "Converter Audio GAS",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        3248,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "id": "gas-media-audio-transc-01",
+      "name": "Transcrever Audio GAS",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.6,
+      "position": [
+        3472,
+        624
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "sjemA3sd4BGEaIHJ",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://evo.upviaagentes.com/chat/getBase64FromMediaMessage/{{ $('Filtrar e Extrair').first().json.instancia }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ message: { key: { id: $('Filtrar e Extrair').first().json.msg_id } }, convertToMp4: false }) }}",
+        "options": {}
+      },
+      "id": "gas-media-img-fetch-01",
+      "name": "Buscar Imagem Base64 GAS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3024,
+        816
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "base64",
+        "options": {
+          "fileName": "image",
+          "mimeType": ""
+        }
+      },
+      "id": "gas-media-img-conv-01",
+      "name": "Converter Imagem GAS",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        3248,
+        816
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "text": "Descreva essa imagem no contexto de uma revenda de gas e agua. Pode ser comprovante de pagamento/PIX, foto de botijao vazio, foto de endereco/fachada, ou outra coisa. Descreva objetivamente o que aparece.",
+        "inputType": "base64",
+        "options": {}
+      },
+      "id": "gas-media-img-analyze-01",
+      "name": "Analisar Imagem GAS",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.6,
+      "position": [
+        3472,
+        816
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "sjemA3sd4BGEaIHJ",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://evo.upviaagentes.com/chat/getBase64FromMediaMessage/{{ $('Filtrar e Extrair').first().json.instancia }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ message: { key: { id: $('Filtrar e Extrair').first().json.msg_id } }, convertToMp4: false }) }}",
+        "options": {}
+      },
+      "id": "gas-media-doc-fetch-01",
+      "name": "Buscar Documento Base64 GAS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3024,
+        1104
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "base64",
+        "options": {
+          "fileName": "={{ $('Webhook').first().json.body.data.message.documentMessage.fileName }}",
+          "mimeType": "={{ $('Webhook').first().json.body.data.message.documentMessage.mimetype }}"
+        }
+      },
+      "id": "gas-media-doc-conv-01",
+      "name": "Converter Documento GAS",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        3248,
+        1104
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "id": "gas-media-doc-extract-01",
+      "name": "Extrair Texto Documento GAS",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        3472,
+        1104
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const negocio = $('Carregar Dados Negocio').first().json;\nconst filtro = $('Filtrar e Extrair').first().json;\n\nlet mensagemFinal = filtro.mensagem || '';\n\ntry {\n  const audio = $('Transcrever Audio GAS').first().json;\n  if (audio && audio.text) mensagemFinal = audio.text.trim();\n} catch (e) {}\n\ntry {\n  const imagem = $('Analisar Imagem GAS').first().json;\n  const desc = imagem?.content || (imagem?.message && imagem.message.content) || imagem?.text || '';\n  if (desc) mensagemFinal = '[Imagem enviada pelo cliente] ' + String(desc).trim();\n} catch (e) {}\n\ntry {\n  const doc = $('Extrair Texto Documento GAS').first().json;\n  if (doc && doc.text) mensagemFinal = '[Documento enviado pelo cliente] ' + String(doc.text).trim();\n} catch (e) {}\n\nreturn [{ json: { ...negocio, mensagem: mensagemFinal, msg_id: filtro.msg_id } }];"
+      },
+      "id": "gas-unificar-msg-01",
+      "name": "Unificar Mensagem GAS",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3696,
+        952
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "leftValue": "={{ ($('Filtrar e Extrair').first().json.mensagem || '').trim().toLowerCase() }}",
+              "rightValue": "#relatorio",
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "gas-e-relatorio-01",
+      "name": "E Relatorio? GAS",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1776,
+        332
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const filtro = $('Filtrar e Extrair').first().json;\nconst negocio = $('Carregar Dados Negocio').first().json;\nconst texto = (filtro.mensagem || '').toLowerCase();\n\nconst hoje = new Date();\nlet inicio, fim, periodoTexto;\n\nconst matchDatas = texto.match(/(\\d{2}\\/\\d{2}\\/\\d{4})\\s*(?:ate|até|-|a)\\s*(\\d{2}\\/\\d{2}\\/\\d{4})/);\n\nif (matchDatas) {\n  const [, di, df] = matchDatas;\n  const [d1, m1, y1] = di.split('/');\n  const [d2, m2, y2] = df.split('/');\n  inicio = new Date(`${y1}-${m1}-${d1}T00:00:00`);\n  fim = new Date(`${y2}-${m2}-${d2}T23:59:59`);\n  periodoTexto = `${di} a ${df}`;\n} else if (texto.includes('semana')) {\n  inicio = new Date(hoje); inicio.setDate(inicio.getDate() - 7);\n  fim = hoje;\n  periodoTexto = 'ultimos 7 dias';\n} else if (texto.includes('mes') || texto.includes('mês')) {\n  inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1);\n  fim = hoje;\n  periodoTexto = 'mes atual';\n} else {\n  inicio = new Date(hoje); inicio.setHours(0, 0, 0, 0);\n  fim = hoje;\n  periodoTexto = 'hoje';\n}\n\nreturn [{\n  json: {\n    negocio_id: negocio.id,\n    nome_loja: negocio.nome,\n    instancia: negocio.instancia_whatsapp,\n    telefone_admin: negocio.telefone_admin,\n    dataInicio: inicio.toISOString(),\n    dataFim: fim.toISOString(),\n    periodoTexto,\n  },\n}];"
+      },
+      "id": "gas-parse-periodo-01",
+      "name": "Parsear Periodo Relatorio GAS",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/pedidos_gas?negocio_id=eq.{{ $json.negocio_id }}&criado_em=gte.{{ $json.dataInicio }}&criado_em=lt.{{ $json.dataFim }}&select=id,cliente_nome,cliente_telefone,endereco,produto_nome,forma_pagamento,valor_total,status,entregador_id,criado_em",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "gas-buscar-pedidos-periodo-01",
+      "name": "Buscar Pedidos Periodo GAS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2224,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/entregadores_gas?negocio_id=eq.{{ $('Parsear Periodo Relatorio GAS').first().json.negocio_id }}&select=id,nome",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "gas-buscar-entreg-relatorio-01",
+      "name": "Buscar Entregadores Loja Relatorio GAS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2512,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const loja = $('Parsear Periodo Relatorio GAS').first().json;\nconst pedidos = $('Buscar Pedidos Periodo GAS').all().map(i => i.json);\nconst entregadores = $('Buscar Entregadores Loja Relatorio GAS').all().map(i => i.json);\n\nif (!pedidos || pedidos.length === 0) {\n  return [{\n    json: {\n      telefone_admin: loja.telefone_admin,\n      instancia: loja.instancia,\n      mensagem: `Relatorio ${loja.nome_loja} - ${loja.periodoTexto}\\n\\nNenhum pedido no periodo.`,\n    },\n  }];\n}\n\nconst porProduto = {};\npedidos.forEach(p => { const prod = p.produto_nome ?? 'Nao informado'; porProduto[prod] = (porProduto[prod] ?? 0) + 1; });\n\nconst porEntregador = {};\npedidos.forEach(p => {\n  if (p.entregador_id) {\n    const ent = entregadores.find(e => e.id === p.entregador_id);\n    const nome = ent?.nome ?? 'Entregador ' + p.entregador_id;\n    porEntregador[nome] = (porEntregador[nome] ?? 0) + 1;\n  }\n});\n\nconst despachados = pedidos.filter(p => p.status === 'despachado').length;\nconst entregues = pedidos.filter(p => p.status === 'entregue').length;\nconst cancelados = pedidos.filter(p => p.status === 'cancelado').length;\nconst faturamento = pedidos.reduce((acc, p) => acc + (parseFloat(p.valor_total) || 0), 0);\n\nconst produtosTexto = Object.entries(porProduto).map(([n, q]) => `   - ${n}: ${q}`).join('\\n');\nconst entregadoresTexto = Object.entries(porEntregador).map(([n, q]) => `   - ${n}: ${q}`).join('\\n');\n\nconst mensagem = `Relatorio ${loja.nome_loja}\nPeriodo: ${loja.periodoTexto}\n\nTotal de pedidos: ${pedidos.length}\n\nPor produto:\n${produtosTexto}\n\nPor entregador:\n${entregadoresTexto || '   - Nao informado'}\n\nStatus:\n   - Despachados: ${despachados}\n   - Entregues: ${entregues}\n   - Cancelados: ${cancelados}\n\nFaturamento estimado: R$${faturamento.toFixed(2)}`;\n\nreturn [{ json: { telefone_admin: loja.telefone_admin, instancia: loja.instancia, mensagem } }];"
+      },
+      "id": "gas-montar-relatorio-01",
+      "name": "Montar Relatorio Sob Demanda GAS",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2800,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://evo.upviaagentes.com/message/sendText/{{ $json.instancia }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: $json.telefone_admin, text: $json.mensagem }) }}",
+        "options": {}
+      },
+      "id": "gas-responder-dono-01",
+      "name": "Responder Dono GAS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3024,
+        332
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "gas-chatmodel-consulta-01",
+      "name": "OpenAI Chat Model Consulta GAS",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        2456,
+        304
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "sjemA3sd4BGEaIHJ",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "Busca pedidos/atendimentos anteriores da loja. Use para responder perguntas do dono sobre um cliente ou pedido especifico (por nome ou telefone).",
+        "jsCode": "const negocio = $('Carregar Dados Negocio').first().json;\nlet url = 'https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/pedidos_gas?negocio_id=eq.' + negocio.id + '&select=cliente_nome,cliente_telefone,endereco,produto_nome,forma_pagamento,valor_total,status,criado_em&order=criado_em.desc&limit=15';\n\nif (typeof termo === 'string' && termo.trim() !== '') {\n  const t = encodeURIComponent(termo.trim());\n  url += '&or=(cliente_nome.ilike.*' + t + '*,cliente_telefone.ilike.*' + t + '*)';\n}\n\nconst resposta = await this.helpers.httpRequest({\n  method: 'GET',\n  url,\n  headers: {\n    apikey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M',\n    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M',\n  },\n  json: true,\n});\n\nreturn JSON.stringify(resposta);",
+        "specifyInputSchema": true,
+        "schemaType": "manual",
+        "inputSchema": "{\"type\":\"object\",\"properties\":{\"termo\":{\"type\":\"string\",\"description\":\"Nome ou telefone do cliente perguntado. Deixe vazio para ver os pedidos mais recentes.\"}},\"required\":[]}"
+      },
+      "id": "gas-tool-consultar-pedidos-01",
+      "name": "consultar_pedidos GAS",
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.3,
+      "position": [
+        2584,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Filtrar e Extrair').first().json.mensagem }}",
+        "options": {
+          "systemMessage": "=Voce e o assistente do dono/gerente de {{ $('Carregar Dados Negocio').first().json.nome }}, uma revenda de gas e agua. O dono esta te perguntando algo sobre pedidos/atendimentos anteriores pelo WhatsApp.\n\nUse a tool consultar_pedidos para buscar os dados antes de responder. Se o dono mencionar um nome ou telefone, passe no parametro termo. Se nao mencionar, deixe termo vazio pra ver os pedidos mais recentes.\n\nResponda de forma direta e objetiva, em portugues, resumindo o que encontrou. Se nao encontrar nada, diga isso claramente."
+        }
+      },
+      "id": "gas-agente-consulta-01",
+      "name": "Agente Consulta Atendimento GAS",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        2448,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const negocio = $('Carregar Dados Negocio').first().json;\nconst out = $json.output || 'Nao consegui buscar essa informacao agora.';\nreturn [{ json: { telefone_admin: negocio.telefone_admin, instancia: negocio.instancia_whatsapp, mensagem: out } }];"
+      },
+      "id": "gas-extrair-resp-consulta-01",
+      "name": "Extrair Resposta Agente Consulta GAS",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2800,
+        184
+      ]
+    },
+    {
+      "id": "gas-antieco-entregador-01",
+      "name": "Verificar Eco Entregador GAS",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1088,
+        750
+      ],
+      "parameters": {
+        "jsCode": "const negocio = $json; // saida de Carregar Dados Negocio\nconst filtro = $('Filtrar e Extrair').first().json;\n\nconst digits = v => (v || '').toString().replace(/\\D/g, '');\nconst remetente = digits(filtro.remoteJid);\n\nconst textoLower = (filtro.mensagem || '').toLowerCase();\nconst frasesBot = [\n  'novo pedido!',\n  'atendente virtual',\n  'upvia automa',\n  'seu pedido est',\n  'para organizar seu pedido',\n  'confirmar alguns dados',\n  'nome completo e um telefone',\n  'maps.google.com'\n];\nconst pareceBot = frasesBot.some(f => textoLower.includes(f));\n\n// Se o texto nao parece resposta de bot, nem precisa gastar uma query - segue direto.\nif (!pareceBot) {\n  return [{ json: negocio }];\n}\n\nlet entregadores = [];\ntry {\n  const resposta = await this.helpers.httpRequest({\n    method: 'GET',\n    url: 'https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/entregadores_gas?negocio_id=eq.' + negocio.id + '&select=jid_whatsapp',\n    headers: {\n      apikey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M',\n      Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M',\n    },\n    json: true,\n  });\n  entregadores = Array.isArray(resposta) ? resposta : [];\n} catch (e) {\n  entregadores = [];\n}\n\nconst ehEntregador = entregadores.some(e => {\n  const d = digits(e.jid_whatsapp);\n  return d && remetente && (d.endsWith(remetente.slice(-8)) || remetente.endsWith(d.slice(-8)));\n});\n\nconst ehDono = digits(negocio.telefone_admin) && remetente && remetente.endsWith(digits(negocio.telefone_admin).slice(-8));\n\nif (ehEntregador || ehDono) {\n  // Numero de entregador/dono mandando texto com cara de resposta do proprio bot: eco confirmado, descarta.\n  return [];\n}\n\nreturn [{ json: negocio }];"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Filtrar e Extrair",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar e Extrair": {
+      "main": [
+        [
+          {
+            "node": "Ignorar fromMe e Grupos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ignorar fromMe e Grupos": {
+      "main": [
+        [
+          {
+            "node": "Check Duplicate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Carregar Dados Negocio": {
+      "main": [
+        [
+          {
+            "node": "Verificar Eco Entregador GAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Carregar Produtos": {
+      "main": [
+        [
+          {
+            "node": "Carregar Historico Cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Carregar Historico Cliente": {
+      "main": [
+        [
+          {
+            "node": "Montar Contexto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Contexto": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Confirmar Pedido?": {
+      "main": [
+        [
+          {
+            "node": "Geocodificar Endereco",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder Cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Entregadores": {
+      "main": [
+        [
+          {
+            "node": "Calcular Entregador Mais Proximo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calcular Entregador Mais Proximo": {
+      "main": [
+        [
+          {
+            "node": "Notificar Entregador",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notificar Entregador": {
+      "main": [
+        [
+          {
+            "node": "Salvar Pedido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Salvar Pedido": {
+      "main": [
+        [
+          {
+            "node": "Responder Cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Responder Cliente": {
+      "main": [
+        [
+          {
+            "node": "Salvar Historico",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Duplicate": {
+      "main": [
+        [
+          {
+            "node": "Carregar Dados Negocio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Processar Resposta Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Processar Resposta Agent": {
+      "main": [
+        [
+          {
+            "node": "Confirmar Pedido?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model GAS": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "confirmar_pedido": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Geocodificar Endereco": {
+      "main": [
+        [
+          {
+            "node": "Extrair Coordenadas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Coordenadas": {
+      "main": [
+        [
+          {
+            "node": "Buscar Entregadores",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decisor Central GAS": {
+      "main": [
+        [
+          {
+            "node": "Switch Acao GAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Acao GAS": {
+      "main": [
+        [
+          {
+            "node": "Supabase - Ativar Trava GAS",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Supabase - Buscar Sessao Trava GAS",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "E Relatorio? GAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase - Buscar Sessao Trava GAS": {
+      "main": [
+        [
+          {
+            "node": "Humano Assumiu? GAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Humano Assumiu? GAS": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Timeout Expirado? GAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Timeout Expirado? GAS": {
+      "main": [
+        [
+          {
+            "node": "Supabase - Resetar Trava GAS",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Switch Midia GAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase - Resetar Trava GAS": {
+      "main": [
+        [
+          {
+            "node": "Switch Midia GAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Midia GAS": {
+      "main": [
+        [
+          {
+            "node": "Buscar Audio Base64 GAS",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Buscar Imagem Base64 GAS",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Buscar Documento Base64 GAS",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Unificar Mensagem GAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Audio Base64 GAS": {
+      "main": [
+        [
+          {
+            "node": "Converter Audio GAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Converter Audio GAS": {
+      "main": [
+        [
+          {
+            "node": "Transcrever Audio GAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcrever Audio GAS": {
+      "main": [
+        [
+          {
+            "node": "Unificar Mensagem GAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Imagem Base64 GAS": {
+      "main": [
+        [
+          {
+            "node": "Converter Imagem GAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Converter Imagem GAS": {
+      "main": [
+        [
+          {
+            "node": "Analisar Imagem GAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analisar Imagem GAS": {
+      "main": [
+        [
+          {
+            "node": "Unificar Mensagem GAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Documento Base64 GAS": {
+      "main": [
+        [
+          {
+            "node": "Converter Documento GAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Converter Documento GAS": {
+      "main": [
+        [
+          {
+            "node": "Extrair Texto Documento GAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Texto Documento GAS": {
+      "main": [
+        [
+          {
+            "node": "Unificar Mensagem GAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unificar Mensagem GAS": {
+      "main": [
+        [
+          {
+            "node": "Carregar Produtos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "E Relatorio? GAS": {
+      "main": [
+        [
+          {
+            "node": "Parsear Periodo Relatorio GAS",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Agente Consulta Atendimento GAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parsear Periodo Relatorio GAS": {
+      "main": [
+        [
+          {
+            "node": "Buscar Pedidos Periodo GAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Pedidos Periodo GAS": {
+      "main": [
+        [
+          {
+            "node": "Buscar Entregadores Loja Relatorio GAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Entregadores Loja Relatorio GAS": {
+      "main": [
+        [
+          {
+            "node": "Montar Relatorio Sob Demanda GAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Relatorio Sob Demanda GAS": {
+      "main": [
+        [
+          {
+            "node": "Responder Dono GAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente Consulta Atendimento GAS": {
+      "main": [
+        [
+          {
+            "node": "Extrair Resposta Agente Consulta GAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Resposta Agente Consulta GAS": {
+      "main": [
+        [
+          {
+            "node": "Responder Dono GAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model Consulta GAS": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente Consulta Atendimento GAS",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "consultar_pedidos GAS": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Consulta Atendimento GAS",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verificar Eco Entregador GAS": {
+      "main": [
+        [
+          {
+            "node": "Decisor Central GAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
