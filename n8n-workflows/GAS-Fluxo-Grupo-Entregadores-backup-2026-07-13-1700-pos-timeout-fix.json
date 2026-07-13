@@ -1,0 +1,492 @@
+﻿{
+    "updatedAt":  "2026-07-13T16:39:03.770Z",
+    "createdAt":  "2026-06-24T14:30:49.849Z",
+    "id":  "COW6lbVrWnYJpWUA",
+    "name":  "GAS - Fluxo Grupo Entregadores",
+    "description":  null,
+    "active":  true,
+    "isArchived":  false,
+    "nodes":  [
+                  {
+                      "parameters":  {
+                                         "httpMethod":  "POST",
+                                         "path":  "gas-grupo-localizacao",
+                                         "responseMode":  "lastNode",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "f59ef7c8-34ec-479d-85f8-0c1fdcc68a51",
+                      "name":  "Webhook Grupo",
+                      "type":  "n8n-nodes-base.webhook",
+                      "typeVersion":  1,
+                      "position":  [
+                                       32,
+                                       352
+                                   ],
+                      "webhookId":  "02cdec65-dd3b-4691-a269-317647a33519"
+                  },
+                  {
+                      "parameters":  {
+                                         "url":  "=https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/negocios_gas?instancia_whatsapp=eq.{{$json.instancia}}\u0026select=id",
+                                         "sendHeaders":  true,
+                                         "headerParameters":  {
+                                                                  "parameters":  [
+                                                                                     {
+                                                                                         "name":  "apikey",
+                                                                                         "value":  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+                                                                                     },
+                                                                                     {
+                                                                                         "name":  "Authorization",
+                                                                                         "value":  "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+                                                                                     }
+                                                                                 ]
+                                                              },
+                                         "sendBody":  false,
+                                         "options":  {
+                                                         "timeout":  12000
+                                                     },
+                                         "method":  "GET"
+                                     },
+                      "id":  "112829ca-583f-4c35-9900-182abc7ee5b6",
+                      "name":  "Buscar Negocio",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4,
+                      "position":  [
+                                       736,
+                                       16
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "method":  "POST",
+                                         "url":  "https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/entregadores_gas",
+                                         "sendHeaders":  true,
+                                         "headerParameters":  {
+                                                                  "parameters":  [
+                                                                                     {
+                                                                                         "name":  "apikey",
+                                                                                         "value":  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+                                                                                     },
+                                                                                     {
+                                                                                         "name":  "Authorization",
+                                                                                         "value":  "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+                                                                                     },
+                                                                                     {
+                                                                                         "name":  "Prefer",
+                                                                                         "value":  "resolution=merge-duplicates"
+                                                                                     },
+                                                                                     {
+                                                                                         "name":  "Content-Type",
+                                                                                         "value":  "application/json"
+                                                                                     }
+                                                                                 ]
+                                                              },
+                                         "sendBody":  true,
+                                         "specifyBody":  "json",
+                                         "jsonBody":  "={{ JSON.stringify({\n  negocio_id: $json.id,\n  jid_whatsapp: $(\u0027Extrair Dados1\u0027).first().json.jid_entregador,\n  lat: $(\u0027Extrair Dados1\u0027).first().json.lat,\n  long: $(\u0027Extrair Dados1\u0027).first().json.long,\n  status: \"disponivel\",\n  atualizado_em: $now.toISO()\n}) }}",
+                                         "options":  {
+                                                         "timeout":  12000
+                                                     }
+                                     },
+                      "id":  "dfd65155-f570-41ff-9ade-ebe280e6bf9f",
+                      "name":  "Atualizar Entregador",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4,
+                      "position":  [
+                                       944,
+                                       336
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "values":  {
+                                                        "string":  [
+                                                                       {
+                                                                           "name":  "instancia",
+                                                                           "value":  "={{$json.body.instance}}"
+                                                                       },
+                                                                       {
+                                                                           "name":  "jid_entregador",
+                                                                           "value":  "={{$json.body.data.key.participant}}"
+                                                                       },
+                                                                       {
+                                                                           "name":  "lat",
+                                                                           "value":  "={{$json.body.data.message.liveLocationMessage.degreesLatitude}}"
+                                                                       },
+                                                                       {
+                                                                           "name":  "long",
+                                                                           "value":  "={{$json.body.data.message.liveLocationMessage.degreesLongitude}}"
+                                                                       }
+                                                                   ]
+                                                    },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "e97ce7f5-5d07-42a9-bf9e-0e62c2695b72",
+                      "name":  "Extrair Dados1",
+                      "type":  "n8n-nodes-base.set",
+                      "typeVersion":  1,
+                      "position":  [
+                                       496,
+                                       336
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "conditions":  {
+                                                            "options":  {
+                                                                            "caseSensitive":  true,
+                                                                            "leftValue":  "",
+                                                                            "typeValidation":  "strict",
+                                                                            "version":  3
+                                                                        },
+                                                            "conditions":  [
+                                                                               {
+                                                                                   "id":  "8ace406f-f7db-4554-8fd3-b1512cbf4a52",
+                                                                                   "leftValue":  "={{ $json.body.data.messageType }}",
+                                                                                   "rightValue":  "liveLocationMessage",
+                                                                                   "operator":  {
+                                                                                                    "type":  "string",
+                                                                                                    "operation":  "equals",
+                                                                                                    "name":  "filter.operator.equals"
+                                                                                                }
+                                                                               }
+                                                                           ],
+                                                            "combinator":  "and"
+                                                        },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.if",
+                      "typeVersion":  2.3,
+                      "position":  [
+                                       240,
+                                       352
+                                   ],
+                      "id":  "31fb5c7c-5974-4ccc-b17d-ba9d2b3e50ae",
+                      "name":  "If"
+                  }
+              ],
+    "connections":  {
+                        "Webhook Grupo":  {
+                                              "main":  [
+                                                           [
+                                                               {
+                                                                   "node":  "If",
+                                                                   "type":  "main",
+                                                                   "index":  0
+                                                               }
+                                                           ]
+                                                       ]
+                                          },
+                        "Buscar Negocio":  {
+                                               "main":  [
+                                                            [
+                                                                {
+                                                                    "node":  "Atualizar Entregador",
+                                                                    "type":  "main",
+                                                                    "index":  0
+                                                                }
+                                                            ]
+                                                        ]
+                                           },
+                        "Extrair Dados1":  {
+                                               "main":  [
+                                                            [
+                                                                {
+                                                                    "node":  "Buscar Negocio",
+                                                                    "type":  "main",
+                                                                    "index":  0
+                                                                }
+                                                            ]
+                                                        ]
+                                           },
+                        "If":  {
+                                   "main":  [
+                                                [
+                                                    {
+                                                        "node":  "Extrair Dados1",
+                                                        "type":  "main",
+                                                        "index":  0
+                                                    }
+                                                ]
+                                            ]
+                               }
+                    },
+    "settings":  {
+                     "executionOrder":  "v1",
+                     "binaryMode":  "separate"
+                 },
+    "staticData":  null,
+    "meta":  null,
+    "pinData":  {
+
+                },
+    "versionId":  "cb75d50d-daaf-455a-a475-b833a6c31402",
+    "activeVersionId":  "cb75d50d-daaf-455a-a475-b833a6c31402",
+    "versionCounter":  114,
+    "triggerCount":  1,
+    "shared":  [
+                   {
+                       "updatedAt":  "2026-06-24T14:30:49.854Z",
+                       "createdAt":  "2026-06-24T14:30:49.854Z",
+                       "role":  "workflow:owner",
+                       "workflowId":  "COW6lbVrWnYJpWUA",
+                       "projectId":  "wvVR5bxXzTLlLBhJ",
+                       "project":  {
+                                       "updatedAt":  "2026-06-24T13:23:41.357Z",
+                                       "createdAt":  "2026-05-23T22:44:43.627Z",
+                                       "id":  "wvVR5bxXzTLlLBhJ",
+                                       "name":  "Elisa Andrade \u003cupvianegocios@gmail.com\u003e",
+                                       "type":  "personal",
+                                       "icon":  null,
+                                       "description":  null,
+                                       "creatorId":  "63b6bda0-d1aa-4abc-beaa-0fbb599f2288"
+                                   }
+                   }
+               ],
+    "tags":  [
+
+             ],
+    "activeVersion":  {
+                          "updatedAt":  "2026-07-13T16:39:03.774Z",
+                          "createdAt":  "2026-07-13T16:39:03.774Z",
+                          "versionId":  "cb75d50d-daaf-455a-a475-b833a6c31402",
+                          "workflowId":  "COW6lbVrWnYJpWUA",
+                          "nodes":  [
+                                        {
+                                            "parameters":  {
+                                                               "httpMethod":  "POST",
+                                                               "path":  "gas-grupo-localizacao",
+                                                               "responseMode":  "lastNode",
+                                                               "options":  {
+
+                                                                           }
+                                                           },
+                                            "id":  "f59ef7c8-34ec-479d-85f8-0c1fdcc68a51",
+                                            "name":  "Webhook Grupo",
+                                            "type":  "n8n-nodes-base.webhook",
+                                            "typeVersion":  1,
+                                            "position":  [
+                                                             32,
+                                                             352
+                                                         ],
+                                            "webhookId":  "02cdec65-dd3b-4691-a269-317647a33519"
+                                        },
+                                        {
+                                            "parameters":  {
+                                                               "url":  "=https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/negocios_gas?instancia_whatsapp=eq.{{$json.instancia}}\u0026select=id",
+                                                               "sendHeaders":  true,
+                                                               "headerParameters":  {
+                                                                                        "parameters":  [
+                                                                                                           {
+                                                                                                               "name":  "apikey",
+                                                                                                               "value":  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+                                                                                                           },
+                                                                                                           {
+                                                                                                               "name":  "Authorization",
+                                                                                                               "value":  "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+                                                                                                           }
+                                                                                                       ]
+                                                                                    },
+                                                               "sendBody":  false,
+                                                               "options":  {
+                                                                               "timeout":  12000
+                                                                           },
+                                                               "method":  "GET"
+                                                           },
+                                            "id":  "112829ca-583f-4c35-9900-182abc7ee5b6",
+                                            "name":  "Buscar Negocio",
+                                            "type":  "n8n-nodes-base.httpRequest",
+                                            "typeVersion":  4,
+                                            "position":  [
+                                                             736,
+                                                             16
+                                                         ]
+                                        },
+                                        {
+                                            "parameters":  {
+                                                               "method":  "POST",
+                                                               "url":  "https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/entregadores_gas",
+                                                               "sendHeaders":  true,
+                                                               "headerParameters":  {
+                                                                                        "parameters":  [
+                                                                                                           {
+                                                                                                               "name":  "apikey",
+                                                                                                               "value":  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+                                                                                                           },
+                                                                                                           {
+                                                                                                               "name":  "Authorization",
+                                                                                                               "value":  "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+                                                                                                           },
+                                                                                                           {
+                                                                                                               "name":  "Prefer",
+                                                                                                               "value":  "resolution=merge-duplicates"
+                                                                                                           },
+                                                                                                           {
+                                                                                                               "name":  "Content-Type",
+                                                                                                               "value":  "application/json"
+                                                                                                           }
+                                                                                                       ]
+                                                                                    },
+                                                               "sendBody":  true,
+                                                               "specifyBody":  "json",
+                                                               "jsonBody":  "={{ JSON.stringify({\n  negocio_id: $json.id,\n  jid_whatsapp: $(\u0027Extrair Dados1\u0027).first().json.jid_entregador,\n  lat: $(\u0027Extrair Dados1\u0027).first().json.lat,\n  long: $(\u0027Extrair Dados1\u0027).first().json.long,\n  status: \"disponivel\",\n  atualizado_em: $now.toISO()\n}) }}",
+                                                               "options":  {
+                                                                               "timeout":  12000
+                                                                           }
+                                                           },
+                                            "id":  "dfd65155-f570-41ff-9ade-ebe280e6bf9f",
+                                            "name":  "Atualizar Entregador",
+                                            "type":  "n8n-nodes-base.httpRequest",
+                                            "typeVersion":  4,
+                                            "position":  [
+                                                             944,
+                                                             336
+                                                         ]
+                                        },
+                                        {
+                                            "parameters":  {
+                                                               "values":  {
+                                                                              "string":  [
+                                                                                             {
+                                                                                                 "name":  "instancia",
+                                                                                                 "value":  "={{$json.body.instance}}"
+                                                                                             },
+                                                                                             {
+                                                                                                 "name":  "jid_entregador",
+                                                                                                 "value":  "={{$json.body.data.key.participant}}"
+                                                                                             },
+                                                                                             {
+                                                                                                 "name":  "lat",
+                                                                                                 "value":  "={{$json.body.data.message.liveLocationMessage.degreesLatitude}}"
+                                                                                             },
+                                                                                             {
+                                                                                                 "name":  "long",
+                                                                                                 "value":  "={{$json.body.data.message.liveLocationMessage.degreesLongitude}}"
+                                                                                             }
+                                                                                         ]
+                                                                          },
+                                                               "options":  {
+
+                                                                           }
+                                                           },
+                                            "id":  "e97ce7f5-5d07-42a9-bf9e-0e62c2695b72",
+                                            "name":  "Extrair Dados1",
+                                            "type":  "n8n-nodes-base.set",
+                                            "typeVersion":  1,
+                                            "position":  [
+                                                             496,
+                                                             336
+                                                         ]
+                                        },
+                                        {
+                                            "parameters":  {
+                                                               "conditions":  {
+                                                                                  "options":  {
+                                                                                                  "caseSensitive":  true,
+                                                                                                  "leftValue":  "",
+                                                                                                  "typeValidation":  "strict",
+                                                                                                  "version":  3
+                                                                                              },
+                                                                                  "conditions":  [
+                                                                                                     {
+                                                                                                         "id":  "8ace406f-f7db-4554-8fd3-b1512cbf4a52",
+                                                                                                         "leftValue":  "={{ $json.body.data.messageType }}",
+                                                                                                         "rightValue":  "liveLocationMessage",
+                                                                                                         "operator":  {
+                                                                                                                          "type":  "string",
+                                                                                                                          "operation":  "equals",
+                                                                                                                          "name":  "filter.operator.equals"
+                                                                                                                      }
+                                                                                                     }
+                                                                                                 ],
+                                                                                  "combinator":  "and"
+                                                                              },
+                                                               "options":  {
+
+                                                                           }
+                                                           },
+                                            "type":  "n8n-nodes-base.if",
+                                            "typeVersion":  2.3,
+                                            "position":  [
+                                                             240,
+                                                             352
+                                                         ],
+                                            "id":  "31fb5c7c-5974-4ccc-b17d-ba9d2b3e50ae",
+                                            "name":  "If"
+                                        }
+                                    ],
+                          "connections":  {
+                                              "Webhook Grupo":  {
+                                                                    "main":  [
+                                                                                 [
+                                                                                     {
+                                                                                         "node":  "If",
+                                                                                         "type":  "main",
+                                                                                         "index":  0
+                                                                                     }
+                                                                                 ]
+                                                                             ]
+                                                                },
+                                              "Buscar Negocio":  {
+                                                                     "main":  [
+                                                                                  [
+                                                                                      {
+                                                                                          "node":  "Atualizar Entregador",
+                                                                                          "type":  "main",
+                                                                                          "index":  0
+                                                                                      }
+                                                                                  ]
+                                                                              ]
+                                                                 },
+                                              "Extrair Dados1":  {
+                                                                     "main":  [
+                                                                                  [
+                                                                                      {
+                                                                                          "node":  "Buscar Negocio",
+                                                                                          "type":  "main",
+                                                                                          "index":  0
+                                                                                      }
+                                                                                  ]
+                                                                              ]
+                                                                 },
+                                              "If":  {
+                                                         "main":  [
+                                                                      [
+                                                                          {
+                                                                              "node":  "Extrair Dados1",
+                                                                              "type":  "main",
+                                                                              "index":  0
+                                                                          }
+                                                                      ]
+                                                                  ]
+                                                     }
+                                          },
+                          "authors":  "Elisa Andrade",
+                          "name":  null,
+                          "description":  null,
+                          "autosaved":  false,
+                          "workflowPublishHistory":  [
+                                                         {
+                                                             "createdAt":  "2026-07-13T16:39:03.881Z",
+                                                             "id":  668,
+                                                             "workflowId":  "COW6lbVrWnYJpWUA",
+                                                             "versionId":  "cb75d50d-daaf-455a-a475-b833a6c31402",
+                                                             "event":  "activated",
+                                                             "userId":  "63b6bda0-d1aa-4abc-beaa-0fbb599f2288"
+                                                         },
+                                                         {
+                                                             "createdAt":  "2026-07-13T16:39:03.847Z",
+                                                             "id":  667,
+                                                             "workflowId":  "COW6lbVrWnYJpWUA",
+                                                             "versionId":  "cb75d50d-daaf-455a-a475-b833a6c31402",
+                                                             "event":  "deactivated",
+                                                             "userId":  "63b6bda0-d1aa-4abc-beaa-0fbb599f2288"
+                                                         }
+                                                     ]
+                      }
+}

@@ -1,0 +1,210 @@
+{
+  "name": "GAS - Fluxo Grupo Entregadores",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "gas-grupo-localizacao",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "f59ef7c8-34ec-479d-85f8-0c1fdcc68a51",
+      "name": "Webhook Grupo",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        32,
+        352
+      ],
+      "webhookId": "02cdec65-dd3b-4691-a269-317647a33519"
+    },
+    {
+      "parameters": {
+        "url": "=https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/negocios_gas?instancia_whatsapp=eq.{{$json.instancia}}&select=id",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            }
+          ]
+        },
+        "sendBody": false,
+        "options": {
+          "timeout": 12000
+        },
+        "method": "GET"
+      },
+      "id": "112829ca-583f-4c35-9900-182abc7ee5b6",
+      "name": "Buscar Negocio",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        736,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/entregadores_gas",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            },
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  negocio_id: $json.id,\n  jid_whatsapp: $('Extrair Dados1').first().json.jid_entregador,\n  lat: $('Extrair Dados1').first().json.lat,\n  long: $('Extrair Dados1').first().json.long,\n  status: \"disponivel\",\n  atualizado_em: $now.toISO()\n}) }}",
+        "options": {
+          "timeout": 12000
+        }
+      },
+      "id": "dfd65155-f570-41ff-9ade-ebe280e6bf9f",
+      "name": "Atualizar Entregador",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        944,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "instancia",
+              "value": "={{$json.body.instance}}"
+            },
+            {
+              "name": "jid_entregador",
+              "value": "={{$json.body.data.key.participant}}"
+            },
+            {
+              "name": "lat",
+              "value": "={{$json.body.data.message.liveLocationMessage.degreesLatitude}}"
+            },
+            {
+              "name": "long",
+              "value": "={{$json.body.data.message.liveLocationMessage.degreesLongitude}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e97ce7f5-5d07-42a9-bf9e-0e62c2695b72",
+      "name": "Extrair Dados1",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        496,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "8ace406f-f7db-4554-8fd3-b1512cbf4a52",
+              "leftValue": "={{ $json.body.data.messageType }}",
+              "rightValue": "liveLocationMessage",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        240,
+        352
+      ],
+      "id": "31fb5c7c-5974-4ccc-b17d-ba9d2b3e50ae",
+      "name": "If"
+    }
+  ],
+  "connections": {
+    "Webhook Grupo": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Negocio": {
+      "main": [
+        [
+          {
+            "node": "Atualizar Entregador",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Dados1": {
+      "main": [
+        [
+          {
+            "node": "Buscar Negocio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Extrair Dados1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
