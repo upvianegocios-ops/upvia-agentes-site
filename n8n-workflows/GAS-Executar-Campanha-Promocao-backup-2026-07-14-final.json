@@ -1,0 +1,679 @@
+{
+  "updatedAt": "2026-07-14T14:20:27.406Z",
+  "createdAt": "2026-07-14T14:20:27.406Z",
+  "id": "bpJR6oFz3MkjadcH",
+  "name": "GAS - Executar Campanha Promocao",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "pc-webhook-01",
+      "name": "Webhook Campanha Promocao",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        200,
+        300
+      ],
+      "webhookId": "gas-executar-promocao-wh",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "gas-executar-promocao",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "pc-buscapromo-01",
+      "name": "Buscar Promocao GAS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        420,
+        300
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/promocoes_gas?id=eq.{{ $json.body.promocao_id }}&select=*",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "pc-buscanegocio-01",
+      "name": "Buscar Negocio Promocao GAS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        860,
+        300
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/negocios_gas?id=eq.{{ $json.negocio_id }}&select=*",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "pc-buscaclientes-01",
+      "name": "Buscar Clientes Negocio GAS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1300,
+        300
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/dados_clientes_gas?negocio_id=eq.{{ $json.id }}&select=id,remote_jid,nome",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "pc-combinar-01",
+      "name": "Combinar Dados Campanha GAS",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1520,
+        300
+      ],
+      "parameters": {
+        "jsCode": "const promo = $('Buscar Promocao GAS').first().json;\nconst negocio = $('Buscar Negocio Promocao GAS').first().json;\nconst clientes = $input.all().map(i => i.json);\n\nreturn clientes.map(c => ({\n  json: {\n    cliente_id: c.id,\n    remote_jid: c.remote_jid,\n    cliente_nome: c.nome || 'cliente',\n    promocao_id: promo.id,\n    texto_campanha: promo.texto_campanha,\n    instancia: negocio.instancia_whatsapp,\n  }\n}));"
+      }
+    },
+    {
+      "id": "pc-loop-01",
+      "name": "Loop Clientes Campanha GAS",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1740,
+        300
+      ],
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      }
+    },
+    {
+      "id": "pc-enviar-01",
+      "name": "Enviar Campanha WhatsApp GAS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1960,
+        200
+      ],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "=https://evo.upviaagentes.com/message/sendText/{{ $json.instancia }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: $json.remote_jid, text: $json.texto_campanha }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "pc-delay-01",
+      "name": "Anti-Spam Delay Campanha GAS",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2180,
+        200
+      ],
+      "webhookId": "pc-delay-webhook-01",
+      "parameters": {
+        "unit": "seconds",
+        "amount": 3
+      }
+    },
+    {
+      "id": "pc-statusenviada-01",
+      "name": "Atualizar Status Promocao Enviada GAS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1960,
+        420
+      ],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/promocoes_gas?id=eq.{{ $('Buscar Promocao GAS').first().json.id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: 'enviada', executado_em: $now.toISO() }) }}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Campanha Promocao": {
+      "main": [
+        [
+          {
+            "node": "Buscar Promocao GAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Promocao GAS": {
+      "main": [
+        [
+          {
+            "node": "Buscar Negocio Promocao GAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Negocio Promocao GAS": {
+      "main": [
+        [
+          {
+            "node": "Buscar Clientes Negocio GAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Clientes Negocio GAS": {
+      "main": [
+        [
+          {
+            "node": "Combinar Dados Campanha GAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combinar Dados Campanha GAS": {
+      "main": [
+        [
+          {
+            "node": "Loop Clientes Campanha GAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Clientes Campanha GAS": {
+      "main": [
+        [
+          {
+            "node": "Enviar Campanha WhatsApp GAS",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Atualizar Status Promocao Enviada GAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Campanha WhatsApp GAS": {
+      "main": [
+        [
+          {
+            "node": "Anti-Spam Delay Campanha GAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anti-Spam Delay Campanha GAS": {
+      "main": [
+        [
+          {
+            "node": "Loop Clientes Campanha GAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "20b4720e-9f46-46c9-b80d-b3bc1f06668d",
+  "activeVersionId": "20b4720e-9f46-46c9-b80d-b3bc1f06668d",
+  "versionCounter": 3,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-07-14T14:20:27.409Z",
+      "createdAt": "2026-07-14T14:20:27.409Z",
+      "role": "workflow:owner",
+      "workflowId": "bpJR6oFz3MkjadcH",
+      "projectId": "wvVR5bxXzTLlLBhJ",
+      "project": {
+        "updatedAt": "2026-06-24T13:23:41.357Z",
+        "createdAt": "2026-05-23T22:44:43.627Z",
+        "id": "wvVR5bxXzTLlLBhJ",
+        "name": "Elisa Andrade <upvianegocios@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "63b6bda0-d1aa-4abc-beaa-0fbb599f2288"
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-07-14T14:20:27.410Z",
+    "createdAt": "2026-07-14T14:20:27.410Z",
+    "versionId": "20b4720e-9f46-46c9-b80d-b3bc1f06668d",
+    "workflowId": "bpJR6oFz3MkjadcH",
+    "nodes": [
+      {
+        "id": "pc-webhook-01",
+        "name": "Webhook Campanha Promocao",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2,
+        "position": [
+          200,
+          300
+        ],
+        "webhookId": "gas-executar-promocao-wh",
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "gas-executar-promocao",
+          "responseMode": "onReceived",
+          "options": {}
+        }
+      },
+      {
+        "id": "pc-buscapromo-01",
+        "name": "Buscar Promocao GAS",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          420,
+          300
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "=https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/promocoes_gas?id=eq.{{ $json.body.promocao_id }}&select=*",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+              },
+              {
+                "name": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+              }
+            ]
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "pc-buscanegocio-01",
+        "name": "Buscar Negocio Promocao GAS",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          860,
+          300
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "=https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/negocios_gas?id=eq.{{ $json.negocio_id }}&select=*",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+              },
+              {
+                "name": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+              }
+            ]
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "pc-buscaclientes-01",
+        "name": "Buscar Clientes Negocio GAS",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          1300,
+          300
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "=https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/dados_clientes_gas?negocio_id=eq.{{ $json.id }}&select=id,remote_jid,nome",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+              },
+              {
+                "name": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+              }
+            ]
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "pc-combinar-01",
+        "name": "Combinar Dados Campanha GAS",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1520,
+          300
+        ],
+        "parameters": {
+          "jsCode": "const promo = $('Buscar Promocao GAS').first().json;\nconst negocio = $('Buscar Negocio Promocao GAS').first().json;\nconst clientes = $input.all().map(i => i.json);\n\nreturn clientes.map(c => ({\n  json: {\n    cliente_id: c.id,\n    remote_jid: c.remote_jid,\n    cliente_nome: c.nome || 'cliente',\n    promocao_id: promo.id,\n    texto_campanha: promo.texto_campanha,\n    instancia: negocio.instancia_whatsapp,\n  }\n}));"
+        }
+      },
+      {
+        "id": "pc-loop-01",
+        "name": "Loop Clientes Campanha GAS",
+        "type": "n8n-nodes-base.splitInBatches",
+        "typeVersion": 3,
+        "position": [
+          1740,
+          300
+        ],
+        "parameters": {
+          "batchSize": 1,
+          "options": {}
+        }
+      },
+      {
+        "id": "pc-enviar-01",
+        "name": "Enviar Campanha WhatsApp GAS",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          1960,
+          200
+        ],
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "method": "POST",
+          "url": "=https://evo.upviaagentes.com/message/sendText/{{ $json.instancia }}",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify({ number: $json.remote_jid, text: $json.texto_campanha }) }}",
+          "options": {}
+        }
+      },
+      {
+        "id": "pc-delay-01",
+        "name": "Anti-Spam Delay Campanha GAS",
+        "type": "n8n-nodes-base.wait",
+        "typeVersion": 1.1,
+        "position": [
+          2180,
+          200
+        ],
+        "webhookId": "pc-delay-webhook-01",
+        "parameters": {
+          "unit": "seconds",
+          "amount": 3
+        }
+      },
+      {
+        "id": "pc-statusenviada-01",
+        "name": "Atualizar Status Promocao Enviada GAS",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          1960,
+          420
+        ],
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "method": "PATCH",
+          "url": "=https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/promocoes_gas?id=eq.{{ $('Buscar Promocao GAS').first().json.id }}",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+              },
+              {
+                "name": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify({ status: 'enviada', executado_em: $now.toISO() }) }}",
+          "options": {}
+        }
+      }
+    ],
+    "connections": {
+      "Webhook Campanha Promocao": {
+        "main": [
+          [
+            {
+              "node": "Buscar Promocao GAS",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Buscar Promocao GAS": {
+        "main": [
+          [
+            {
+              "node": "Buscar Negocio Promocao GAS",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Buscar Negocio Promocao GAS": {
+        "main": [
+          [
+            {
+              "node": "Buscar Clientes Negocio GAS",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Buscar Clientes Negocio GAS": {
+        "main": [
+          [
+            {
+              "node": "Combinar Dados Campanha GAS",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Combinar Dados Campanha GAS": {
+        "main": [
+          [
+            {
+              "node": "Loop Clientes Campanha GAS",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Loop Clientes Campanha GAS": {
+        "main": [
+          [
+            {
+              "node": "Enviar Campanha WhatsApp GAS",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Atualizar Status Promocao Enviada GAS",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Enviar Campanha WhatsApp GAS": {
+        "main": [
+          [
+            {
+              "node": "Anti-Spam Delay Campanha GAS",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Anti-Spam Delay Campanha GAS": {
+        "main": [
+          [
+            {
+              "node": "Loop Clientes Campanha GAS",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Elisa Andrade",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-07-14T14:20:27.578Z",
+        "id": 724,
+        "workflowId": "bpJR6oFz3MkjadcH",
+        "versionId": "20b4720e-9f46-46c9-b80d-b3bc1f06668d",
+        "event": "activated",
+        "userId": "63b6bda0-d1aa-4abc-beaa-0fbb599f2288"
+      }
+    ]
+  }
+}
