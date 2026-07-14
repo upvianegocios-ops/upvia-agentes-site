@@ -1,0 +1,958 @@
+﻿{
+    "updatedAt":  "2026-07-14T03:59:24.768Z",
+    "createdAt":  "2026-06-24T14:30:49.849Z",
+    "id":  "COW6lbVrWnYJpWUA",
+    "name":  "GAS - Fluxo Grupo Entregadores",
+    "description":  null,
+    "active":  true,
+    "isArchived":  false,
+    "nodes":  [
+                  {
+                      "parameters":  {
+                                         "httpMethod":  "POST",
+                                         "path":  "gas-grupo-localizacao",
+                                         "responseMode":  "lastNode",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "f59ef7c8-34ec-479d-85f8-0c1fdcc68a51",
+                      "name":  "Webhook Grupo",
+                      "type":  "n8n-nodes-base.webhook",
+                      "typeVersion":  1,
+                      "position":  [
+                                       32,
+                                       352
+                                   ],
+                      "webhookId":  "02cdec65-dd3b-4691-a269-317647a33519"
+                  },
+                  {
+                      "parameters":  {
+                                         "url":  "=https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/negocios_gas?instancia_whatsapp=eq.{{$json.instancia}}\u0026select=id",
+                                         "sendHeaders":  true,
+                                         "headerParameters":  {
+                                                                  "parameters":  [
+                                                                                     {
+                                                                                         "name":  "apikey",
+                                                                                         "value":  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+                                                                                     },
+                                                                                     {
+                                                                                         "name":  "Authorization",
+                                                                                         "value":  "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+                                                                                     }
+                                                                                 ]
+                                                              },
+                                         "options":  {
+                                                         "timeout":  12000
+                                                     }
+                                     },
+                      "id":  "112829ca-583f-4c35-9900-182abc7ee5b6",
+                      "name":  "Buscar Negocio",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4,
+                      "position":  [
+                                       736,
+                                       336
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "method":  "POST",
+                                         "url":  "https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/entregadores_gas",
+                                         "sendHeaders":  true,
+                                         "headerParameters":  {
+                                                                  "parameters":  [
+                                                                                     {
+                                                                                         "name":  "apikey",
+                                                                                         "value":  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+                                                                                     },
+                                                                                     {
+                                                                                         "name":  "Authorization",
+                                                                                         "value":  "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+                                                                                     },
+                                                                                     {
+                                                                                         "name":  "Prefer",
+                                                                                         "value":  "resolution=merge-duplicates"
+                                                                                     },
+                                                                                     {
+                                                                                         "name":  "Content-Type",
+                                                                                         "value":  "application/json"
+                                                                                     }
+                                                                                 ]
+                                                              },
+                                         "sendBody":  true,
+                                         "specifyBody":  "json",
+                                         "jsonBody":  "={{ JSON.stringify({\n  negocio_id: $json.id,\n  jid_whatsapp: $(\u0027Extrair Dados1\u0027).first().json.jid_entregador,\n  lat: $(\u0027Extrair Dados1\u0027).first().json.lat,\n  long: $(\u0027Extrair Dados1\u0027).first().json.long,\n  status: \"disponivel\",\n  atualizado_em: $now.toISO()\n}) }}",
+                                         "options":  {
+                                                         "timeout":  12000
+                                                     }
+                                     },
+                      "id":  "dfd65155-f570-41ff-9ade-ebe280e6bf9f",
+                      "name":  "Atualizar Entregador",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4,
+                      "position":  [
+                                       944,
+                                       336
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "values":  {
+                                                        "string":  [
+                                                                       {
+                                                                           "name":  "instancia",
+                                                                           "value":  "={{$json.body.instance}}"
+                                                                       },
+                                                                       {
+                                                                           "name":  "jid_entregador",
+                                                                           "value":  "={{$json.body.data.key.participant}}"
+                                                                       },
+                                                                       {
+                                                                           "name":  "lat",
+                                                                           "value":  "={{$json.body.data.message.liveLocationMessage.degreesLatitude}}"
+                                                                       },
+                                                                       {
+                                                                           "name":  "long",
+                                                                           "value":  "={{$json.body.data.message.liveLocationMessage.degreesLongitude}}"
+                                                                       }
+                                                                   ]
+                                                    },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "e97ce7f5-5d07-42a9-bf9e-0e62c2695b72",
+                      "name":  "Extrair Dados1",
+                      "type":  "n8n-nodes-base.set",
+                      "typeVersion":  1,
+                      "position":  [
+                                       496,
+                                       336
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "conditions":  {
+                                                            "options":  {
+                                                                            "caseSensitive":  true,
+                                                                            "leftValue":  "",
+                                                                            "typeValidation":  "strict",
+                                                                            "version":  3
+                                                                        },
+                                                            "conditions":  [
+                                                                               {
+                                                                                   "id":  "8ace406f-f7db-4554-8fd3-b1512cbf4a52",
+                                                                                   "leftValue":  "={{ $json.body.data.messageType }}",
+                                                                                   "rightValue":  "liveLocationMessage",
+                                                                                   "operator":  {
+                                                                                                    "type":  "string",
+                                                                                                    "operation":  "equals",
+                                                                                                    "name":  "filter.operator.equals"
+                                                                                                }
+                                                                               },
+                                                                               {
+                                                                                   "id":  "antieco1",
+                                                                                   "leftValue":  "={{ !($json.body.data.key.id \u0026\u0026 $json.body.data.key.id.toString().startsWith(\u00273EB0\u0027) \u0026\u0026 $json.body.data.key.fromMe === false) }}",
+                                                                                   "rightValue":  true,
+                                                                                   "operator":  {
+                                                                                                    "type":  "boolean",
+                                                                                                    "operation":  "equals"
+                                                                                                }
+                                                                               }
+                                                                           ],
+                                                            "combinator":  "and"
+                                                        },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.if",
+                      "typeVersion":  2.3,
+                      "position":  [
+                                       240,
+                                       352
+                                   ],
+                      "id":  "31fb5c7c-5974-4ccc-b17d-ba9d2b3e50ae",
+                      "name":  "If"
+                  },
+                  {
+                      "id":  "gas-if-pedido-novo-01",
+                      "name":  "E Pedido Novo? GAS",
+                      "type":  "n8n-nodes-base.if",
+                      "typeVersion":  2.3,
+                      "position":  [
+                                       240,
+                                       550
+                                   ],
+                      "parameters":  {
+                                         "conditions":  {
+                                                            "options":  {
+                                                                            "caseSensitive":  true,
+                                                                            "leftValue":  "",
+                                                                            "typeValidation":  "strict",
+                                                                            "version":  3
+                                                                        },
+                                                            "combinator":  "and",
+                                                            "conditions":  [
+                                                                               {
+                                                                                   "id":  "pedido-novo-1",
+                                                                                   "leftValue":  "={{ $json.body.tipo_evento }}",
+                                                                                   "rightValue":  "novo_pedido",
+                                                                                   "operator":  {
+                                                                                                    "type":  "string",
+                                                                                                    "operation":  "equals"
+                                                                                                }
+                                                                               }
+                                                                           ]
+                                                        },
+                                         "options":  {
+
+                                                     }
+                                     }
+                  },
+                  {
+                      "id":  "gas-registrar-pedido-01",
+                      "name":  "Registrar Pedido Recebido GAS",
+                      "type":  "n8n-nodes-base.noOp",
+                      "typeVersion":  1,
+                      "position":  [
+                                       460,
+                                       550
+                                   ],
+                      "notes":  "Marca que o Fluxo Grupo Entregadores foi acionado pelo pedido. A notificacao real ao entregador ja acontece direto em GAS - Atendente Cliente (node Notificar Entregador) - este node existe pra dar visibilidade/auditoria de execucao aqui tambem, sem duplicar a notificacao. Ponto de extensao futuro (ex: marcar entregador como ocupado) se for pedido.",
+                      "parameters":  {
+
+                                     }
+                  },
+                  {
+                      "id":  "gas-buscar-entreg-grupo-01",
+                      "name":  "Buscar Entregadores GAS",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.2,
+                      "position":  [
+                                       680,
+                                       550
+                                   ],
+                      "parameters":  {
+                                         "method":  "GET",
+                                         "url":  "=https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/entregadores_gas?negocio_id=eq.{{ $(\u0027Webhook Grupo\u0027).first().json.body.negocio_id }}\u0026status=eq.disponivel\u0026select=id,nome,jid_whatsapp,lat,long",
+                                         "sendHeaders":  true,
+                                         "headerParameters":  {
+                                                                  "parameters":  [
+                                                                                     {
+                                                                                         "name":  "apikey",
+                                                                                         "value":  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+                                                                                     },
+                                                                                     {
+                                                                                         "name":  "Authorization",
+                                                                                         "value":  "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+                                                                                     }
+                                                                                 ]
+                                                              },
+                                         "options":  {
+
+                                                     }
+                                     }
+                  },
+                  {
+                      "id":  "gas-calcular-mais-prox-grupo-01",
+                      "name":  "Calcular Entregador Mais Proximo GAS",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       900,
+                                       550
+                                   ],
+                      "parameters":  {
+                                         "jsCode":  "const dados = $(\u0027Webhook Grupo\u0027).first().json.body;\nconst entregadores = $input.all().map(i =\u003e i.json);\n\nif (!entregadores || entregadores.length === 0) {\n  return [{ json: { ...dados, entregador_jid: null, entregador_nome: \u0027Entregador\u0027, entregador_id: null, sem_entregador: true } }];\n}\n\nfunction haversine(lat1, lon1, lat2, lon2) {\n  const R = 6371;\n  const dLat = (lat2 - lat1) * Math.PI / 180;\n  const dLon = (lon2 - lon1) * Math.PI / 180;\n  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;\n  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));\n}\n\nconst clienteLat = parseFloat(dados.lat);\nconst clienteLon = parseFloat(dados.long);\nconst clienteGeoValido = !Number.isNaN(clienteLat) \u0026\u0026 !Number.isNaN(clienteLon);\n\nlet melhor = null;\nlet menorDist = Infinity;\n\nif (!clienteGeoValido) {\n  console.warn(\u0027Geocodificacao do cliente ausente/invalida (lat=\u0027 + dados.lat + \u0027, long=\u0027 + dados.long + \u0027) - usando primeiro entregador disponivel em vez de distancia.\u0027);\n  melhor = entregadores[0];\n  menorDist = null;\n} else {\n  for (const e of entregadores) {\n    const lat = parseFloat(e.lat);\n    const long = parseFloat(e.long);\n    if (Number.isNaN(lat) || Number.isNaN(long)) continue;\n    const dist = haversine(clienteLat, clienteLon, lat, long);\n    if (dist \u003c menorDist) { menorDist = dist; melhor = e; }\n  }\n\n  if (!melhor) {\n    melhor = entregadores[0];\n    menorDist = null;\n  }\n}\n\nconst VELOCIDADE_MEDIA_KMH = 27;\nconst TEMPO_INSTALACAO_MIN = 7;\n\n// Sem distancia real (entregador ainda sem lat/long compartilhado) - usa metade do\n// raio de atendimento do negocio como estimativa razoavel em vez de nao dar ETA nenhum.\nconst raioAtendimento = parseFloat(dados.raio_atendimento_km);\nconst distanciaFallback = !Number.isNaN(raioAtendimento) ? raioAtendimento / 2 : 3;\nconst distanciaParaEta = menorDist !== null ? menorDist : distanciaFallback;\n\nconst tempoDeslocamentoMin = (distanciaParaEta / VELOCIDADE_MEDIA_KMH) * 60;\nconst tempoInstalacaoMin = melhor.status === \u0027em_instalacao\u0027 ? TEMPO_INSTALACAO_MIN : 0;\nconst etaBrutoMin = tempoDeslocamentoMin + tempoInstalacaoMin;\n\nconst etaPiso = Math.max(5, Math.floor(etaBrutoMin / 5) * 5);\nconst eta_estimado_min = etaPiso;\nconst eta_estimado_texto = `${etaPiso}-${etaPiso + 5} minutos`;\n\nreturn [{ json: { ...dados, entregador_jid: melhor.jid_whatsapp, entregador_nome: melhor.nome, entregador_id: melhor.id, distancia_km: menorDist !== null ? menorDist.toFixed(1) : null, sem_entregador: false, eta_estimado_min, eta_estimado_texto } }];"
+                                     }
+                  },
+                  {
+                      "id":  "gas-notificar-entreg-grupo-01",
+                      "name":  "Notificar Entregador GAS",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.2,
+                      "position":  [
+                                       1120,
+                                       550
+                                   ],
+                      "onError":  "continueRegularOutput",
+                      "parameters":  {
+                                         "method":  "POST",
+                                         "url":  "=https://evo.upviaagentes.com/message/sendText/{{ $json.instancia }}",
+                                         "sendHeaders":  true,
+                                         "headerParameters":  {
+                                                                  "parameters":  [
+                                                                                     {
+                                                                                         "name":  "apikey",
+                                                                                         "value":  "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+                                                                                     },
+                                                                                     {
+                                                                                         "name":  "Content-Type",
+                                                                                         "value":  "application/json"
+                                                                                     }
+                                                                                 ]
+                                                              },
+                                         "sendBody":  true,
+                                         "specifyBody":  "json",
+                                         "jsonBody":  "={{ JSON.stringify({\n  number: $json.entregador_jid,\n  text: \"NOVO PEDIDO!\\n\\nCliente: \" + $json.cliente_nome + \"\\nProduto: \" + $json.produto + \"\\nEndereço: \" + $json.endereco + \"\\nPagamento: \" + $json.pagamento + \"\\n\\nMaps: https://maps.google.com/?q=\" + encodeURIComponent($json.endereco)\n}) }}",
+                                         "options":  {
+
+                                                     }
+                                     }
+                  },
+                  {
+                      "id":  "gas-atualizar-pedido-despachado-01",
+                      "name":  "Atualizar Pedido Despachado GAS",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.2,
+                      "position":  [
+                                       1340,
+                                       550
+                                   ],
+                      "parameters":  {
+                                         "method":  "PATCH",
+                                         "url":  "=https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/pedidos_gas?id=eq.{{ $(\u0027Calcular Entregador Mais Proximo GAS\u0027).first().json.pedido_id }}",
+                                         "sendHeaders":  true,
+                                         "headerParameters":  {
+                                                                  "parameters":  [
+                                                                                     {
+                                                                                         "name":  "apikey",
+                                                                                         "value":  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+                                                                                     },
+                                                                                     {
+                                                                                         "name":  "Authorization",
+                                                                                         "value":  "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+                                                                                     },
+                                                                                     {
+                                                                                         "name":  "Content-Type",
+                                                                                         "value":  "application/json"
+                                                                                     }
+                                                                                 ]
+                                                              },
+                                         "sendBody":  true,
+                                         "specifyBody":  "json",
+                                         "jsonBody":  "={{ JSON.stringify({ status: \"despachado\", entregador_id: $(\u0027Calcular Entregador Mais Proximo GAS\u0027).first().json.entregador_id, eta_estimado_min: $(\u0027Calcular Entregador Mais Proximo GAS\u0027).first().json.eta_estimado_min, eta_estimado_texto: $(\u0027Calcular Entregador Mais Proximo GAS\u0027).first().json.eta_estimado_texto }) }}",
+                                         "options":  {
+
+                                                     }
+                                     }
+                  }
+              ],
+    "connections":  {
+                        "Webhook Grupo":  {
+                                              "main":  [
+                                                           [
+                                                               {
+                                                                   "node":  "If",
+                                                                   "type":  "main",
+                                                                   "index":  0
+                                                               },
+                                                               {
+                                                                   "node":  "E Pedido Novo? GAS",
+                                                                   "type":  "main",
+                                                                   "index":  0
+                                                               }
+                                                           ]
+                                                       ]
+                                          },
+                        "Buscar Negocio":  {
+                                               "main":  [
+                                                            [
+                                                                {
+                                                                    "node":  "Atualizar Entregador",
+                                                                    "type":  "main",
+                                                                    "index":  0
+                                                                }
+                                                            ]
+                                                        ]
+                                           },
+                        "Extrair Dados1":  {
+                                               "main":  [
+                                                            [
+                                                                {
+                                                                    "node":  "Buscar Negocio",
+                                                                    "type":  "main",
+                                                                    "index":  0
+                                                                }
+                                                            ]
+                                                        ]
+                                           },
+                        "If":  {
+                                   "main":  [
+                                                [
+                                                    {
+                                                        "node":  "Extrair Dados1",
+                                                        "type":  "main",
+                                                        "index":  0
+                                                    }
+                                                ]
+                                            ]
+                               },
+                        "E Pedido Novo? GAS":  {
+                                                   "main":  [
+                                                                [
+                                                                    {
+                                                                        "node":  "Registrar Pedido Recebido GAS",
+                                                                        "type":  "main",
+                                                                        "index":  0
+                                                                    }
+                                                                ],
+                                                                [
+
+                                                                ]
+                                                            ]
+                                               },
+                        "Registrar Pedido Recebido GAS":  {
+                                                              "main":  [
+                                                                           [
+                                                                               {
+                                                                                   "node":  "Buscar Entregadores GAS",
+                                                                                   "type":  "main",
+                                                                                   "index":  0
+                                                                               }
+                                                                           ]
+                                                                       ]
+                                                          },
+                        "Buscar Entregadores GAS":  {
+                                                        "main":  [
+                                                                     [
+                                                                         {
+                                                                             "node":  "Calcular Entregador Mais Proximo GAS",
+                                                                             "type":  "main",
+                                                                             "index":  0
+                                                                         }
+                                                                     ]
+                                                                 ]
+                                                    },
+                        "Calcular Entregador Mais Proximo GAS":  {
+                                                                     "main":  [
+                                                                                  [
+                                                                                      {
+                                                                                          "node":  "Notificar Entregador GAS",
+                                                                                          "type":  "main",
+                                                                                          "index":  0
+                                                                                      }
+                                                                                  ]
+                                                                              ]
+                                                                 },
+                        "Notificar Entregador GAS":  {
+                                                         "main":  [
+                                                                      [
+                                                                          {
+                                                                              "node":  "Atualizar Pedido Despachado GAS",
+                                                                              "type":  "main",
+                                                                              "index":  0
+                                                                          }
+                                                                      ]
+                                                                  ]
+                                                     }
+                    },
+    "settings":  {
+                     "executionOrder":  "v1",
+                     "binaryMode":  "separate"
+                 },
+    "staticData":  null,
+    "meta":  null,
+    "pinData":  {
+
+                },
+    "versionId":  "3f758ba5-56ae-430a-a0bc-3fe77c7fb4b7",
+    "activeVersionId":  "3f758ba5-56ae-430a-a0bc-3fe77c7fb4b7",
+    "versionCounter":  132,
+    "triggerCount":  1,
+    "shared":  [
+                   {
+                       "updatedAt":  "2026-06-24T14:30:49.854Z",
+                       "createdAt":  "2026-06-24T14:30:49.854Z",
+                       "role":  "workflow:owner",
+                       "workflowId":  "COW6lbVrWnYJpWUA",
+                       "projectId":  "wvVR5bxXzTLlLBhJ",
+                       "project":  {
+                                       "updatedAt":  "2026-06-24T13:23:41.357Z",
+                                       "createdAt":  "2026-05-23T22:44:43.627Z",
+                                       "id":  "wvVR5bxXzTLlLBhJ",
+                                       "name":  "Elisa Andrade \u003cupvianegocios@gmail.com\u003e",
+                                       "type":  "personal",
+                                       "icon":  null,
+                                       "description":  null,
+                                       "creatorId":  "63b6bda0-d1aa-4abc-beaa-0fbb599f2288"
+                                   }
+                   }
+               ],
+    "tags":  [
+
+             ],
+    "activeVersion":  {
+                          "updatedAt":  "2026-07-14T03:59:24.768Z",
+                          "createdAt":  "2026-07-14T03:59:24.768Z",
+                          "versionId":  "3f758ba5-56ae-430a-a0bc-3fe77c7fb4b7",
+                          "workflowId":  "COW6lbVrWnYJpWUA",
+                          "nodes":  [
+                                        {
+                                            "parameters":  {
+                                                               "httpMethod":  "POST",
+                                                               "path":  "gas-grupo-localizacao",
+                                                               "responseMode":  "lastNode",
+                                                               "options":  {
+
+                                                                           }
+                                                           },
+                                            "id":  "f59ef7c8-34ec-479d-85f8-0c1fdcc68a51",
+                                            "name":  "Webhook Grupo",
+                                            "type":  "n8n-nodes-base.webhook",
+                                            "typeVersion":  1,
+                                            "position":  [
+                                                             32,
+                                                             352
+                                                         ],
+                                            "webhookId":  "02cdec65-dd3b-4691-a269-317647a33519"
+                                        },
+                                        {
+                                            "parameters":  {
+                                                               "url":  "=https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/negocios_gas?instancia_whatsapp=eq.{{$json.instancia}}\u0026select=id",
+                                                               "sendHeaders":  true,
+                                                               "headerParameters":  {
+                                                                                        "parameters":  [
+                                                                                                           {
+                                                                                                               "name":  "apikey",
+                                                                                                               "value":  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+                                                                                                           },
+                                                                                                           {
+                                                                                                               "name":  "Authorization",
+                                                                                                               "value":  "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+                                                                                                           }
+                                                                                                       ]
+                                                                                    },
+                                                               "options":  {
+                                                                               "timeout":  12000
+                                                                           }
+                                                           },
+                                            "id":  "112829ca-583f-4c35-9900-182abc7ee5b6",
+                                            "name":  "Buscar Negocio",
+                                            "type":  "n8n-nodes-base.httpRequest",
+                                            "typeVersion":  4,
+                                            "position":  [
+                                                             736,
+                                                             336
+                                                         ]
+                                        },
+                                        {
+                                            "parameters":  {
+                                                               "method":  "POST",
+                                                               "url":  "https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/entregadores_gas",
+                                                               "sendHeaders":  true,
+                                                               "headerParameters":  {
+                                                                                        "parameters":  [
+                                                                                                           {
+                                                                                                               "name":  "apikey",
+                                                                                                               "value":  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+                                                                                                           },
+                                                                                                           {
+                                                                                                               "name":  "Authorization",
+                                                                                                               "value":  "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+                                                                                                           },
+                                                                                                           {
+                                                                                                               "name":  "Prefer",
+                                                                                                               "value":  "resolution=merge-duplicates"
+                                                                                                           },
+                                                                                                           {
+                                                                                                               "name":  "Content-Type",
+                                                                                                               "value":  "application/json"
+                                                                                                           }
+                                                                                                       ]
+                                                                                    },
+                                                               "sendBody":  true,
+                                                               "specifyBody":  "json",
+                                                               "jsonBody":  "={{ JSON.stringify({\n  negocio_id: $json.id,\n  jid_whatsapp: $(\u0027Extrair Dados1\u0027).first().json.jid_entregador,\n  lat: $(\u0027Extrair Dados1\u0027).first().json.lat,\n  long: $(\u0027Extrair Dados1\u0027).first().json.long,\n  status: \"disponivel\",\n  atualizado_em: $now.toISO()\n}) }}",
+                                                               "options":  {
+                                                                               "timeout":  12000
+                                                                           }
+                                                           },
+                                            "id":  "dfd65155-f570-41ff-9ade-ebe280e6bf9f",
+                                            "name":  "Atualizar Entregador",
+                                            "type":  "n8n-nodes-base.httpRequest",
+                                            "typeVersion":  4,
+                                            "position":  [
+                                                             944,
+                                                             336
+                                                         ]
+                                        },
+                                        {
+                                            "parameters":  {
+                                                               "values":  {
+                                                                              "string":  [
+                                                                                             {
+                                                                                                 "name":  "instancia",
+                                                                                                 "value":  "={{$json.body.instance}}"
+                                                                                             },
+                                                                                             {
+                                                                                                 "name":  "jid_entregador",
+                                                                                                 "value":  "={{$json.body.data.key.participant}}"
+                                                                                             },
+                                                                                             {
+                                                                                                 "name":  "lat",
+                                                                                                 "value":  "={{$json.body.data.message.liveLocationMessage.degreesLatitude}}"
+                                                                                             },
+                                                                                             {
+                                                                                                 "name":  "long",
+                                                                                                 "value":  "={{$json.body.data.message.liveLocationMessage.degreesLongitude}}"
+                                                                                             }
+                                                                                         ]
+                                                                          },
+                                                               "options":  {
+
+                                                                           }
+                                                           },
+                                            "id":  "e97ce7f5-5d07-42a9-bf9e-0e62c2695b72",
+                                            "name":  "Extrair Dados1",
+                                            "type":  "n8n-nodes-base.set",
+                                            "typeVersion":  1,
+                                            "position":  [
+                                                             496,
+                                                             336
+                                                         ]
+                                        },
+                                        {
+                                            "parameters":  {
+                                                               "conditions":  {
+                                                                                  "options":  {
+                                                                                                  "caseSensitive":  true,
+                                                                                                  "leftValue":  "",
+                                                                                                  "typeValidation":  "strict",
+                                                                                                  "version":  3
+                                                                                              },
+                                                                                  "conditions":  [
+                                                                                                     {
+                                                                                                         "id":  "8ace406f-f7db-4554-8fd3-b1512cbf4a52",
+                                                                                                         "leftValue":  "={{ $json.body.data.messageType }}",
+                                                                                                         "rightValue":  "liveLocationMessage",
+                                                                                                         "operator":  {
+                                                                                                                          "type":  "string",
+                                                                                                                          "operation":  "equals",
+                                                                                                                          "name":  "filter.operator.equals"
+                                                                                                                      }
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "id":  "antieco1",
+                                                                                                         "leftValue":  "={{ !($json.body.data.key.id \u0026\u0026 $json.body.data.key.id.toString().startsWith(\u00273EB0\u0027) \u0026\u0026 $json.body.data.key.fromMe === false) }}",
+                                                                                                         "rightValue":  true,
+                                                                                                         "operator":  {
+                                                                                                                          "type":  "boolean",
+                                                                                                                          "operation":  "equals"
+                                                                                                                      }
+                                                                                                     }
+                                                                                                 ],
+                                                                                  "combinator":  "and"
+                                                                              },
+                                                               "options":  {
+
+                                                                           }
+                                                           },
+                                            "type":  "n8n-nodes-base.if",
+                                            "typeVersion":  2.3,
+                                            "position":  [
+                                                             240,
+                                                             352
+                                                         ],
+                                            "id":  "31fb5c7c-5974-4ccc-b17d-ba9d2b3e50ae",
+                                            "name":  "If"
+                                        },
+                                        {
+                                            "id":  "gas-if-pedido-novo-01",
+                                            "name":  "E Pedido Novo? GAS",
+                                            "type":  "n8n-nodes-base.if",
+                                            "typeVersion":  2.3,
+                                            "position":  [
+                                                             240,
+                                                             550
+                                                         ],
+                                            "parameters":  {
+                                                               "conditions":  {
+                                                                                  "options":  {
+                                                                                                  "caseSensitive":  true,
+                                                                                                  "leftValue":  "",
+                                                                                                  "typeValidation":  "strict",
+                                                                                                  "version":  3
+                                                                                              },
+                                                                                  "combinator":  "and",
+                                                                                  "conditions":  [
+                                                                                                     {
+                                                                                                         "id":  "pedido-novo-1",
+                                                                                                         "leftValue":  "={{ $json.body.tipo_evento }}",
+                                                                                                         "rightValue":  "novo_pedido",
+                                                                                                         "operator":  {
+                                                                                                                          "type":  "string",
+                                                                                                                          "operation":  "equals"
+                                                                                                                      }
+                                                                                                     }
+                                                                                                 ]
+                                                                              },
+                                                               "options":  {
+
+                                                                           }
+                                                           }
+                                        },
+                                        {
+                                            "id":  "gas-registrar-pedido-01",
+                                            "name":  "Registrar Pedido Recebido GAS",
+                                            "type":  "n8n-nodes-base.noOp",
+                                            "typeVersion":  1,
+                                            "position":  [
+                                                             460,
+                                                             550
+                                                         ],
+                                            "notes":  "Marca que o Fluxo Grupo Entregadores foi acionado pelo pedido. A notificacao real ao entregador ja acontece direto em GAS - Atendente Cliente (node Notificar Entregador) - este node existe pra dar visibilidade/auditoria de execucao aqui tambem, sem duplicar a notificacao. Ponto de extensao futuro (ex: marcar entregador como ocupado) se for pedido.",
+                                            "parameters":  {
+
+                                                           }
+                                        },
+                                        {
+                                            "id":  "gas-buscar-entreg-grupo-01",
+                                            "name":  "Buscar Entregadores GAS",
+                                            "type":  "n8n-nodes-base.httpRequest",
+                                            "typeVersion":  4.2,
+                                            "position":  [
+                                                             680,
+                                                             550
+                                                         ],
+                                            "parameters":  {
+                                                               "method":  "GET",
+                                                               "url":  "=https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/entregadores_gas?negocio_id=eq.{{ $(\u0027Webhook Grupo\u0027).first().json.body.negocio_id }}\u0026status=eq.disponivel\u0026select=id,nome,jid_whatsapp,lat,long",
+                                                               "sendHeaders":  true,
+                                                               "headerParameters":  {
+                                                                                        "parameters":  [
+                                                                                                           {
+                                                                                                               "name":  "apikey",
+                                                                                                               "value":  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+                                                                                                           },
+                                                                                                           {
+                                                                                                               "name":  "Authorization",
+                                                                                                               "value":  "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+                                                                                                           }
+                                                                                                       ]
+                                                                                    },
+                                                               "options":  {
+
+                                                                           }
+                                                           }
+                                        },
+                                        {
+                                            "id":  "gas-calcular-mais-prox-grupo-01",
+                                            "name":  "Calcular Entregador Mais Proximo GAS",
+                                            "type":  "n8n-nodes-base.code",
+                                            "typeVersion":  2,
+                                            "position":  [
+                                                             900,
+                                                             550
+                                                         ],
+                                            "parameters":  {
+                                                               "jsCode":  "const dados = $(\u0027Webhook Grupo\u0027).first().json.body;\nconst entregadores = $input.all().map(i =\u003e i.json);\n\nif (!entregadores || entregadores.length === 0) {\n  return [{ json: { ...dados, entregador_jid: null, entregador_nome: \u0027Entregador\u0027, entregador_id: null, sem_entregador: true } }];\n}\n\nfunction haversine(lat1, lon1, lat2, lon2) {\n  const R = 6371;\n  const dLat = (lat2 - lat1) * Math.PI / 180;\n  const dLon = (lon2 - lon1) * Math.PI / 180;\n  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;\n  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));\n}\n\nconst clienteLat = parseFloat(dados.lat);\nconst clienteLon = parseFloat(dados.long);\nconst clienteGeoValido = !Number.isNaN(clienteLat) \u0026\u0026 !Number.isNaN(clienteLon);\n\nlet melhor = null;\nlet menorDist = Infinity;\n\nif (!clienteGeoValido) {\n  console.warn(\u0027Geocodificacao do cliente ausente/invalida (lat=\u0027 + dados.lat + \u0027, long=\u0027 + dados.long + \u0027) - usando primeiro entregador disponivel em vez de distancia.\u0027);\n  melhor = entregadores[0];\n  menorDist = null;\n} else {\n  for (const e of entregadores) {\n    const lat = parseFloat(e.lat);\n    const long = parseFloat(e.long);\n    if (Number.isNaN(lat) || Number.isNaN(long)) continue;\n    const dist = haversine(clienteLat, clienteLon, lat, long);\n    if (dist \u003c menorDist) { menorDist = dist; melhor = e; }\n  }\n\n  if (!melhor) {\n    melhor = entregadores[0];\n    menorDist = null;\n  }\n}\n\nconst VELOCIDADE_MEDIA_KMH = 27;\nconst TEMPO_INSTALACAO_MIN = 7;\n\n// Sem distancia real (entregador ainda sem lat/long compartilhado) - usa metade do\n// raio de atendimento do negocio como estimativa razoavel em vez de nao dar ETA nenhum.\nconst raioAtendimento = parseFloat(dados.raio_atendimento_km);\nconst distanciaFallback = !Number.isNaN(raioAtendimento) ? raioAtendimento / 2 : 3;\nconst distanciaParaEta = menorDist !== null ? menorDist : distanciaFallback;\n\nconst tempoDeslocamentoMin = (distanciaParaEta / VELOCIDADE_MEDIA_KMH) * 60;\nconst tempoInstalacaoMin = melhor.status === \u0027em_instalacao\u0027 ? TEMPO_INSTALACAO_MIN : 0;\nconst etaBrutoMin = tempoDeslocamentoMin + tempoInstalacaoMin;\n\nconst etaPiso = Math.max(5, Math.floor(etaBrutoMin / 5) * 5);\nconst eta_estimado_min = etaPiso;\nconst eta_estimado_texto = `${etaPiso}-${etaPiso + 5} minutos`;\n\nreturn [{ json: { ...dados, entregador_jid: melhor.jid_whatsapp, entregador_nome: melhor.nome, entregador_id: melhor.id, distancia_km: menorDist !== null ? menorDist.toFixed(1) : null, sem_entregador: false, eta_estimado_min, eta_estimado_texto } }];"
+                                                           }
+                                        },
+                                        {
+                                            "id":  "gas-notificar-entreg-grupo-01",
+                                            "name":  "Notificar Entregador GAS",
+                                            "type":  "n8n-nodes-base.httpRequest",
+                                            "typeVersion":  4.2,
+                                            "position":  [
+                                                             1120,
+                                                             550
+                                                         ],
+                                            "onError":  "continueRegularOutput",
+                                            "parameters":  {
+                                                               "method":  "POST",
+                                                               "url":  "=https://evo.upviaagentes.com/message/sendText/{{ $json.instancia }}",
+                                                               "sendHeaders":  true,
+                                                               "headerParameters":  {
+                                                                                        "parameters":  [
+                                                                                                           {
+                                                                                                               "name":  "apikey",
+                                                                                                               "value":  "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+                                                                                                           },
+                                                                                                           {
+                                                                                                               "name":  "Content-Type",
+                                                                                                               "value":  "application/json"
+                                                                                                           }
+                                                                                                       ]
+                                                                                    },
+                                                               "sendBody":  true,
+                                                               "specifyBody":  "json",
+                                                               "jsonBody":  "={{ JSON.stringify({\n  number: $json.entregador_jid,\n  text: \"NOVO PEDIDO!\\n\\nCliente: \" + $json.cliente_nome + \"\\nProduto: \" + $json.produto + \"\\nEndereço: \" + $json.endereco + \"\\nPagamento: \" + $json.pagamento + \"\\n\\nMaps: https://maps.google.com/?q=\" + encodeURIComponent($json.endereco)\n}) }}",
+                                                               "options":  {
+
+                                                                           }
+                                                           }
+                                        },
+                                        {
+                                            "id":  "gas-atualizar-pedido-despachado-01",
+                                            "name":  "Atualizar Pedido Despachado GAS",
+                                            "type":  "n8n-nodes-base.httpRequest",
+                                            "typeVersion":  4.2,
+                                            "position":  [
+                                                             1340,
+                                                             550
+                                                         ],
+                                            "parameters":  {
+                                                               "method":  "PATCH",
+                                                               "url":  "=https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/pedidos_gas?id=eq.{{ $(\u0027Calcular Entregador Mais Proximo GAS\u0027).first().json.pedido_id }}",
+                                                               "sendHeaders":  true,
+                                                               "headerParameters":  {
+                                                                                        "parameters":  [
+                                                                                                           {
+                                                                                                               "name":  "apikey",
+                                                                                                               "value":  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+                                                                                                           },
+                                                                                                           {
+                                                                                                               "name":  "Authorization",
+                                                                                                               "value":  "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+                                                                                                           },
+                                                                                                           {
+                                                                                                               "name":  "Content-Type",
+                                                                                                               "value":  "application/json"
+                                                                                                           }
+                                                                                                       ]
+                                                                                    },
+                                                               "sendBody":  true,
+                                                               "specifyBody":  "json",
+                                                               "jsonBody":  "={{ JSON.stringify({ status: \"despachado\", entregador_id: $(\u0027Calcular Entregador Mais Proximo GAS\u0027).first().json.entregador_id, eta_estimado_min: $(\u0027Calcular Entregador Mais Proximo GAS\u0027).first().json.eta_estimado_min, eta_estimado_texto: $(\u0027Calcular Entregador Mais Proximo GAS\u0027).first().json.eta_estimado_texto }) }}",
+                                                               "options":  {
+
+                                                                           }
+                                                           }
+                                        }
+                                    ],
+                          "connections":  {
+                                              "Webhook Grupo":  {
+                                                                    "main":  [
+                                                                                 [
+                                                                                     {
+                                                                                         "node":  "If",
+                                                                                         "type":  "main",
+                                                                                         "index":  0
+                                                                                     },
+                                                                                     {
+                                                                                         "node":  "E Pedido Novo? GAS",
+                                                                                         "type":  "main",
+                                                                                         "index":  0
+                                                                                     }
+                                                                                 ]
+                                                                             ]
+                                                                },
+                                              "Buscar Negocio":  {
+                                                                     "main":  [
+                                                                                  [
+                                                                                      {
+                                                                                          "node":  "Atualizar Entregador",
+                                                                                          "type":  "main",
+                                                                                          "index":  0
+                                                                                      }
+                                                                                  ]
+                                                                              ]
+                                                                 },
+                                              "Extrair Dados1":  {
+                                                                     "main":  [
+                                                                                  [
+                                                                                      {
+                                                                                          "node":  "Buscar Negocio",
+                                                                                          "type":  "main",
+                                                                                          "index":  0
+                                                                                      }
+                                                                                  ]
+                                                                              ]
+                                                                 },
+                                              "If":  {
+                                                         "main":  [
+                                                                      [
+                                                                          {
+                                                                              "node":  "Extrair Dados1",
+                                                                              "type":  "main",
+                                                                              "index":  0
+                                                                          }
+                                                                      ]
+                                                                  ]
+                                                     },
+                                              "E Pedido Novo? GAS":  {
+                                                                         "main":  [
+                                                                                      [
+                                                                                          {
+                                                                                              "node":  "Registrar Pedido Recebido GAS",
+                                                                                              "type":  "main",
+                                                                                              "index":  0
+                                                                                          }
+                                                                                      ],
+                                                                                      [
+
+                                                                                      ]
+                                                                                  ]
+                                                                     },
+                                              "Registrar Pedido Recebido GAS":  {
+                                                                                    "main":  [
+                                                                                                 [
+                                                                                                     {
+                                                                                                         "node":  "Buscar Entregadores GAS",
+                                                                                                         "type":  "main",
+                                                                                                         "index":  0
+                                                                                                     }
+                                                                                                 ]
+                                                                                             ]
+                                                                                },
+                                              "Buscar Entregadores GAS":  {
+                                                                              "main":  [
+                                                                                           [
+                                                                                               {
+                                                                                                   "node":  "Calcular Entregador Mais Proximo GAS",
+                                                                                                   "type":  "main",
+                                                                                                   "index":  0
+                                                                                               }
+                                                                                           ]
+                                                                                       ]
+                                                                          },
+                                              "Calcular Entregador Mais Proximo GAS":  {
+                                                                                           "main":  [
+                                                                                                        [
+                                                                                                            {
+                                                                                                                "node":  "Notificar Entregador GAS",
+                                                                                                                "type":  "main",
+                                                                                                                "index":  0
+                                                                                                            }
+                                                                                                        ]
+                                                                                                    ]
+                                                                                       },
+                                              "Notificar Entregador GAS":  {
+                                                                               "main":  [
+                                                                                            [
+                                                                                                {
+                                                                                                    "node":  "Atualizar Pedido Despachado GAS",
+                                                                                                    "type":  "main",
+                                                                                                    "index":  0
+                                                                                                }
+                                                                                            ]
+                                                                                        ]
+                                                                           }
+                                          },
+                          "authors":  "Elisa Andrade",
+                          "name":  null,
+                          "description":  null,
+                          "autosaved":  false,
+                          "workflowPublishHistory":  [
+                                                         {
+                                                             "createdAt":  "2026-07-14T03:59:24.838Z",
+                                                             "id":  706,
+                                                             "workflowId":  "COW6lbVrWnYJpWUA",
+                                                             "versionId":  "3f758ba5-56ae-430a-a0bc-3fe77c7fb4b7",
+                                                             "event":  "activated",
+                                                             "userId":  "63b6bda0-d1aa-4abc-beaa-0fbb599f2288"
+                                                         },
+                                                         {
+                                                             "createdAt":  "2026-07-14T03:59:24.809Z",
+                                                             "id":  705,
+                                                             "workflowId":  "COW6lbVrWnYJpWUA",
+                                                             "versionId":  "3f758ba5-56ae-430a-a0bc-3fe77c7fb4b7",
+                                                             "event":  "deactivated",
+                                                             "userId":  "63b6bda0-d1aa-4abc-beaa-0fbb599f2288"
+                                                         }
+                                                     ]
+                      }
+}
