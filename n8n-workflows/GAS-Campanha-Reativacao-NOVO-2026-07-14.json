@@ -1,0 +1,365 @@
+{
+  "name": "GAS - Campanha Reativacao",
+  "nodes": [
+    {
+      "id": "cr-trigger-01",
+      "name": "Disparar Campanha Reativacao 10h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        200,
+        300
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 10 * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "cr-lojas-01",
+      "name": "Buscar Lojas Ativas Reativacao",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        420,
+        300
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/negocios_gas?ativo=eq.true&select=id,nome,nome_atendente,instancia_whatsapp,intervalo_reativacao_dias",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "cr-loop-loja-01",
+      "name": "Para Cada Loja Reativacao",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        640,
+        300
+      ],
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      }
+    },
+    {
+      "id": "cr-corte-01",
+      "name": "Calcular Data Corte Reativacao",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        860,
+        200
+      ],
+      "parameters": {
+        "jsCode": "const loja = $json;\nconst intervaloDias = loja.intervalo_reativacao_dias ?? 30;\nconst cutoff = new Date(Date.now() - intervaloDias * 24 * 3600 * 1000);\n\nreturn [{ json: { ...loja, cutoffISO: cutoff.toISOString() } }];"
+      }
+    },
+    {
+      "id": "cr-candidatos-01",
+      "name": "Buscar Clientes Candidatos Reativacao",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1080,
+        200
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/dados_clientes_gas?negocio_id=eq.{{ $json.id }}&data_ultima_compra=lte.{{ $json.cutoffISO }}&data_ultima_compra=not.is.null&select=id,remote_jid,nome,data_ultima_compra,ultima_reativacao_enviada",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "cr-filtrar-01",
+      "name": "Filtrar Nao Contatados Reativacao",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1300,
+        200
+      ],
+      "parameters": {
+        "jsCode": "const loja = $('Calcular Data Corte Reativacao').first().json;\nconst candidatos = $input.all().map(i => i.json);\n\n// So elegivel se nunca recebeu reativacao desde a ultima compra dele -\n// garante 1 envio por periodo de inatividade, reseta quando ele compra de novo.\nconst elegiveis = candidatos.filter(c => {\n  if (!c.data_ultima_compra) return false;\n  if (!c.ultima_reativacao_enviada) return true;\n  return new Date(c.ultima_reativacao_enviada) < new Date(c.data_ultima_compra);\n});\n\nreturn elegiveis.map(c => ({\n  json: {\n    cliente_id: c.id,\n    remote_jid: c.remote_jid,\n    cliente_nome: c.nome || 'cliente',\n    negocio_id: loja.id,\n    negocio_nome: loja.nome,\n    nome_atendente: loja.nome_atendente,\n    instancia: loja.instancia_whatsapp,\n  }\n}));"
+      }
+    },
+    {
+      "id": "cr-loop-cliente-01",
+      "name": "Loop Clientes Reativacao",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1520,
+        200
+      ],
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      }
+    },
+    {
+      "id": "cr-montar-msg-01",
+      "name": "Montar Mensagem Reativacao",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1740,
+        100
+      ],
+      "parameters": {
+        "jsCode": "const d = $json;\nconst nome = d.cliente_nome || 'cliente';\nconst nomeAtendente = d.nome_atendente || 'nossa atendente';\nconst negocioNome = d.negocio_nome || 'nossa loja';\n\nconst variantes = [\n  `Oi ${nome}! Faz uns dias que voce nao pede gas com a gente, ja ta precisando de reposicao? Qualquer coisa, estamos aqui! - ${nomeAtendente}, da ${negocioNome}`,\n  `Opa ${nome}, tudo bem? Notei que faz um tempinho que voce nao faz pedido aqui na ${negocioNome}. Se precisar de gas ou agua, e so chamar! - ${nomeAtendente}`,\n  `${nome}, sentimos sua falta por aqui! Se estiver precisando de gas, e so me chamar que eu resolvo rapidinho. - ${nomeAtendente}, ${negocioNome}`,\n  `Oi ${nome}! Passando pra saber se ja ta na hora de repor o gas ai em casa. Qualquer coisa e so mandar mensagem! - ${nomeAtendente}`,\n  `Oi ${nome}, tudo certo? Faz um tempo que voce nao pede com a gente na ${negocioNome} - se precisar, e so chamar!`,\n];\nconst mensagem = variantes[Math.floor(Math.random() * variantes.length)];\n\nreturn [{ json: { ...d, mensagem } }];"
+      }
+    },
+    {
+      "id": "cr-enviar-01",
+      "name": "Enviar Mensagem Reativacao WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1960,
+        100
+      ],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "=https://evo.upviaagentes.com/message/sendText/{{ $json.instancia }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: $json.remote_jid, text: $json.mensagem }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "cr-atualizar-01",
+      "name": "Atualizar Ultima Reativacao Enviada",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2180,
+        100
+      ],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://clcyyogtvygpehgcmeyj.supabase.co/rest/v1/dados_clientes_gas?id=eq.{{ $('Montar Mensagem Reativacao').first().json.cliente_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3l5b2d0dnlncGVoZ2NtZXlqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA4NTQ3NCwiZXhwIjoyMDk1NjYxNDc0fQ.XizutisZ4syhlUMlTRisVg1J8jFNNrZ9bF54ntF4B4M"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ ultima_reativacao_enviada: $now.toISO() }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "cr-delay-01",
+      "name": "Anti-Spam Delay Reativacao",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2400,
+        100
+      ],
+      "parameters": {
+        "unit": "seconds",
+        "amount": 3
+      }
+    }
+  ],
+  "connections": {
+    "Disparar Campanha Reativacao 10h": {
+      "main": [
+        [
+          {
+            "node": "Buscar Lojas Ativas Reativacao",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Lojas Ativas Reativacao": {
+      "main": [
+        [
+          {
+            "node": "Para Cada Loja Reativacao",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Para Cada Loja Reativacao": {
+      "main": [
+        [
+          {
+            "node": "Calcular Data Corte Reativacao",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Calcular Data Corte Reativacao": {
+      "main": [
+        [
+          {
+            "node": "Buscar Clientes Candidatos Reativacao",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Clientes Candidatos Reativacao": {
+      "main": [
+        [
+          {
+            "node": "Filtrar Nao Contatados Reativacao",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar Nao Contatados Reativacao": {
+      "main": [
+        [
+          {
+            "node": "Loop Clientes Reativacao",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Clientes Reativacao": {
+      "main": [
+        [
+          {
+            "node": "Montar Mensagem Reativacao",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Para Cada Loja Reativacao",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Mensagem Reativacao": {
+      "main": [
+        [
+          {
+            "node": "Enviar Mensagem Reativacao WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Mensagem Reativacao WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Atualizar Ultima Reativacao Enviada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualizar Ultima Reativacao Enviada": {
+      "main": [
+        [
+          {
+            "node": "Anti-Spam Delay Reativacao",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anti-Spam Delay Reativacao": {
+      "main": [
+        [
+          {
+            "node": "Loop Clientes Reativacao",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
