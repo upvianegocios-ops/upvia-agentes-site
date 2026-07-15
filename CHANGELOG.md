@@ -18,3 +18,27 @@
 **Commits:** `736ce67` (backup), `21b1811` (feature)
 
 **Pendente:** validação ao vivo dos 3 cenários (Ariane trava, Studio Andrade não trava, `#reativar` funciona) — ver conversa do Claude Code.
+
+## 2026-07-15 — AtendentIA Multi-Atendimento SaaS (buffer/debounce de mensagens)
+
+**Problema:** cliente mandando várias mensagens em sequência (principalmente fotos, ex: cliente da Ariane D'Avila Afonso enviando fotos de um processo) recebia uma resposta separada da IA por mensagem, em vez de uma análise única e consolidada.
+
+**Causa raiz:** já existia um mecanismo de buffer/debounce (Redis + node `Wait`), mas estava quebrado em 5 pontos: (1) chave gravada no Redis (`telefone`) não batia com a chave lida (`instancia:telefone`); (2) o campo `instancia` nem existia nesse trecho do fluxo; (3) a gravação fazia `SET` (sobrescreve) em vez de acumular lista; (4) o node `Compara` sempre seguia em frente por causa do fallback, então o `Wait` não impedia nada; (5) o tempo de espera configurado era 4s (sem unidade explícita), não 12s. Resultado prático: cada mensagem processava e respondia sozinha, imediatamente.
+
+**Correção aplicada:**
+1. `Config Debounce` (novo): centraliza `debounce_segundos = 12` e `limite_fotos_referencia = 5`.
+2. `Mensagem` (editado): passa a incluir `instancia` (de `Montar Contexto Dinamico`), corrigindo a causa raiz das chaves quebradas.
+3. `Buscar Buffer Atual` + `Montar Buffer Atualizado` (novos): leem o buffer existente e acrescentam a mensagem nova numa lista real (tipo + conteúdo + timestamp), em vez de sobrescrever.
+4. `Incluir Mensagem` / `Buscar Mensagens` (editados/corrigidos): chave consistente `instancia:telefone` nos dois lados.
+5. `Intervalo` (editado): usa `Config Debounce` (12s) em vez do valor fixo de 4.
+6. `Compara` (reescrito): vira o juiz do debounce — só a execução da mensagem mais recente segue adiante (`souAMaisRecente`); as demais param sozinhas (`stale`).
+7. `Rotear Decisao Buffer` + `Marcar Pergunta Feita` + `Perguntar Mais Fotos` (novos): quando o buffer atinge 5 fotos, manda "Recebi essas imagens, são todas ou vai enviar mais alguma?", marca que já perguntou (não repete) e volta pro `Intervalo` aguardando mais 12s antes de decidir consolidar. Limite técnico da OpenAI (1500 imagens/512MB por request, confirmado na doc oficial) está muito acima disso — 5 é só um gatilho de UX, não um corte técnico.
+8. Reordenado `Acumula → Atendente → Apaga Mensagens` (era `Acumula → Apaga Mensagens → Atendente`): o buffer só é limpo depois que a IA responde com sucesso; se falhar, a execução para sozinha e o buffer fica intacto pra próxima mensagem retomar.
+
+Aplica pra todos os tenants (não é específico da Ariane).
+
+**Validado por:** Elisa (diagnóstico e desenho da lógica revisados e aprovados antes do PATCH).
+**Backup:** `n8n-workflows/AtendentIA-Multi-Atendimento-SaaS-backup-2026-07-15-pre-buffer-debounce.json` (antes) e `n8n-workflows/AtendentIA-Multi-Atendimento-SaaS-backup-2026-07-15-1119-pos-buffer-debounce.json` (depois).
+**Commits:** `114162a` (backup), `8958ec6` (fix)
+
+**Pendente:** validação ao vivo — mandar 3-4 fotos em sequência rápida (menos de 12s entre elas) e confirmar resposta única; mandar 5+ fotos e confirmar a pergunta de confirmação; testar prioritariamente no tenant Ariane.
