@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-07-16 — AtendentIA Multi-Atendimento SaaS (hotfix urgente — Task Runner travando)
+
+**Problema:** na noite de 2026-07-15 (~23:02-23:33 BRT), a fila de mensagens do N8N encheu — mensagens novas de qualquer tenant ficavam "Waiting in the queue" indefinidamente. Reportado como possível fila zumbi + timeout de 300s no node `Montar Buffer Atualizado` (execução #95002).
+
+**Causa raiz:** `detectarTipo()` no node `Montar Buffer Atualizado` (criado no fix do buffer/debounce de 2026-07-15) chamava `$('Envio de Imagens').first()`, `$('Mensagem de Audio').first()` e `$('Envio de Documentos').first()` — nodes que só rodam em UM dos 5 branches do `Switch` por execução. Referenciar um node sem `runData` na execução atual **trava o Task Runner do N8N** (processo externo que roda o código dos nodes Code) em vez de lançar um erro capturável pelo `try/catch`. Cada vez que isso acontecia, o N8N suspeitava o runner de estar sem resposta e o reiniciava à força depois de 300s — derrubando em cascata **todas as outras execuções concorrentes que estavam usando aquele mesmo processo**, de qualquer tenant, incluindo nodes sem nenhuma relação com o bug (ex: `Filtro + Extrair` chegou a falhar com "Task request timed out after 60 seconds").
+
+**Confirmado:** afetou pelo menos `studio-andrade` e `ariane-d-avila-afonso-advocaci` — pelo menos 3 reinícios forçados do runner identificados (execuções #94901, #94929, #94952, além da #95002).
+
+**Diagnóstico separado:** havia também uma execução isolada travada em "running" desde 2026-07-10 (ID 81887), mas pertence a outro workflow (`Cadastro Automatico UpvIA v5`) — não relacionada a este bug. A API pública do N8N não permite parar/deletar execução em "running" (`"Cannot delete a running execution"`); só dá pra encerrar pela interface. Pendente: Elisa parar manualmente pela UI se quiser (baixo impacto, não estava bloqueando o AtendentIA).
+
+**Correção aplicada:** `detectarTipo()` reescrito para ler o tipo da mensagem direto do payload bruto do `Webhook` (node que sempre roda, sem ambiguidade) em vez de referenciar nodes de outros branches. Adicionado try/catch externo no node inteiro — se falhar, falha rápido e o buffer no Redis fica intacto (TTL 300s) pra próxima mensagem retomar, sem travar a fila.
+
+**Validado por:** Elisa (autorizou ação imediata dada a urgência; diagnóstico revisado por completo, incluindo evidência da execução #95002 e da rajada de erros).
+**Backup:** `n8n-workflows/AtendentIA-Multi-Atendimento-SaaS-backup-2026-07-16-pre-hotfix-task-runner-hang.json` (antes) e `...-pos-hotfix-task-runner-hang.json` (depois).
+**Commits:** `357ecbe` (backup), `e1c03aa` (hotfix)
+
+**Pendente:** validação ao vivo de que o buffer/debounce (mensagens múltiplas, incluindo fotos/áudio/documento) funciona sem travar a fila. Elisa decidir se quer parar manualmente a execução zumbi #81887 (outro workflow, baixo impacto).
+
 ## 2026-07-15 — AtendentIA Multi-Atendimento SaaS
 
 **Problema:** Trava automática de IA quando o dono do número manda mensagem manual (`Decisor Central` → `Supabase - Ativar Trava (Humano Falou)`) estava ativa globalmente para todos os tenants desde 2026-07-11, sem opção de desligar. Tenant Ariane D'Avila Afonso Advocacia precisa desse comportamento (evita a IA responder terceiros institucionais que ela mesma contatou), mas outros tenants como Studio Andrade não — e estavam tendo clientes travados sem saber.
