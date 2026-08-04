@@ -35,7 +35,22 @@ Dados de teste (6 números fake `5500000099xxx`) removidos de `dados_cliente` e 
 
 **Backup:** `AtendentIA-Multi-Atendimento-SaaS-backup-2026-08-04-pre-fix-decisor-central-backspace-regex.json`, `AtendentIA-Multi-Atendimento-SaaS-backup-2026-08-04-pre-fix-dataloss-recheck-buffer.json`, `AtendentIA-Multi-Atendimento-SaaS-backup-2026-08-04-pos-fix-completo-validado.json` (estado final, 180 nodes).
 
-**Pendente:** auditoria retroativa de quantas conversas reais (todos os tenants) ficaram sem resposta da IA na janela ~13:10–19:44 UTC de 2026-08-04 por causa da regressão nº 2, pra decidir se algum cliente precisa de follow-up manual. Não feita ainda — foco foi corrigir e validar antes de mais nada.
+**Auditoria retroativa (concluída):** varredura de todas as 983 execuções `webhook` da janela `2026-08-04T13:13:39Z`–`2026-08-04T19:43:50Z` (todos os tenants), buscando a assinatura exata do bug (`Rotear Decisao Buffer` rodou, nenhum dos 3 branches — `Acumula`/`Marcar Pergunta Feita`/`Para o Fluxo` — rodou depois, e não foi um bloqueio legítimo via `IA Bloqueada Apos Buffer`).
+
+**Resultado: 13 mensagens reais de 9 clientes distintos ficaram sem resposta da IA**, todas em **um único tenant: `ariane-d-avila-afonso-advocaci`** (nenhum outro tenant, incluindo `studio_andrade`, foi afetado nessa janela). Números/horários (UTC):
+- `5528992515342` — 14:08 — "Cansado... mas seguimos"
+- `555384514026` — 14:13 — "Bom dia essa é o empréstimo que eu fiz pra fazer p..."
+- `555399479727` — 15:08 — "Bom diaa, bora essa quinta?"
+- `555399907907` — 15:10 (3 msgs) — "Olá, Dra. Ariane." / "Bom dia." / "Muito prazer, me chamo Yago Caldeira, advogado da..."
+- `555391757916` — 16:03 (2 msgs) — "Oi" / "Boa tarde"
+- `555391477884` — 16:38 (2 msgs) — **percebeu o bug em tempo real**: "Bugou teu chat kkkkk" / "Ta toda hora me mandando opções de atendimento 😂" — candidato prioritário pra um follow-up pessoal, esse cliente sabe que algo quebrou
+- `554195142615` — 17:17 — mensagem de áudio (sem texto extraído)
+- `555196176229` — 17:36 — mensagem de áudio (sem texto extraído)
+- `555399404636` — 18:30 — "Oi 🌷"
+
+Execution IDs (pra conferir no n8n): 124615, 124635, 124810, 124833, 124834, 124842, 125026, 125027, 125146, 125147, 125254, 125286, 125450.
+
+**Pendente:** avisar a Ariane (tenant `ariane-d-avila-afonso-advocaci`) pra fazer follow-up manual com esses 9 contatos, priorizando `555391477884` (já percebeu o bug) e `555384514026`/`555399907907` (mensagens com conteúdo que sugere assunto sensível/profissional).
 
 ## 2026-07-16 — AtendentIA Multi-Atendimento SaaS (hotfix urgente — Task Runner travando)
 
