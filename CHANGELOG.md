@@ -14,7 +14,28 @@
 **Backup:** `n8n-workflows/AtendentIA-Multi-Atendimento-SaaS-backup-2026-07-31-pre-fix-lock-race-buffer.json` (antes) e `n8n-workflows/AtendentIA-Multi-Atendimento-SaaS-backup-2026-08-04-pos-fix-lock-race-buffer.json` (depois).
 **Commits:** ver commit desta alteração.
 
-**Pendente:** validação ao vivo do cenário completo (mandar mensagem de teste, aguardar entrar no buffer, mandar `#pausar` dentro dos 12s de debounce, confirmar que a IA NÃO responde) — nenhuma execução real bateu ainda no trecho novo (`Supabase - Recheck Trava Pos Buffer`) desde o deploy, só o caminho de escrita da trava (`Ativar Trava`) foi confirmado em tráfego real. Sugestão: testar no número de demo da Unhabella (mesmo workflow, sem afetar clientes reais da Andressa) ou pedir pra Andressa testar em um contato de teste.
+---
+
+### ⚠️ ADENDO (mesmo dia, algumas horas depois) — teste ao vivo revelou a causa raiz real + uma regressão introduzida pelo fix acima
+
+O usuário pediu pra automatizar o teste ao vivo do cenário (mensagem de cliente entra no buffer, `#pausar` chega dentro dos 12s, confirmar que a IA NÃO responde; e teste inverso, cliente novo sem interferência, confirmar que responde normal). Simulei os dois cenários com números de teste fake (`5500000099xxx`, nunca usados por cliente real) direto no webhook de produção (`/webhook/atendente-webhook`, instância `studio-andrade`). Isso expôs dois problemas que a análise estática não pegou:
+
+**1) Causa raiz real do bug original — regex quebrado (backspace literal em vez de `\b`):** no node `Decisor Central`, os dois regexes de detecção de comando —
+`/^#(reativar|retomar|voltar|despausar)\b/i` e `/^#(pausar|humano|pause|parar)\b/i` — continham um **caractere de backspace literal (código 8)** no lugar da sequência de dois caracteres `\` + `b` (confirmado via `charCodeAt`, replay isolado do código exato contra o input exato capturado na execução de teste). Um regex com backspace literal exige um caractere de backspace de verdade no texto pra casar, o que nunca acontece em mensagem real — ou seja, `isPauseCmd` e `isReactivateCmd` eram **sempre `false`**, pra qualquer mensagem, desde que esse trecho foi escrito. Resultado: `#pausar`/`#parar`/`#humano`/`#pause` e `#reativar`/`#retomar`/`#voltar`/`#despausar` **nunca ativavam nem desativavam a trava** — caíam no `else` (`comando_proprietario`), que só funciona se o número bater com o dono E é interpretado por uma IA que não conhece esses comandos. Esse era o bug de verdade que a Andressa sofreu — não só a corrida com o buffer (que também era real, mas nunca chegava a importar, porque a trava nunca era escrita pelo comando). Corrigido: os dois caracteres de backspace foram substituídos pela sequência correta `\b`. Validado: replay local confirma `#pausar`→match, `#pausaria`→não-match (boundary funcionando), etc.
+
+**2) Regressão introduzida pelo meu próprio fix de race condition:** o node Postgres `Supabase - Recheck Trava Pos Buffer` (novo, adicionado no fix acima) devolve **apenas as colunas da query** (`humano_assumiu`, `humano_assumiu_em`) — um node Postgres não repassa os campos de entrada automaticamente. Isso descartava `_acao`, `telefone`, `instancia`, `text`, `mensagens` etc. antes de chegar em `Rotear Decisao Buffer`, cujo switch depende de `$json._acao`. Com `_acao` ausente, nenhuma regra do switch casava — a mensagem morria em silêncio, sem erro, sem resposta. Isso quebrou o caminho normal (sem trava ativa) pra **qualquer tenant**, não só Studio Andrade, desde o deploy do primeiro fix (~13:10 UTC) até a correção (~19:44 UTC), sempre que uma conversa passava pelo buffer/debounce sem lock ativo — ou seja, a maioria das conversas normais nesse intervalo. Pego e corrigido no mesmo teste ao vivo, antes de declarar o trabalho concluído.
+
+**Correção da regressão:** novo node `Restaurar Dados Pos Recheck` (Code) entre `Supabase - Recheck Trava Pos Buffer` e `Humano Assumiu Apos Buffer?` — remonta o item completo a partir de `$('Compara').first().json` + os campos de lock da query, antes de seguir pro `Humano Assumiu Apos Buffer?` / `Rotear Decisao Buffer`.
+
+**Teste final (3ª rodada, após as duas correções, contra produção real):**
+- Cliente teste manda mensagem → entra no buffer → dono manda `#pausar` 3s depois (dentro dos 12s de debounce) → `_acao: humano_falou` confirmado, trava gravada (`Supabase - Ativar Trava`) → mensagem original do cliente re-checa a trava após o Wait e para em `IA Bloqueada Apos Buffer` — **não responde**. ✅
+- Cliente teste novo, sem interferência → buffer normal → `Restaurar Dados Pos Recheck` → `Rotear Decisao Buffer` → `Acumula` → `Atendente` gerou resposta real e coerente (preço de esmaltação em gel decorada, usando a tabela de preços do tenant) → `resposta ao cliente` enviou sem erro. **Comportamento normal 100% preservado.** ✅
+
+Dados de teste (6 números fake `5500000099xxx`) removidos de `dados_cliente` e `trava_atendimento_humano` após validação.
+
+**Backup:** `AtendentIA-Multi-Atendimento-SaaS-backup-2026-08-04-pre-fix-decisor-central-backspace-regex.json`, `AtendentIA-Multi-Atendimento-SaaS-backup-2026-08-04-pre-fix-dataloss-recheck-buffer.json`, `AtendentIA-Multi-Atendimento-SaaS-backup-2026-08-04-pos-fix-completo-validado.json` (estado final, 180 nodes).
+
+**Pendente:** auditoria retroativa de quantas conversas reais (todos os tenants) ficaram sem resposta da IA na janela ~13:10–19:44 UTC de 2026-08-04 por causa da regressão nº 2, pra decidir se algum cliente precisa de follow-up manual. Não feita ainda — foco foi corrigir e validar antes de mais nada.
 
 ## 2026-07-16 — AtendentIA Multi-Atendimento SaaS (hotfix urgente — Task Runner travando)
 
