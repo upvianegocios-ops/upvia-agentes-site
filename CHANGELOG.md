@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-08-04 — AtendentIA Multi-Atendimento SaaS (race condition — IA respondia depois de #pausar/#parar)
+
+**Problema:** Andressa (tenant `studio_andrade`) estava respondendo uma cliente manualmente e mandou `#pausar`/`#parar` para travar a IA naquele contato. A IA continuou respondendo em paralelo, atropelando as respostas manuais — obrigou a desconectar o WhatsApp da instância pra conseguir atender.
+
+**Causa raiz:** `#parar` já era reconhecido (mesmo regex de `#pausar`/`#humano`/`#pause` em `Decisor Central`) e a gravação/leitura do lock (`trava_atendimento_humano`) já usava chave consistente — não era bug de comando nem de chave. O lock (`humano_assumiu`) só era checado **uma vez**, no início da execução (`Supabase - Buscar Sessao` → `Humano Assumiu?`), antes do buffer/debounce (`Intervalo`, node `Wait`). Se o dono mandasse `#pausar`/`#parar` **enquanto a mensagem do cliente já estava esperando o debounce**, a execução em curso acordava do `Wait` e ia direto pra `Atendente` sem re-checar o lock — respondendo mesmo com a trava já ativa. Falha arquitetural pré-existente (já estava lá no `Wait` de 4s antes do fix de buffer de 2026-07-15), mas o fix de buffer/debounce (`8958ec6`) aumentou a janela de espera de 4s pra 12s (`Config Debounce`), triplicando a chance de a corrida acontecer.
+
+**Correção aplicada:** novo trecho `Compara → Supabase - Recheck Trava Pos Buffer → Humano Assumiu Apos Buffer?` inserido antes de `Rotear Decisao Buffer`. Re-checa `humano_assumiu` (mesma lógica do `Humano Assumiu?` original, incluindo janela de 120min) logo antes de decidir consolidar/perguntar/enviar. Se o dono assumiu durante a espera, para em `IA Bloqueada Apos Buffer` (não envia); senão segue normal pro fluxo existente. Nenhum node/conexão existente foi removido ou renomeado.
+
+**Aplicação:** `PATCH` recusado pela API (`405 PATCH method not allowed`, mesmo comportamento do fix de 15/07). Autorizado `PUT` com o workflow completo (179 nodes, não parcial) — mesmo precedente. Antes de aplicar a correção real, foi feito um round-trip de teste (PUT com os 176 nodes originais inalterados) pra confirmar que a API não esvaziava nada; só depois foi enviado o PUT com a correção. Pós-aplicação: 179 nodes confirmados via GET independente, sem conexão pendurada, sem duplicidade, e os caminhos existentes (`Decisor Central`, `Switch1`, `Validar RemoteJid → Ativar Trava`, `Rotear Decisao Buffer`) continuam intactos. Execuções reais logo após o deploy (webhook, incluindo uma passando pelo caminho `Ativar Trava`) rodaram com sucesso, sem erro novo.
+
+**Validado por:** usuário autorizou diagnóstico e o `PUT` explicitamente nesta conversa.
+**Backup:** `n8n-workflows/AtendentIA-Multi-Atendimento-SaaS-backup-2026-07-31-pre-fix-lock-race-buffer.json` (antes) e `n8n-workflows/AtendentIA-Multi-Atendimento-SaaS-backup-2026-08-04-pos-fix-lock-race-buffer.json` (depois).
+**Commits:** ver commit desta alteração.
+
+**Pendente:** validação ao vivo do cenário completo (mandar mensagem de teste, aguardar entrar no buffer, mandar `#pausar` dentro dos 12s de debounce, confirmar que a IA NÃO responde) — nenhuma execução real bateu ainda no trecho novo (`Supabase - Recheck Trava Pos Buffer`) desde o deploy, só o caminho de escrita da trava (`Ativar Trava`) foi confirmado em tráfego real. Sugestão: testar no número de demo da Unhabella (mesmo workflow, sem afetar clientes reais da Andressa) ou pedir pra Andressa testar em um contato de teste.
+
 ## 2026-07-16 — AtendentIA Multi-Atendimento SaaS (hotfix urgente — Task Runner travando)
 
 **Problema:** na noite de 2026-07-15 (~23:02-23:33 BRT), a fila de mensagens do N8N encheu — mensagens novas de qualquer tenant ficavam "Waiting in the queue" indefinidamente. Reportado como possível fila zumbi + timeout de 300s no node `Montar Buffer Atualizado` (execução #95002).
