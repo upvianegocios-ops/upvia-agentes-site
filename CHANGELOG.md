@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-08-06 (noite) — AtendentIA Multi-Atendimento SaaS (correção urgente — notificação de handoff disparando pra ação da própria Ariane)
+
+**Problema (feedback real da Ariane, print com 6+ notificações repetidas):** o gatilho "trava automática" (`trava_conversas_iniciadas_pelo_owner`) — implementado horas antes na feature de notificação — disparava toda vez que a própria Ariane mandava mensagem normal pra alguém, avisando ela de uma ação que ela mesma acabou de tomar. Ruído puro, gerou spam.
+
+**Causa raiz:** na hora de desenhar a feature, perguntei especificamente se `#pausar` deveria notificar e recomendei que não (ação deliberada, o dono já sabe) — mas propus que a trava automática (efeito colateral de mensagem normal do dono) DEVERIA notificar, por ser "menos consciente". Na prática ficou claro que a distinção não importa: as duas são ações da própria Ariane, e ela não precisa ser avisada de nenhuma das duas.
+
+**Correção:** desconectada a ligação `Supabase - Ativar Trava (Humano Falou) → Notificar Trava Automatica?` (volta a ser beco sem saída, como era antes de hoje). Os 3 nodes desse branch (`Notificar Trava Automatica?`, `Montar Notificacao Trava Automatica`, `Avisar Handoff Trava Automatica`) continuam no workflow mas inertes — não removidos, só desconectados (mais fácil de auditar/reverter).
+
+**Gatilhos que continuam ativos** (únicos que fazem sentido — sempre sobre o CLIENTE, nunca sobre ação da Ariane):
+1. Cliente pediu atendimento humano explicitamente (`Pediu Humano?`)
+2. Pré-triagem concluída pela IA / urgência identificada (`Avaliar Notificacao Pos Resposta`, via `notificar_toda_interacao` e `palavras_urgencia`)
+
+**Melhoria de mensagem (pedido junto):** os 2 gatilhos acima agora usam o `pushName` (nome do WhatsApp do cliente) em vez de só o número de telefone, e adicionam uma frase de call-to-action no final: "Continue o atendimento de [nome]." Exemplo real testado: *"🔔 Atendimento pronto para você: Joana Teste Verificação — [resumo]. Continue o atendimento de Joana Teste Verificação."*
+
+**Validado:** reenviei os 2 cenários — mensagem normal da Ariane pra um contato (trava automática) → confirmado que NÃO dispara mais nenhuma notificação; cliente novo conversando → confirmado que a notificação dispara com nome + call-to-action corretos.
+
+**Backup:** `AtendentIA-Multi-Atendimento-SaaS-backup-2026-08-06-pre-fix-desconectar-trava-automatica.json` (antes) → `...-pos-fix-desconectar-trava-automatica-validado.json` (depois, estado final, 196 nodes).
+
+---
+
 ## 2026-08-06 (tarde) — AtendentIA Multi-Atendimento SaaS (feature: notificação automática de handoff pra atendimento humano)
 
 **Objetivo:** hoje quando a IA passa o atendimento pro humano, o dono do número não recebe alerta ativo — precisa checar o WhatsApp manualmente. Implementada notificação automática, configurável por tenant, via self-message (mesmo número da instância).
