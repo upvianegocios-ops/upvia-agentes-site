@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-08-06 (noite, 2) — AtendentIA Multi-Atendimento SaaS (bug crítico — notificações com quebra de linha falhavam silenciosamente)
+
+**Contexto:** Ariane simulou uma conversa real (contato "Jean Andrade", auto-identificado como Jean Carlo Andrade da Silva, caso de cirurgia de pedra no rim pelo SUS) pra gravar a tela recebendo a notificação. Pedido pra localizar a execução e confirmar/disparar a notificação.
+
+**Investigação:** localizada a conversa real (5 mensagens, tenant `ariane-d-avila-afonso-advocaci`, telefone `555384742117`, 17:24–17:34 UTC). **3 das 5 notificações foram enviadas, mas as 2 que mencionam o caso da cirurgia em detalhe — exatamente as mais relevantes pra gravação — falharam silenciosamente.**
+
+**Causa raiz:** `Avisar Jean` monta o corpo da requisição HTTP inserindo `{{ $json.texto_notificacao }}` direto dentro de uma string JSON manual (`"text": "{{ ... }}"`). Quando o texto tem quebra de linha real (`\n`) — o que é comum em respostas da IA com mais de uma frase, e o próprio "Continue o atendimento de [nome]." adicionado hoje mais cedo sempre gera `\n\n` — a quebra de linha crua invalida o JSON. O node tem `onError: continueRegularOutput`, então a execução inteira aparecia como "success" mesmo com esse node falhando por dentro — só aparecia checando o campo de erro do node especificamente.
+
+**Correção:** `jsonBody` reescrito pra usar `{{ JSON.stringify(...) }}` nos dois campos (`number` e `text`) em vez de interpolação manual de string — escapa newline/aspas/etc corretamente, robusto pra qualquer conteúdo que a IA gerar.
+
+**Validado:** reenviei um teste com resposta multi-parágrafo (a mesma condição que causou a falha original) — `Avisar Jean` completou sem erro e a Evolution API confirmou o envio (`status: PENDING`) com o texto multi-linha preservado corretamente.
+
+**Backup:** `AtendentIA-Multi-Atendimento-SaaS-backup-2026-08-06-pre-fix-avisar-jean-json-escape.json` (antes) → `...-pos-fix-avisar-jean-json-escape-validado.json` (depois).
+**Pendente:** decidir com o usuário se reenvia manualmente um resumo da conversa real do Jean Andrade agora que o bug está corrigido, ou se pede pra simular de novo.
+
+---
+
 ## 2026-08-06 (noite) — AtendentIA Multi-Atendimento SaaS (correção urgente — notificação de handoff disparando pra ação da própria Ariane)
 
 **Problema (feedback real da Ariane, print com 6+ notificações repetidas):** o gatilho "trava automática" (`trava_conversas_iniciadas_pelo_owner`) — implementado horas antes na feature de notificação — disparava toda vez que a própria Ariane mandava mensagem normal pra alguém, avisando ela de uma ação que ela mesma acabou de tomar. Ruído puro, gerou spam.
