@@ -1,5 +1,35 @@
 # Changelog
 
+## 2026-08-06 — AtendentIA Multi-Atendimento SaaS (race condition no buffer — rajada de mensagens gerava respostas fragmentadas/duplicadas)
+
+**Problema:** cliente da tenant `ariane-d-avila-afonso-advocaci` (Mayara Vargas) mandou 16 mensagens em rajada (7,8s) — a IA respondeu 15 vezes, cada resposta interpretando um pedaço diferente e incompleto da conversa, sem nunca consolidar numa resposta única nem avançar a coleta de dados.
+
+**Causa raiz (confirmada com dados reais de execução, não só análise estática):** o mecanismo de buffer/debounce (`Buscar Buffer Atual` → `Montar Buffer Atualizado` → `Incluir Mensagem`) fazia GET+modifica+SET no Redis sem nenhuma trava. Com 16 execuções concorrentes fazendo isso ao mesmo tempo, cada escrita sobrescrevia a anterior (lost update) — e o único mecanismo de desempate (`Compara`: "sou a mensagem mais recente?") era uma comparação otimista sobre um valor (`buffer.latest`) escrito da mesma forma insegura. Resultado real medido: das 15 execuções concorrentes, **15 (100%) se consideraram "a mais recente"** e todas enviaram resposta. Falha pré-existente desde a reescrita do buffer de 15/07 — sem relação com o fix de lock `humano_assumiu` de 04/08 (que roda depois de `Compara`, upstream de onde a corrida acontece).
+
+**Correção aplicada (aprovada pelo usuário):** reescrita do mecanismo de acúmulo/consolidação usando primitivas atômicas do Redis:
+1. `Redis - Empilhar Mensagem` (RPUSH) substitui o GET+modifica+SET — cada execução empilha só a própria mensagem, impossível perder mensagem por sobrescrita concorrente.
+2. `Redis - Incrementar Lock Rajada` (INCR atômico, TTL 20s) — exatamente UMA execução por rajada recebe o valor 1 (garantido pelo Redis mesmo sob concorrência) e vira a responsável por esperar o debounce e consolidar; todas as outras só empilham e param (`Sou o Primeiro da Rajada?`).
+3. Como só a vencedora do lock chega em `Compara` agora, a checagem antiga de "sou a mais recente" deixou de ser necessária.
+4. Drenagem do buffer via `Redis - Contar Buffer` (LLEN) + loop (`Loop Drenar Buffer`/`Redis - Pop Mensagem`, FIFO) — o Redis nativo do n8n não tem LRANGE, então a leitura completa da lista precisa de um loop.
+5. Checagem de "5+ fotos, perguntar se são todas" preservada, mas desacoplada do conteúdo do buffer — agora usa um contador atômico (`Redis - Incrementar Contador Fotos`) verificado ANTES de drenar, evitando ter que drenar-e-restaurar destrutivamente.
+6. `Compara`, `Marcar Pergunta Feita` e `Apaga Mensagens` mantiveram os nomes (evita quebrar referências de `Restaurar Dados Pos Recheck` e Rotear Decisao Buffer) mas foram reescritos por dentro.
+
+**3 bugs pegos e corrigidos durante o teste ao vivo, antes de declarar concluído** (nenhum chegou a afetar cliente real — todos os testes usaram números fake `550000008880x`):
+1. `Loop Drenar Buffer` (SplitInBatches) com os outputs invertidos — o output "loop" de verdade é o índice 1, não o 0 como a documentação interna (`CLAUDE.md`) registrava. Confirmado empiricamente rodando a rajada de teste (a primeira tentativa quebrou com `Cannot assign to read only property 'name' of object 'Error: Node 'Redis - Pop Mensagem' hasn't been executed'` — o mesmo tipo de erro fatal do hotfix de 16/07, mas dessa vez capturado em teste, não em produção). `CLAUDE.md` e `SKILL_AUDITOR_N8N.md` devem ser corrigidos para refletir isso.
+2. Consequência do bug 1: nenhuma resposta saía (pior que o bug original). Corrigido invertendo os dois outputs.
+3. `Compara` usava `$('Redis - Pop Mensagem').all()` pra juntar as mensagens drenadas — isso só retorna a ÚLTIMA rodada do node dentro do loop, não todas. A forma correta é `$input.all()` (a entrada direta do node, que o branch "done" do SplitInBatches já agrega corretamente). Sem essa correção, só a última mensagem da rajada aparecia na resposta consolidada.
+
+**Validação final (3 testes ao vivo, produção real, apos as 3 correções):**
+- Rajada de 12 mensagens rápidas → **exatamente 1 resposta enviada**, consolidando as 12 mensagens em ordem no texto final. ✅
+- Mensagem única, sem rajada → 1 resposta normal e coerente, sem regressão. ✅
+- Rajada + `#pausar` no meio do debounce (mesmo teste do fix de 04/08) → segue bloqueando corretamente, os dois mecanismos funcionam em conjunto. ✅
+
+**Não testado:** o fluxo de confirmação de 5+ fotos ("são todas as fotos?") não foi exercitado ao vivo nesta rodada — a lógica foi revisada mas não simulada com mensagens de imagem reais.
+
+**Aplicação:** `PATCH` nem tentado desta vez (já sabido que a API recusa). `PUT` direto, com round-trip de segurança e backups antes/depois de cada uma das 4 aplicações (fix principal + 2 correções de bug + estado final).
+**Backup:** `AtendentIA-Multi-Atendimento-SaaS-backup-2026-08-06-pre-fix-buffer-race-rajada.json` (antes de tudo) → `...-pre-fix-loop-drenar-indices.json` → `...-pre-fix-compara-input-all.json` → `...-pos-fix-buffer-race-rajada-validado.json` (estado final, 190 nodes).
+**Pendente:** limpar as linhas de teste (`dados_cliente`/`trava_atendimento_humano`, telefones `550000008880x`) do Supabase — não foi possível nesta sessão porque a ferramenta de acesso ao Supabase desconectou no meio da tarefa. Baixo risco (números obviamente fake, e as chaves Redis usadas já expiraram sozinhas pelo TTL).
+
 ## 2026-08-04 — AtendentIA Multi-Atendimento SaaS (race condition — IA respondia depois de #pausar/#parar)
 
 **Problema:** Andressa (tenant `studio_andrade`) estava respondendo uma cliente manualmente e mandou `#pausar`/`#parar` para travar a IA naquele contato. A IA continuou respondendo em paralelo, atropelando as respostas manuais — obrigou a desconectar o WhatsApp da instância pra conseguir atender.

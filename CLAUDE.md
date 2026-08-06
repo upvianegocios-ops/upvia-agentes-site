@@ -166,7 +166,8 @@ Provisiona instância automaticamente. Integrado ao Asaas para cobrança recorre
 - **Acentos em nomes de nodes** causam erro `"Referenced node doesn't exist"` — NUNCA usar acentos
 - **PUT/POST direto na API N8N esvazia workflows** — sempre editar JSON localmente e importar via "Import from File"
 - **MCP N8N server conflita com chamadas REST diretas** — desabilitar antes de usar Invoke-RestMethod
-- **Split in Batches:** output `0` = Loop Branch | output `1` = Done Branch (não inverter)
+- **Split in Batches:** ⚠️ CORRIGIDO 06/08 — testado ao vivo (workflow AtendentIA, node `Loop Drenar Buffer`, typeVersion 3): na prática é o **inverso** do que este arquivo dizia antes. Output `0` = **Done Branch**, output `1` = **Loop Branch**. Ligar o loop no output errado faz o node de dentro do loop nunca rodar, e qualquer `$('node').all()` referenciando esse node quebra a execução com `"Node 'X' hasn't been executed"`. **Antes de confiar nisso：teste com um item real** — o workflow `agente-vendedor-multitenant`/outros que usam Split in Batches (ex: `Loop Promocao`) podem estar com essa mesma inversão sem terem sido pegos ainda; auditar se for mexer neles.
+- **Coletar resultados de dentro de um loop (Split in Batches):** `$('NomeDoNode').all()` dentro de um Code node só enxerga a ÚLTIMA rodada do node referenciado, não todas as voltas do loop. Pra pegar tudo que passou pelo loop, use `$input.all()` no node que recebe o branch "done" — é ele quem de fato agrega os itens de todas as iterações.
 - **Nó `Sem Erros?` IF:** usar `notEquals`, não `isEmpty` (null ≠ "" com validação estrita)
 - **`fromMe` detection:** simplificar para boolean `true` com "Convert types where required"
 
