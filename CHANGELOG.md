@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-08-06 (noite, 3) — AtendentIA Multi-Atendimento SaaS (feature: bloqueio automático por palavra-chave — contatos institucionais/profissionais)
+
+**Objetivo:** a lista manual `contatos_bloqueados` da Ariane precisava ser atualizada toda vez que um novo contato profissional (vara, tribunal, advogado parceiro, perito, procurador) aparecia — inviável de manter. A IA estava triando gente que não é cliente.
+
+**Migração** (`supabase/migrations/20260806_add_bloqueio_palavra_chave.sql`) — 2 colunas em `clientes_sistema`: `bloqueio_por_palavra_chave` (bool, default `false`) + `palavras_chave_bloqueio` (text, csv). Aplicada via workflow n8n temporário (mesmo método de hoje mais cedo). Ativado só pra Ariane: `vara,tribunal,forum,comarca,procurador,procuradoria,advogado,advogada,dr.,dra.,oab,perito,pericia,cartorio,delegacia,ministerio publico,promotoria,juiz,juiza,oficial de justica`.
+
+**Onde entra no fluxo:** logo após `Montar Contexto Dinamico`, antes de `Guard Erro Contexto` — não em "depois de identificar o contato" como o pedido original sugeria, porque a checagem só precisa de `pushName`+texto (já disponíveis desde o início) e inserir mais cedo evita criar registro em `dados_cliente` pra um contato que vai ser ignorado de qualquer forma.
+
+**Nodes novos:** `Verificar Palavra Chave Institucional` (checa pushName E texto da mensagem) → `Contato Institucional Detectado?` (IF) → match: `Ativar Trava Bloqueio Institucional` (grava `humano_assumiu=true`, mesmo padrão de `Supabase - Ativar Trava`) → `Notificar Bloqueio Institucional` → `Avisar Jean` (reaproveitado). Sem match: segue pro `Guard Erro Contexto` normal.
+
+**Decisão de design — correspondência por borda de palavra, não substring:** `"dra"` como substring bateria em "qua**dra**", "consi**dra**" e outras palavras comuns — usa regex com borda de palavra (`(^|[^a-z0-9])palavra($|[^a-z0-9])`) sobre texto normalizado (sem acento, minúsculo) nos dois lados. Testado localmente antes de aplicar: "quadra de tênis" e "considera isso" **não** disparam; "Dra. Fulana" e "aqui é o perito Fulano" disparam corretamente.
+
+**Riscos conhecidos e aceitos (usuário optou por manter a lista como especificada):**
+- `dr.`/`dra.` continuam podendo disparar em uso informal não-profissional ("oi dr, tudo bem?") ou contato salvo por vaidade sem ser advogado de verdade — borda de palavra resolve o problema de substring, não resolve ambiguidade semântica. Sem confirmação extra da IA antes de bloquear (mudaria a promessa de bloqueio silencioso do pedido original).
+- Trade-off oposto também existe: `"oab"` com borda de palavra **não** bate em `"OAB123"` (sem espaço) — só em uso isolado da palavra. Prioriza evitar falso positivo (bloquear cliente real) sobre pegar todo falso negativo.
+
+**Validado (3 cenários, produção real, tenant Ariane):**
+- Contato salvo como "Dr. Joao Advogado" + mensagem comum → bloqueado por nome salvo, IA não rodou, notificação disparou. ✅
+- Contato com nome comum + "aqui é o perito Fulano, preciso falar com a Dra Ariane" → bloqueado por conteúdo, IA não rodou, notificação disparou. ✅
+- Cliente normal (nome comum, mensagem comum) → não bloqueado, IA respondeu normalmente, notificação padrão de `toda_interacao` continuou funcionando sem interferência do novo bloqueio. ✅
+
+**Backup:** `AtendentIA-Multi-Atendimento-SaaS-backup-2026-08-06-pre-fix-bloqueio-institucional.json` (antes) → `...-pos-fix-bloqueio-institucional-validado.json` (depois, estado final, 200 nodes).
+
+---
+
 ## 2026-08-06 (noite, 2) — AtendentIA Multi-Atendimento SaaS (bug crítico — notificações com quebra de linha falhavam silenciosamente)
 
 **Contexto:** Ariane simulou uma conversa real (contato "Jean Andrade", auto-identificado como Jean Carlo Andrade da Silva, caso de cirurgia de pedra no rim pelo SUS) pra gravar a tela recebendo a notificação. Pedido pra localizar a execução e confirmar/disparar a notificação.
