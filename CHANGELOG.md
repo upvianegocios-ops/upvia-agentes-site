@@ -1,6 +1,42 @@
 # Changelog
 
-## 2026-08-06 — AtendentIA Multi-Atendimento SaaS (race condition no buffer — rajada de mensagens gerava respostas fragmentadas/duplicadas)
+## 2026-08-06 (tarde) — AtendentIA Multi-Atendimento SaaS (feature: notificação automática de handoff pra atendimento humano)
+
+**Objetivo:** hoje quando a IA passa o atendimento pro humano, o dono do número não recebe alerta ativo — precisa checar o WhatsApp manualmente. Implementada notificação automática, configurável por tenant, via self-message (mesmo número da instância).
+
+**Migração Supabase** (`supabase/migrations/20260806_add_notificacao_handoff_atendimento.sql`) — 4 colunas novas em `clientes_sistema`, todas com default seguro:
+- `notificar_atendimento_humano` (bool, default `true`) — liga/desliga notificações padrão (trava automática + cliente pediu humano + falha detectada)
+- `notificar_toda_interacao` (bool, default `false`, `true` só pra Ariane) — notifica em toda resposta da IA, não só handoff — modelo "sempre revisão humana", já que ela nunca deixa a IA agendar sozinha (REGRAS ABSOLUTAS — AGENDAMENTO no prompt dela)
+- `palavras_urgencia` (text, nullable; Ariane: `"situação urgente"`) — frases checadas na resposta da IA, notificação imediata com prefixo 🚨 independente dos outros flags
+- `palavras_falha_atendimento` (text, nullable) — frases indicando que a IA não resolveu, só conta se `notificar_atendimento_humano=true`
+
+Aplicada via workflow n8n temporário (webhook + Postgres, credencial já existente `Postgres account 2`) já que o MCP do Supabase estava indisponível na sessão — criado, disparado uma vez, resultado conferido, deletado.
+
+**Decisão de design — detecção de urgência:** em vez de tentar re-detectar "prisão em flagrante"/"mandado"/etc diretamente no texto do cliente (raso, arriscado), a IA da Ariane já é instruída (seção "CLASSIFICAÇÃO DA URGÊNCIA" do prompt dela) a responder literalmente **"situação urgente"** quando classifica um caso como prioridade máxima — a notificação detecta essa confirmação da própria IA, que já tem o contexto completo. Confirmado num teste real: mensagem sobre prisão em flagrante → IA respondeu citando "situação urgente" → notificação 🚨 disparou corretamente.
+
+**#pausar/#parar explícito NUNCA notifica** (ação deliberada do dono, ele já sabe) — só a trava automática (`trava_conversas_iniciadas_pelo_owner`, efeito colateral de mensagem normal) notifica. Adicionado campo `_motivo_lock` (`comando_explicito` | `trava_automatica`) em `Decisor Central` pra fazer essa distinção, que antes não existia (os dois casos geravam o mesmo `_acao: humano_falou`).
+
+**Nodes novos:** `Notificar Trava Automatica?` (IF) + `Montar Notificacao Trava Automatica` + `Avisar Handoff Trava Automatica` (branch da trava automática, pendurado em `Supabase - Ativar Trava` que antes era um beco sem saída) · `Montar Notificacao Pediu Humano` (novo branch paralelo de `Pediu Humano?`) · `Avaliar Notificacao Pos Resposta` + `Montar Notificacao Pos Resposta` (branch novo pendurado em `Atendente`, decide urgente/falha/toda_interacao). **Node generalizado:** `Avisar Jean` — antes só mandava um texto fixo de "pediu atendimento humano", agora recebe `texto_notificacao` pronto de qualquer uma das 3 origens acima e serve qualquer tenant/motivo.
+
+### 2 bugs pegos e corrigidos durante o teste ao vivo
+
+1. **Hang do Task Runner (300s timeout)** em `Montar Notificacao Pediu Humano` — usava `$('Mensagem').item.json`, o mesmo padrão de acessor `.item` com pairedItem ambíguo que já tinha causado o hotfix de 16/07 (trava o runner em vez de lançar erro capturável). Trocado por `$('Filtro + Extrair').first().json` (roda uma única vez, sem ambiguidade — mesmo padrão já usado em `detectarTipo()` e `Compara`). Não causou dano colateral desta vez (pouco tráfego concorrente no momento), mas é a mesma classe de bug que já derrubou execuções de outros tenants antes — `CLAUDE.md` já tinha o aviso, só não bati o olho a tempo.
+
+2. **`evo_api_url`/`evo_api_key` NULL no banco** — `clientes_sistema.evo_api_url`/`evo_api_key` vêm nulos pra pelo menos a Ariane; a API global (`evo.upviaagentes.com` + chave global do `CLAUDE.md`) sempre foi o fallback de fato usado em produção via `Montar Contexto Dinamico` (`txt(negocio.evo_api_url) || 'https://...'`), só que a query nova (`Carregar Flag Trava Owner`) não tinha esse fallback. **Isso chegou a afetar 3 interações reais** de um cliente real da Ariane (`555384514026`) entre o deploy e a correção — a trava automática funcionou normal (não foi afetada), só a notificação nova falhou silenciosamente nessas 3 vezes. Corrigido com o mesmo fallback.
+
+### Validação final (5 cenários, produção real)
+- Ariane, mensagem urgente (prisão em flagrante) → 🚨 URGENTE, IA citou "situação urgente" corretamente. ✅
+- Ariane, mensagem normal → 🔔 toda_interacao. ✅
+- Studio Andrade, cliente pede humano ("quero falar com atendente") → 🔔 gatilho generalizado funcionando em outro tenant. ✅
+- Ariane, `#pausar` → confirmado que NÃO notifica. ✅
+- Ariane, mensagem normal dela pra um contato → trava automática notifica corretamente. ✅
+
+**Backup:** `AtendentIA-Multi-Atendimento-SaaS-backup-2026-08-06-pre-fix-notificacao-handoff.json` (antes) → `...-pre-fix-pediu-humano-hang.json` → `...-pre-fix-evo-api-fallback.json` → `...-pos-fix-notificacao-handoff-validado.json` (estado final, 196 nodes).
+**Pendente:** nada bloqueante. `palavras_falha_atendimento` fica vazio até algum tenant configurar suas próprias frases (feature opt-in, sem uso ainda).
+
+---
+
+## 2026-08-06 (manhã) — AtendentIA Multi-Atendimento SaaS (race condition no buffer — rajada de mensagens gerava respostas fragmentadas/duplicadas)
 
 **Problema:** cliente da tenant `ariane-d-avila-afonso-advocaci` (Mayara Vargas) mandou 16 mensagens em rajada (7,8s) — a IA respondeu 15 vezes, cada resposta interpretando um pedaço diferente e incompleto da conversa, sem nunca consolidar numa resposta única nem avançar a coleta de dados.
 
