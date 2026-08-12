@@ -1,5 +1,43 @@
 # Changelog
 
+## 2026-08-12 (manhã) — AtendentIA Multi-Atendimento SaaS (hotfix: regressão na trava automática, causada pelo fix de notificação de ontem)
+
+**Problema (relato real da Ariane):** depois dos testes de ontem à noite, a IA voltou a responder clientes mesmo com a Ariane já respondendo manualmente pelo WhatsApp — a trava automática (`trava_conversas_iniciadas_pelo_owner`) parou de ativar.
+
+**Causa raiz:** regressão introduzida pelo próprio fix de notificação de ontem (ver entrada anterior). O node novo `Carregar Dedup Notificacao Handoff` foi ligado **em série** entre `Carregar Flag Trava Owner` e `Decisor Central`, substituindo o que este último recebe como `$json`. `Decisor Central` lê `item.json.trava_conversas_iniciadas_pelo_owner` direto (sem `$('...')`), campo que só existe no resultado de `Carregar Flag Trava Owner` — com o node novo no meio, esse campo virou sempre `undefined`, e o guard `if (!travaOwnerAtivada) continue;` passou a pular sempre o branch da trava automática.
+
+**Confirmado em produção:** 27 mensagens manuais da Ariane ontem à noite (contato 555391229712 entre outros) — `Supabase - Ativar Trava (Humano Falou)` não rodou em nenhuma. Caso concreto: exec `133709` ("Perdão minha secretária te atendeu", ela mesma respondendo) → trava não ativa → exec `133712`, cliente manda "Desculpa o horário dra" → IA responde de novo, por cima da Ariane.
+
+**Correção:** `Carregar Flag Trava Owner` volta a alimentar `Decisor Central` diretamente, e passa a alimentar `Carregar Dedup Notificacao Handoff` **em paralelo** (mesmo padrão de fan-out já usado em `Pediu Humano?`), não mais em série. `Carregar Dedup Notificacao Handoff` vira nó-folha (sem saída), lido só por referência cruzada `$('Carregar Dedup Notificacao Handoff')` pelos nodes de notificação — não muda nada da lógica de dedup em si. Diff mínimo: os 202 nodes ficaram byte-a-byte idênticos, só a conexão de `Carregar Flag Trava Owner` mudou.
+
+**Validado em produção real:** após o fix, mensagens manuais da Ariane voltaram a marcar `_acao: "humano_falou"` no `Decisor Central` e ativar a trava (`Supabase - Ativar Trava` rodando); mensagem de cliente logo em seguida ("Bom dia") não gerou resposta da IA — trava funcionando.
+
+**Backup:** `AtendentIA-Multi-Atendimento-SaaS-backup-2026-08-12-1056-pre-fix-regressao-trava-automatica.json` (antes) → `AtendentIA-Multi-Atendimento-SaaS-NOVO-2026-08-12-fix-regressao-trava-automatica.json` (depois, estado final, 202 nodes).
+
+**Lição:** ao inserir um node novo no meio de uma cadeia existente, checar se algum node downstream lê `$json` direto (em vez de `$('NomeDoNode')`) antes de substituir a ligação em série — nesses casos, ligar em paralelo (fan-out) em vez de intercalar.
+
+---
+
+## 2026-08-11 (noite) — AtendentIA Multi-Atendimento SaaS (fix: notificação de handoff disparando em toda resposta da IA durante a triagem)
+
+**Problema (relato real da Ariane):** a notificação "🔔 Atendimento pronto para você" disparava a cada resposta da IA durante uma triagem em andamento (várias por conversa), não só quando a triagem de fato terminava — spam.
+
+**Causa raiz:** não era bug de lógica quebrada — `notificar_toda_interacao=true` (ligado só pra Ariane desde 06/08) fazia exatamente o que foi projetado pra fazer: notificar em toda resposta da IA. Na prática, com triagens de várias perguntas, isso virou ruído. Não existia nenhuma trava contra repetição em nenhum dos 2 gatilhos "sobre o cliente" (`toda_interacao` / `pediu_humano`).
+
+**Migração** (`supabase/migrations/20260811_dedup_e_conclusao_triagem_notificacao.sql`) — 2 colunas novas: `clientes_sistema.palavras_conclusao_triagem` (mesmo padrão de `palavras_urgencia`, várias variações separadas por vírgula pra tolerar paráfrase da IA — pra Ariane: `vou encaminhar,passarei essas informações,dra. ariane vai analisar,dra. ariane vai retornar,entrará em contato`) + `trava_atendimento_humano.notificacao_handoff_enviada_em` (timestamp de dedup, reaproveitando a mesma janela de 2h de `humano_assumiu_em`).
+
+**Nodes novos:** `Carregar Dedup Notificacao Handoff` (lê `humano_assumiu` + `notificacao_handoff_enviada_em` do contato, cedo no fluxo) e `Marcar Notificacao Enviada` (grava o timestamp de dedup antes de `Avisar Jean`, só nos branches `toda_interacao`/`pediu_humano` — não em `Notificar Bloqueio Institucional`, feature separada). `Avaliar Notificacao Pos Resposta` só marca `toda_interacao` quando a IA de fato sinaliza fim de triagem (match em `palavras_conclusao_triagem`) E ainda não notificou nessa sessão; `urgente` continua disparando sempre, sem respeitar a trava de dedup (emergência real merece alerta mesmo repetido).
+
+**2 bugs pegos e corrigidos durante o teste ao vivo:**
+1. `ctx.palavras_conclusao_triagem` chegava `undefined` em `Avaliar Notificacao Pos Resposta` — `Carregar Dados Negocio` usa lista explícita de colunas (não `SELECT *`) e `Montar Contexto Dinamico` mapeia campos explicitamente pro `ctx`; a coluna nova não passava por nenhum dos dois. Corrigido adicionando `cs.palavras_conclusao_triagem` na query e o mapeamento correspondente no `ctx`.
+2. Ver entrada seguinte (regressão na trava automática) — pego só no dia seguinte, via relato real da Ariane.
+
+**Aplicado via API (PUT), não "Import from File":** autorização explícita pra essa exceção pontual à regra do `SKILL_GOVERNANCA.md`. Descoberto durante a aplicação que o body do PUT só aceita os campos read-write do schema oficial (`name, nodes, connections, settings, staticData, pinData` — nunca `id`/`active`/`versionId`/etc, que são read-only) e que o `settings` desta instância específica do n8n só aceita um subconjunto de campos mais antigo que o da doc do GitHub (sem `binaryMode`/`timeSavedMode`/`availableInMCP`) — provavelmente a causa raiz do incidente histórico de PUT "esvaziando" workflows.
+
+**Backup:** `AtendentIA-Multi-Atendimento-SaaS-backup-2026-08-11-2005-pre-fix-notificacao-spam-triagem.json` (antes) → `AtendentIA-Multi-Atendimento-SaaS-NOVO-2026-08-11-2350-fix2-ctx-palavras-conclusao.json` (depois, estado final, 202 nodes).
+
+---
+
 ## 2026-08-06 (noite, 3) — AtendentIA Multi-Atendimento SaaS (feature: bloqueio automático por palavra-chave — contatos institucionais/profissionais)
 
 **Objetivo:** a lista manual `contatos_bloqueados` da Ariane precisava ser atualizada toda vez que um novo contato profissional (vara, tribunal, advogado parceiro, perito, procurador) aparecia — inviável de manter. A IA estava triando gente que não é cliente.
