@@ -1,0 +1,1584 @@
+﻿{
+    "updatedAt":  "2026-08-12T16:32:18.984Z",
+    "createdAt":  "2026-07-02T14:12:03.922Z",
+    "id":  "z0LwxrlY0WRztd3N",
+    "name":  "AtendenteIA - Fisa Games Infoproduto",
+    "description":  null,
+    "active":  false,
+    "isArchived":  false,
+    "nodes":  [
+                  {
+                      "parameters":  {
+                                         "httpMethod":  "POST",
+                                         "path":  "checkout-infoproduto",
+                                         "options":  {
+                                                         "rawBody":  true
+                                                     }
+                                     },
+                      "id":  "n01-wh-checkout",
+                      "name":  "Webhook Checkout",
+                      "type":  "n8n-nodes-base.webhook",
+                      "typeVersion":  2,
+                      "position":  [
+                                       0,
+                                       208
+                                   ],
+                      "webhookId":  "checkout-infoproduto-v1"
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const raw = $input.first().json;\nconst body = raw.body || raw;\n\n// AJUSTE: substitua pelos nomes reais dos campos do checkout\nconst evento = String(body.evento || body.event || body.status || body.tipo || \u0027\u0027).toLowerCase();\nconst order_id = String(body.order_id || body.id || body.pedido_id || body.orderId || \u0027\u0027);\nconst telefone = String(body.telefone || body.phone || body.whatsapp || body.celular || \u0027\u0027).replace(/\\D/g, \u0027\u0027);\nconst nome = String(body.nome || body.name || body.cliente_nome || body.customer_name || \u0027\u0027);\nconst email = String(body.email || body.customer_email || \u0027\u0027);\nconst produto_id = String(body.produto_id || body.product_id || body.productId || \u0027\u0027);\nconst valor = parseFloat(String(body.valor || body.amount || body.price || body.total || \u00270\u0027).replace(\u0027,\u0027, \u0027.\u0027)) || 0;\n// AJUSTE: nome da instancia WhatsApp do tenant na Evolution API\nconst instancia = String(body.instancia || body.instance || \u0027SUA_INSTANCIA_WA\u0027);\n\nif (!order_id || !telefone) return [];\n\nreturn [{ json: { evento, order_id, telefone, nome, email, produto_id, valor, instancia } }];"
+                                     },
+                      "id":  "n02-extrair",
+                      "name":  "Extrair Dados Checkout",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       272,
+                                       208
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "conditions":  {
+                                                            "options":  {
+                                                                            "caseSensitive":  false,
+                                                                            "leftValue":  "",
+                                                                            "typeValidation":  "loose",
+                                                                            "version":  2
+                                                                        },
+                                                            "conditions":  [
+                                                                               {
+                                                                                   "id":  "ev1",
+                                                                                   "leftValue":  "={{ $json.evento }}",
+                                                                                   "rightValue":  "aprovad",
+                                                                                   "operator":  {
+                                                                                                    "type":  "string",
+                                                                                                    "operation":  "contains"
+                                                                                                }
+                                                                               },
+                                                                               {
+                                                                                   "id":  "ev2",
+                                                                                   "leftValue":  "={{ $json.evento }}",
+                                                                                   "rightValue":  "paid",
+                                                                                   "operator":  {
+                                                                                                    "type":  "string",
+                                                                                                    "operation":  "contains"
+                                                                                                }
+                                                                               },
+                                                                               {
+                                                                                   "id":  "ev3",
+                                                                                   "leftValue":  "={{ $json.evento }}",
+                                                                                   "rightValue":  "payment_approved",
+                                                                                   "operator":  {
+                                                                                                    "type":  "string",
+                                                                                                    "operation":  "equals"
+                                                                                                }
+                                                                               }
+                                                                           ],
+                                                            "combinator":  "or"
+                                                        },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "n03-rotear-evento",
+                      "name":  "Rotear Evento",
+                      "type":  "n8n-nodes-base.if",
+                      "typeVersion":  2.2,
+                      "position":  [
+                                       528,
+                                       208
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "executeQuery",
+                                         "query":  "INSERT INTO public.pedidos_infoproduto\n  (order_id, instancia, telefone, nome, email, produto_id, valor, status)\nVALUES\n  (\u0027{{ $json.order_id }}\u0027, \u0027{{ $json.instancia }}\u0027, \u0027{{ $json.telefone }}\u0027,\n   \u0027{{ $json.nome }}\u0027, \u0027{{ $json.email }}\u0027, \u0027{{ $json.produto_id }}\u0027, {{ $json.valor || 0 }}, \u0027aprovado\u0027)\nON CONFLICT (order_id)\nDO UPDATE SET\n  status = \u0027aprovado\u0027,\n  nome = COALESCE(EXCLUDED.nome, pedidos_infoproduto.nome),\n  email = COALESCE(EXCLUDED.email, pedidos_infoproduto.email),\n  updated_at = NOW()\nRETURNING *, (entregue_at IS NULL) AS deve_entregar;",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "n04-upsert-aprovado",
+                      "name":  "Upsert Pedido Aprovado",
+                      "type":  "n8n-nodes-base.postgres",
+                      "typeVersion":  2.5,
+                      "position":  [
+                                       784,
+                                       80
+                                   ],
+                      "credentials":  {
+                                          "postgres":  {
+                                                           "id":  "Dym0Y2qw1VYqERST",
+                                                           "name":  "Postgres account 3"
+                                                       }
+                                      },
+                      "onError":  "continueRegularOutput"
+                  },
+                  {
+                      "parameters":  {
+                                         "conditions":  {
+                                                            "options":  {
+                                                                            "caseSensitive":  true,
+                                                                            "leftValue":  "",
+                                                                            "typeValidation":  "strict",
+                                                                            "version":  2
+                                                                        },
+                                                            "conditions":  [
+                                                                               {
+                                                                                   "id":  "ge1",
+                                                                                   "leftValue":  "={{ $json.deve_entregar }}",
+                                                                                   "rightValue":  true,
+                                                                                   "operator":  {
+                                                                                                    "type":  "boolean",
+                                                                                                    "operation":  "equals"
+                                                                                                }
+                                                                               }
+                                                                           ],
+                                                            "combinator":  "and"
+                                                        },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "n05-guard-entregue",
+                      "name":  "Guard Ja Entregue",
+                      "type":  "n8n-nodes-base.if",
+                      "typeVersion":  2.2,
+                      "position":  [
+                                       1040,
+                                       80
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "executeQuery",
+                                         "query":  "SELECT instancia_whatsapp, evo_api_url, evo_api_key, telefone AS telefone_proprietario, nome_empresa, nome_atendente_ia, link_checkout FROM public.clientes_sistema WHERE instancia_whatsapp = \u0027{{ $(\u0027Extrair Dados Checkout\u0027).first().json.instancia }}\u0027 AND status = \u0027ativo\u0027 LIMIT 1;",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "n06-config-apr",
+                      "name":  "Carregar Config Aprovado",
+                      "type":  "n8n-nodes-base.postgres",
+                      "typeVersion":  2.5,
+                      "position":  [
+                                       1312,
+                                       80
+                                   ],
+                      "credentials":  {
+                                          "postgres":  {
+                                                           "id":  "Dym0Y2qw1VYqERST",
+                                                           "name":  "Postgres account 3"
+                                                       }
+                                      },
+                      "onError":  "continueRegularOutput"
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const pedido = $(\u0027Extrair Dados Checkout\u0027).first().json;\nconst config = $input.first().json;\n\nconst primeiroNome = (pedido.nome || \u0027cliente\u0027).split(\u0027 \u0027)[0];\nconst evoUrl = config.evo_api_url || \u0027https://evo.upviaagentes.com\u0027;\nconst evoKey = config.evo_api_key || \u0027\u0027;\nconst instanciaWA = config.instancia_whatsapp || pedido.instancia;\nconst telDono = config.telefone_proprietario || \u0027\u0027;\nconst empresa = config.nome_empresa || \u0027\u0027;\n\n// AJUSTE: personalize a mensagem e substitua LINK_DO_GRUPO_WA pelo link real do grupo\nconst msg = \u0027Ola \u0027 + primeiroNome + \u0027! ??\\n\\nSua compra foi confirmada com sucesso!\\n\\nPara acessar seu conteudo exclusivo, entre no nosso grupo pelo link abaixo:\\n\\n?? LINK_DO_GRUPO_WA ??\\n\\nQualquer duvida e so me chamar aqui. Bom aprendizado! ??\u0027;\n\nreturn [{\n  json: {\n    order_id: pedido.order_id,\n    telefone: pedido.telefone,\n    nome: pedido.nome,\n    valor: pedido.valor,\n    evo_api_url: evoUrl,\n    evo_api_key: evoKey,\n    instancia_whatsapp: instanciaWA,\n    telefone_proprietario: telDono,\n    nome_empresa: empresa,\n    mensagem_pos_compra: msg,\n    remoteJid: pedido.telefone + \u0027@s.whatsapp.net\u0027\n  }\n}];"
+                                     },
+                      "id":  "n07-montar-msg",
+                      "name":  "Montar Msg Pos Compra",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       1568,
+                                       80
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "method":  "POST",
+                                         "url":  "={{ $json.evo_api_url }}/message/sendText/{{ $json.instancia_whatsapp }}",
+                                         "sendHeaders":  true,
+                                         "headerParameters":  {
+                                                                  "parameters":  [
+                                                                                     {
+                                                                                         "name":  "apikey",
+                                                                                         "value":  "={{ $json.evo_api_key }}"
+                                                                                     }
+                                                                                 ]
+                                                              },
+                                         "sendBody":  true,
+                                         "specifyBody":  "json",
+                                         "jsonBody":  "={\n  \"number\": \"{{ $json.remoteJid }}\",\n  \"text\": {{ JSON.stringify($json.mensagem_pos_compra) }}\n}",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "n08-enviar-msg",
+                      "name":  "Enviar Msg Pos Compra",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.2,
+                      "position":  [
+                                       1824,
+                                       80
+                                   ],
+                      "onError":  "continueRegularOutput"
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "executeQuery",
+                                         "query":  "UPDATE public.pedidos_infoproduto SET entregue_at = NOW(), updated_at = NOW() WHERE order_id = \u0027{{ $(\u0027Extrair Dados Checkout\u0027).first().json.order_id }}\u0027;",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "n09-marcar-entregue",
+                      "name":  "Marcar Entregue",
+                      "type":  "n8n-nodes-base.postgres",
+                      "typeVersion":  2.5,
+                      "position":  [
+                                       2080,
+                                       80
+                                   ],
+                      "credentials":  {
+                                          "postgres":  {
+                                                           "id":  "Dym0Y2qw1VYqERST",
+                                                           "name":  "Postgres account 3"
+                                                       }
+                                      },
+                      "onError":  "continueRegularOutput"
+                  },
+                  {
+                      "parameters":  {
+                                         "method":  "POST",
+                                         "url":  "={{ $(\u0027Montar Msg Pos Compra\u0027).first().json.evo_api_url }}/message/sendText/{{ $(\u0027Montar Msg Pos Compra\u0027).first().json.instancia_whatsapp }}",
+                                         "sendHeaders":  true,
+                                         "headerParameters":  {
+                                                                  "parameters":  [
+                                                                                     {
+                                                                                         "name":  "apikey",
+                                                                                         "value":  "={{ $(\u0027Montar Msg Pos Compra\u0027).first().json.evo_api_key }}"
+                                                                                     }
+                                                                                 ]
+                                                              },
+                                         "sendBody":  true,
+                                         "specifyBody":  "json",
+                                         "jsonBody":  "={\n  \"number\": \"{{ $(\u0027Montar Msg Pos Compra\u0027).first().json.telefone_proprietario }}@s.whatsapp.net\",\n  \"text\": \"?? NOVA VENDA ENTREGUE!\\n\\nPedido: {{ $(\u0027Extrair Dados Checkout\u0027).first().json.order_id }}\\nCliente: {{ $(\u0027Extrair Dados Checkout\u0027).first().json.nome }}\\nTelefone: {{ $(\u0027Extrair Dados Checkout\u0027).first().json.telefone }}\\nValor: R$ {{ $(\u0027Extrair Dados Checkout\u0027).first().json.valor }}\\n\\nAcesso entregue no WhatsApp do cliente automaticamente! ?\"\n}",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "n10-notif-dono-venda",
+                      "name":  "Notificar Dono Venda",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.2,
+                      "position":  [
+                                       2352,
+                                       80
+                                   ],
+                      "onError":  "continueRegularOutput"
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "executeQuery",
+                                         "query":  "INSERT INTO public.pedidos_infoproduto\n  (order_id, instancia, telefone, nome, email, produto_id, valor, status)\nVALUES\n  (\u0027{{ $json.order_id }}\u0027, \u0027{{ $json.instancia }}\u0027, \u0027{{ $json.telefone }}\u0027,\n   \u0027{{ $json.nome }}\u0027, \u0027{{ $json.email }}\u0027, \u0027{{ $json.produto_id }}\u0027, {{ $json.valor || 0 }}, \u0027iniciado\u0027)\nON CONFLICT (order_id)\nDO UPDATE SET\n  telefone = COALESCE(EXCLUDED.telefone, pedidos_infoproduto.telefone),\n  nome = COALESCE(EXCLUDED.nome, pedidos_infoproduto.nome),\n  email = COALESCE(EXCLUDED.email, pedidos_infoproduto.email),\n  updated_at = NOW()\nWHERE pedidos_infoproduto.status = \u0027iniciado\u0027;",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "n11-salvar-iniciado",
+                      "name":  "Salvar Checkout Iniciado",
+                      "type":  "n8n-nodes-base.postgres",
+                      "typeVersion":  2.5,
+                      "position":  [
+                                       784,
+                                       384
+                                   ],
+                      "credentials":  {
+                                          "postgres":  {
+                                                           "id":  "Dym0Y2qw1VYqERST",
+                                                           "name":  "Postgres account 3"
+                                                       }
+                                      },
+                      "onError":  "continueRegularOutput"
+                  },
+                  {
+                      "parameters":  {
+                                         "rule":  {
+                                                      "interval":  [
+                                                                       {
+                                                                           "field":  "cronExpression",
+                                                                           "expression":  "0 */1 * * *"
+                                                                       }
+                                                                   ]
+                                                  }
+                                     },
+                      "id":  "n12-check-1h",
+                      "name":  "Check Abandono 1h",
+                      "type":  "n8n-nodes-base.scheduleTrigger",
+                      "typeVersion":  1.2,
+                      "position":  [
+                                       0,
+                                       912
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "executeQuery",
+                                         "query":  "SELECT p.id, p.order_id, p.telefone, p.nome, p.produto_id, p.valor, p.instancia, cs.evo_api_url, cs.evo_api_key, cs.instancia_whatsapp, cs.nome_empresa, cs.link_checkout FROM public.pedidos_infoproduto p JOIN public.clientes_sistema cs ON cs.instancia_whatsapp = p.instancia WHERE p.status = \u0027iniciado\u0027 AND p.abandono_1h = false AND p.updated_at \u003c NOW() - INTERVAL \u00271 hour\u0027 AND p.updated_at \u003e NOW() - INTERVAL \u00272 hours\u0027 AND cs.status = \u0027ativo\u0027 LIMIT 20;",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "n13-buscar-1h",
+                      "name":  "Buscar Abandonos 1h",
+                      "type":  "n8n-nodes-base.postgres",
+                      "typeVersion":  2.5,
+                      "position":  [
+                                       272,
+                                       912
+                                   ],
+                      "credentials":  {
+                                          "postgres":  {
+                                                           "id":  "Dym0Y2qw1VYqERST",
+                                                           "name":  "Postgres account 3"
+                                                       }
+                                      },
+                      "onError":  "continueRegularOutput"
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const items = $input.all();\nconst results = [];\nfor (const item of items) {\n  const nome = (item.json.nome || \u0027voce\u0027).split(\u0027 \u0027)[0];\n  const link = item.json.link_checkout || \u0027LINK_DO_CHECKOUT\u0027;\n  // AJUSTE: personalize a mensagem de 1h\n  const msg = \u0027Oi \u0027 + nome + \u0027! ??\\n\\nVi que voce se interessou mas nao finalizou a compra.\\n\\nSeu acesso ainda esta disponivel! Finalize agora:\\n\\n\u0027 + link;\n  const delay = 10000 + Math.floor(Math.random() * 40000);\n  results.push({ json: { ...item.json, mensagem_lembrete: msg, delayMs: delay } });\n}\nreturn results;"
+                                     },
+                      "id":  "n14-prep-1h",
+                      "name":  "Preparar Lembrete 1h",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       528,
+                                       912
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "n15-loop-1h",
+                      "name":  "Loop Abandono 1h",
+                      "type":  "n8n-nodes-base.splitInBatches",
+                      "typeVersion":  3,
+                      "position":  [
+                                       784,
+                                       912
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "amount":  "={{ $json.delayMs / 1000 }}"
+                                     },
+                      "id":  "n16-delay-1h",
+                      "name":  "Anti-Spam Delay 1h",
+                      "type":  "n8n-nodes-base.wait",
+                      "typeVersion":  1.1,
+                      "position":  [
+                                       1040,
+                                       832
+                                   ],
+                      "webhookId":  "abandono-delay-1h"
+                  },
+                  {
+                      "parameters":  {
+                                         "method":  "POST",
+                                         "url":  "={{ $json.evo_api_url }}/message/sendText/{{ $json.instancia_whatsapp }}",
+                                         "sendHeaders":  true,
+                                         "headerParameters":  {
+                                                                  "parameters":  [
+                                                                                     {
+                                                                                         "name":  "apikey",
+                                                                                         "value":  "={{ $json.evo_api_key }}"
+                                                                                     }
+                                                                                 ]
+                                                              },
+                                         "sendBody":  true,
+                                         "specifyBody":  "json",
+                                         "jsonBody":  "={\n  \"number\": \"{{ $json.telefone }}@s.whatsapp.net\",\n  \"text\": {{ JSON.stringify($json.mensagem_lembrete) }}\n}",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "n17-enviar-1h",
+                      "name":  "Enviar Lembrete 1h",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.2,
+                      "position":  [
+                                       1312,
+                                       832
+                                   ],
+                      "onError":  "continueRegularOutput"
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "executeQuery",
+                                         "query":  "UPDATE public.pedidos_infoproduto SET abandono_1h = true, updated_at = NOW() WHERE order_id = \u0027{{ $json.order_id }}\u0027;",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "n18-marcar-1h",
+                      "name":  "Marcar Abandono 1h",
+                      "type":  "n8n-nodes-base.postgres",
+                      "typeVersion":  2.5,
+                      "position":  [
+                                       1568,
+                                       912
+                                   ],
+                      "credentials":  {
+                                          "postgres":  {
+                                                           "id":  "Dym0Y2qw1VYqERST",
+                                                           "name":  "Postgres account 3"
+                                                       }
+                                      },
+                      "onError":  "continueRegularOutput"
+                  },
+                  {
+                      "parameters":  {
+                                         "rule":  {
+                                                      "interval":  [
+                                                                       {
+                                                                           "field":  "cronExpression",
+                                                                           "expression":  "0 */6 * * *"
+                                                                       }
+                                                                   ]
+                                                  }
+                                     },
+                      "id":  "n19-check-6h",
+                      "name":  "Check Abandono 6h",
+                      "type":  "n8n-nodes-base.scheduleTrigger",
+                      "typeVersion":  1.2,
+                      "position":  [
+                                       0,
+                                       1408
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "executeQuery",
+                                         "query":  "SELECT p.id, p.order_id, p.telefone, p.nome, p.produto_id, p.valor, p.instancia, cs.evo_api_url, cs.evo_api_key, cs.instancia_whatsapp, cs.nome_empresa, cs.link_checkout FROM public.pedidos_infoproduto p JOIN public.clientes_sistema cs ON cs.instancia_whatsapp = p.instancia WHERE p.status = \u0027iniciado\u0027 AND p.abandono_6h = false AND p.updated_at \u003c NOW() - INTERVAL \u00276 hours\u0027 AND p.updated_at \u003e NOW() - INTERVAL \u00277 hours\u0027 AND cs.status = \u0027ativo\u0027 LIMIT 20;",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "n20-buscar-6h",
+                      "name":  "Buscar Abandonos 6h",
+                      "type":  "n8n-nodes-base.postgres",
+                      "typeVersion":  2.5,
+                      "position":  [
+                                       272,
+                                       1408
+                                   ],
+                      "credentials":  {
+                                          "postgres":  {
+                                                           "id":  "Dym0Y2qw1VYqERST",
+                                                           "name":  "Postgres account 3"
+                                                       }
+                                      },
+                      "onError":  "continueRegularOutput"
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const items = $input.all();\nconst results = [];\nfor (const item of items) {\n  const nome = (item.json.nome || \u0027voce\u0027).split(\u0027 \u0027)[0];\n  const link = item.json.link_checkout || \u0027LINK_DO_CHECKOUT\u0027;\n  // AJUSTE: personalize a mensagem de 6h\n  const msg = \u0027Ei \u0027 + nome + \u0027! ?\\n\\nSeu produto ainda esta te esperando...\\n\\nNao deixe pra depois! Garanta agora:\\n\\n\u0027 + link;\n  const delay = 10000 + Math.floor(Math.random() * 40000);\n  results.push({ json: { ...item.json, mensagem_lembrete: msg, delayMs: delay } });\n}\nreturn results;"
+                                     },
+                      "id":  "n21-prep-6h",
+                      "name":  "Preparar Lembrete 6h",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       528,
+                                       1408
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "n22-loop-6h",
+                      "name":  "Loop Abandono 6h",
+                      "type":  "n8n-nodes-base.splitInBatches",
+                      "typeVersion":  3,
+                      "position":  [
+                                       784,
+                                       1408
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "amount":  "={{ $json.delayMs / 1000 }}"
+                                     },
+                      "id":  "n23-delay-6h",
+                      "name":  "Anti-Spam Delay 6h",
+                      "type":  "n8n-nodes-base.wait",
+                      "typeVersion":  1.1,
+                      "position":  [
+                                       1040,
+                                       1328
+                                   ],
+                      "webhookId":  "abandono-delay-6h"
+                  },
+                  {
+                      "parameters":  {
+                                         "method":  "POST",
+                                         "url":  "={{ $json.evo_api_url }}/message/sendText/{{ $json.instancia_whatsapp }}",
+                                         "sendHeaders":  true,
+                                         "headerParameters":  {
+                                                                  "parameters":  [
+                                                                                     {
+                                                                                         "name":  "apikey",
+                                                                                         "value":  "={{ $json.evo_api_key }}"
+                                                                                     }
+                                                                                 ]
+                                                              },
+                                         "sendBody":  true,
+                                         "specifyBody":  "json",
+                                         "jsonBody":  "={\n  \"number\": \"{{ $json.telefone }}@s.whatsapp.net\",\n  \"text\": {{ JSON.stringify($json.mensagem_lembrete) }}\n}",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "n24-enviar-6h",
+                      "name":  "Enviar Lembrete 6h",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.2,
+                      "position":  [
+                                       1312,
+                                       1328
+                                   ],
+                      "onError":  "continueRegularOutput"
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "executeQuery",
+                                         "query":  "UPDATE public.pedidos_infoproduto SET abandono_6h = true, updated_at = NOW() WHERE order_id = \u0027{{ $json.order_id }}\u0027;",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "n25-marcar-6h",
+                      "name":  "Marcar Abandono 6h",
+                      "type":  "n8n-nodes-base.postgres",
+                      "typeVersion":  2.5,
+                      "position":  [
+                                       1568,
+                                       1408
+                                   ],
+                      "credentials":  {
+                                          "postgres":  {
+                                                           "id":  "Dym0Y2qw1VYqERST",
+                                                           "name":  "Postgres account 3"
+                                                       }
+                                      },
+                      "onError":  "continueRegularOutput"
+                  },
+                  {
+                      "parameters":  {
+                                         "rule":  {
+                                                      "interval":  [
+                                                                       {
+                                                                           "field":  "cronExpression",
+                                                                           "expression":  "0 9 * * *"
+                                                                       }
+                                                                   ]
+                                                  }
+                                     },
+                      "id":  "n26-check-24h",
+                      "name":  "Check Abandono 24h",
+                      "type":  "n8n-nodes-base.scheduleTrigger",
+                      "typeVersion":  1.2,
+                      "position":  [
+                                       0,
+                                       1904
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "executeQuery",
+                                         "query":  "SELECT p.id, p.order_id, p.telefone, p.nome, p.produto_id, p.valor, p.instancia, cs.evo_api_url, cs.evo_api_key, cs.instancia_whatsapp, cs.nome_empresa, cs.link_checkout FROM public.pedidos_infoproduto p JOIN public.clientes_sistema cs ON cs.instancia_whatsapp = p.instancia WHERE p.status = \u0027iniciado\u0027 AND p.abandono_24h = false AND p.updated_at \u003c NOW() - INTERVAL \u002724 hours\u0027 AND p.updated_at \u003e NOW() - INTERVAL \u002725 hours\u0027 AND cs.status = \u0027ativo\u0027 LIMIT 20;",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "n27-buscar-24h",
+                      "name":  "Buscar Abandonos 24h",
+                      "type":  "n8n-nodes-base.postgres",
+                      "typeVersion":  2.5,
+                      "position":  [
+                                       272,
+                                       1904
+                                   ],
+                      "credentials":  {
+                                          "postgres":  {
+                                                           "id":  "Dym0Y2qw1VYqERST",
+                                                           "name":  "Postgres account 3"
+                                                       }
+                                      },
+                      "onError":  "continueRegularOutput"
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const items = $input.all();\nconst results = [];\nfor (const item of items) {\n  const nome = (item.json.nome || \u0027voce\u0027).split(\u0027 \u0027)[0];\n  const link = item.json.link_checkout || \u0027LINK_DO_CHECKOUT\u0027;\n  // AJUSTE: personalize a mensagem de 24h - ultimo lembrete\n  const msg = nome + \u0027, ultimo aviso! ??\\n\\nSua oportunidade de acessar o conteudo esta prestes a expirar.\\n\\nGaranta agora antes que seja tarde:\\n\\n\u0027 + link;\n  const delay = 10000 + Math.floor(Math.random() * 40000);\n  results.push({ json: { ...item.json, mensagem_lembrete: msg, delayMs: delay } });\n}\nreturn results;"
+                                     },
+                      "id":  "n28-prep-24h",
+                      "name":  "Preparar Lembrete 24h",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       528,
+                                       1904
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "n29-loop-24h",
+                      "name":  "Loop Abandono 24h",
+                      "type":  "n8n-nodes-base.splitInBatches",
+                      "typeVersion":  3,
+                      "position":  [
+                                       784,
+                                       1904
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "amount":  "={{ $json.delayMs / 1000 }}"
+                                     },
+                      "id":  "n30-delay-24h",
+                      "name":  "Anti-Spam Delay 24h",
+                      "type":  "n8n-nodes-base.wait",
+                      "typeVersion":  1.1,
+                      "position":  [
+                                       1040,
+                                       1824
+                                   ],
+                      "webhookId":  "abandono-delay-24h"
+                  },
+                  {
+                      "parameters":  {
+                                         "method":  "POST",
+                                         "url":  "={{ $json.evo_api_url }}/message/sendText/{{ $json.instancia_whatsapp }}",
+                                         "sendHeaders":  true,
+                                         "headerParameters":  {
+                                                                  "parameters":  [
+                                                                                     {
+                                                                                         "name":  "apikey",
+                                                                                         "value":  "={{ $json.evo_api_key }}"
+                                                                                     }
+                                                                                 ]
+                                                              },
+                                         "sendBody":  true,
+                                         "specifyBody":  "json",
+                                         "jsonBody":  "={\n  \"number\": \"{{ $json.telefone }}@s.whatsapp.net\",\n  \"text\": {{ JSON.stringify($json.mensagem_lembrete) }}\n}",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "n31-enviar-24h",
+                      "name":  "Enviar Lembrete 24h",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.2,
+                      "position":  [
+                                       1312,
+                                       1824
+                                   ],
+                      "onError":  "continueRegularOutput"
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "executeQuery",
+                                         "query":  "UPDATE public.pedidos_infoproduto SET abandono_24h = true, updated_at = NOW() WHERE order_id = \u0027{{ $json.order_id }}\u0027;",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "n32-marcar-24h",
+                      "name":  "Marcar Abandono 24h",
+                      "type":  "n8n-nodes-base.postgres",
+                      "typeVersion":  2.5,
+                      "position":  [
+                                       1568,
+                                       1904
+                                   ],
+                      "credentials":  {
+                                          "postgres":  {
+                                                           "id":  "Dym0Y2qw1VYqERST",
+                                                           "name":  "Postgres account 3"
+                                                       }
+                                      },
+                      "onError":  "continueRegularOutput"
+                  },
+                  {
+                      "parameters":  {
+                                         "httpMethod":  "POST",
+                                         "path":  "suporte-infoproduto-wa",
+                                         "options":  {
+                                                         "rawBody":  true
+                                                     }
+                                     },
+                      "id":  "n33-wh-suporte",
+                      "name":  "Webhook Suporte WA",
+                      "type":  "n8n-nodes-base.webhook",
+                      "typeVersion":  2,
+                      "position":  [
+                                       0,
+                                       2608
+                                   ],
+                      "webhookId":  "suporte-infoproduto-wa-v1"
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const raw = $input.first().json;\nconst body = raw.body || raw;\n\nconst evento = (body?.event || \u0027\u0027).toLowerCase();\nconst fromMe = body?.data?.key?.fromMe ?? false;\nconst remoteJid = body?.data?.key?.remoteJid || \u0027\u0027;\nconst messageId = body?.data?.key?.id || \u0027\u0027;\nconst instance = body?.instance || body?.instanceName || \u0027\u0027;\n\nconst msg = body?.data?.message || {};\nconst text = (msg.conversation || msg.extendedTextMessage?.text || \u0027\u0027).trim();\nconst pushName = body?.data?.pushName || \u0027\u0027;\n\nconst isMessage = evento.includes(\u0027messages\u0027);\nconst isGroup = remoteJid.endsWith(\u0027@g.us\u0027);\nconst hasText = !!text;\n\nif (!isMessage || isGroup || !hasText || fromMe) return [];\n\nconst telefone = remoteJid.replace(/@s\\.whatsapp\\.net$/, \u0027\u0027);\n\nreturn [{\n  json: {\n    instance,\n    remoteJid,\n    telefone,\n    text,\n    pushName,\n    messageId\n  }\n}];"
+                                     },
+                      "id":  "n34-filtro-wa",
+                      "name":  "Filtro Mensagem WA",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       272,
+                                       2608
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "executeQuery",
+                                         "query":  "SELECT instancia_whatsapp, evo_api_url, evo_api_key, telefone AS telefone_proprietario, nome_empresa, nome_atendente_ia FROM public.clientes_sistema WHERE instancia_whatsapp = \u0027{{ $json.instance }}\u0027 AND status = \u0027ativo\u0027 LIMIT 1;",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "n35-config-suporte",
+                      "name":  "Carregar Config Suporte",
+                      "type":  "n8n-nodes-base.postgres",
+                      "typeVersion":  2.5,
+                      "position":  [
+                                       528,
+                                       2608
+                                   ],
+                      "credentials":  {
+                                          "postgres":  {
+                                                           "id":  "Dym0Y2qw1VYqERST",
+                                                           "name":  "Postgres account 3"
+                                                       }
+                                      },
+                      "onError":  "continueRegularOutput"
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const filtro = $(\u0027Filtro Mensagem WA\u0027).first().json;\nconst config = $input.first().json;\n\nconst text = (filtro.text || \u0027\u0027).toLowerCase().trim();\n\n// Detectar opcao pelo que o usuario digitou\nlet opcao = 0; // 0 = mostrar menu\nif (text === \u00271\u0027 || text.includes(\u0027status\u0027) || text.includes(\u0027pedido\u0027) || text.includes(\u0027rastreio\u0027) || text.includes(\u0027entrega\u0027)) {\n  opcao = 1;\n} else if (text === \u00272\u0027 || text.includes(\u0027duvida\u0027) || text.includes(\u0027pergunta\u0027) || text.includes(\u0027como\u0027) || text.includes(\u0027funciona\u0027)) {\n  opcao = 2;\n} else if (text === \u00273\u0027 || text.includes(\u0027problema\u0027) || text.includes(\u0027acesso\u0027) || text.includes(\u0027tecnico\u0027) || text.includes(\u0027erro\u0027) || text.includes(\u0027nao consigo\u0027) || text.includes(\u0027nao abre\u0027)) {\n  opcao = 3;\n} else if (text === \u00274\u0027 || text.includes(\u0027humano\u0027) || text.includes(\u0027atendente\u0027) || text.includes(\u0027pessoa\u0027) || text.includes(\u0027falar com\u0027)) {\n  opcao = 4;\n}\n\nreturn [{\n  json: {\n    remoteJid: filtro.remoteJid,\n    telefone: filtro.telefone,\n    text: filtro.text,\n    pushName: filtro.pushName,\n    instance: filtro.instance,\n    opcao,\n    evo_api_url: config.evo_api_url || \u0027https://evo.upviaagentes.com\u0027,\n    evo_api_key: config.evo_api_key || \u0027\u0027,\n    instancia_whatsapp: config.instancia_whatsapp || filtro.instance,\n    telefone_proprietario: config.telefone_proprietario || \u0027\u0027,\n    nome_empresa: config.nome_empresa || \u0027nos\u0027,\n    nome_atendente: config.nome_atendente_ia || \u0027Assistente\u0027\n  }\n}];"
+                                     },
+                      "id":  "n36-contexto-suporte",
+                      "name":  "Montar Contexto Suporte",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       784,
+                                       2608
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "rules":  {
+                                                       "values":  [
+                                                                      {
+                                                                          "conditions":  {
+                                                                                             "options":  {
+                                                                                                             "caseSensitive":  true,
+                                                                                                             "leftValue":  "",
+                                                                                                             "typeValidation":  "strict",
+                                                                                                             "version":  2
+                                                                                                         },
+                                                                                             "conditions":  [
+                                                                                                                {
+                                                                                                                    "id":  "r1",
+                                                                                                                    "leftValue":  "={{ $json.opcao }}",
+                                                                                                                    "rightValue":  1,
+                                                                                                                    "operator":  {
+                                                                                                                                     "type":  "number",
+                                                                                                                                     "operation":  "equals"
+                                                                                                                                 }
+                                                                                                                }
+                                                                                                            ],
+                                                                                             "combinator":  "and"
+                                                                                         }
+                                                                      },
+                                                                      {
+                                                                          "conditions":  {
+                                                                                             "options":  {
+                                                                                                             "caseSensitive":  true,
+                                                                                                             "leftValue":  "",
+                                                                                                             "typeValidation":  "strict",
+                                                                                                             "version":  2
+                                                                                                         },
+                                                                                             "conditions":  [
+                                                                                                                {
+                                                                                                                    "id":  "r2",
+                                                                                                                    "leftValue":  "={{ $json.opcao }}",
+                                                                                                                    "rightValue":  2,
+                                                                                                                    "operator":  {
+                                                                                                                                     "type":  "number",
+                                                                                                                                     "operation":  "equals"
+                                                                                                                                 }
+                                                                                                                }
+                                                                                                            ],
+                                                                                             "combinator":  "and"
+                                                                                         }
+                                                                      },
+                                                                      {
+                                                                          "conditions":  {
+                                                                                             "options":  {
+                                                                                                             "caseSensitive":  true,
+                                                                                                             "leftValue":  "",
+                                                                                                             "typeValidation":  "strict",
+                                                                                                             "version":  2
+                                                                                                         },
+                                                                                             "conditions":  [
+                                                                                                                {
+                                                                                                                    "id":  "r3",
+                                                                                                                    "leftValue":  "={{ $json.opcao }}",
+                                                                                                                    "rightValue":  3,
+                                                                                                                    "operator":  {
+                                                                                                                                     "type":  "number",
+                                                                                                                                     "operation":  "equals"
+                                                                                                                                 }
+                                                                                                                }
+                                                                                                            ],
+                                                                                             "combinator":  "and"
+                                                                                         }
+                                                                      },
+                                                                      {
+                                                                          "conditions":  {
+                                                                                             "options":  {
+                                                                                                             "caseSensitive":  true,
+                                                                                                             "leftValue":  "",
+                                                                                                             "typeValidation":  "strict",
+                                                                                                             "version":  2
+                                                                                                         },
+                                                                                             "conditions":  [
+                                                                                                                {
+                                                                                                                    "id":  "r4",
+                                                                                                                    "leftValue":  "={{ $json.opcao }}",
+                                                                                                                    "rightValue":  4,
+                                                                                                                    "operator":  {
+                                                                                                                                     "type":  "number",
+                                                                                                                                     "operation":  "equals"
+                                                                                                                                 }
+                                                                                                                }
+                                                                                                            ],
+                                                                                             "combinator":  "and"
+                                                                                         }
+                                                                      }
+                                                                  ]
+                                                   },
+                                         "options":  {
+                                                         "fallbackOutput":  "extra"
+                                                     }
+                                     },
+                      "id":  "n37-rotear-opcao",
+                      "name":  "Rotear Opcao",
+                      "type":  "n8n-nodes-base.switch",
+                      "typeVersion":  3.2,
+                      "position":  [
+                                       1040,
+                                       2608
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "method":  "POST",
+                                         "url":  "={{ $json.evo_api_url }}/message/sendText/{{ $json.instancia_whatsapp }}",
+                                         "sendHeaders":  true,
+                                         "headerParameters":  {
+                                                                  "parameters":  [
+                                                                                     {
+                                                                                         "name":  "apikey",
+                                                                                         "value":  "={{ $json.evo_api_key }}"
+                                                                                     }
+                                                                                 ]
+                                                              },
+                                         "sendBody":  true,
+                                         "specifyBody":  "json",
+                                         "jsonBody":  "={\n  \"number\": \"{{ $json.remoteJid }}\",\n  \"text\": \"?? STATUS DO PEDIDO\\n\\nPara verificar seu pedido, me informe o numero do pedido ou o email utilizado na compra.\\n\\nCaso precise de ajuda adicional, responda 4 para falar com um atendente. ??\"\n}",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "n38-resp-opcao1",
+                      "name":  "Resp Opcao 1 Status",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.2,
+                      "position":  [
+                                       1312,
+                                       2112
+                                   ],
+                      "onError":  "continueRegularOutput"
+                  },
+                  {
+                      "parameters":  {
+                                         "method":  "POST",
+                                         "url":  "={{ $json.evo_api_url }}/message/sendText/{{ $json.instancia_whatsapp }}",
+                                         "sendHeaders":  true,
+                                         "headerParameters":  {
+                                                                  "parameters":  [
+                                                                                     {
+                                                                                         "name":  "apikey",
+                                                                                         "value":  "={{ $json.evo_api_key }}"
+                                                                                     }
+                                                                                 ]
+                                                              },
+                                         "sendBody":  true,
+                                         "specifyBody":  "json",
+                                         "jsonBody":  "={\n  \"number\": \"{{ $json.remoteJid }}\",\n  \"text\": \"? DUVIDAS SOBRE O PRODUTO\\n\\nFique a vontade para me contar qual e sua duvida que vou te ajudar!\\n\\n// AJUSTE: adicione aqui as respostas para as perguntas mais frequentes sobre o produto\"\n}",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "n39-resp-opcao2",
+                      "name":  "Resp Opcao 2 Duvida",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.2,
+                      "position":  [
+                                       1312,
+                                       2352
+                                   ],
+                      "onError":  "continueRegularOutput"
+                  },
+                  {
+                      "parameters":  {
+                                         "method":  "POST",
+                                         "url":  "={{ $json.evo_api_url }}/message/sendText/{{ $json.instancia_whatsapp }}",
+                                         "sendHeaders":  true,
+                                         "headerParameters":  {
+                                                                  "parameters":  [
+                                                                                     {
+                                                                                         "name":  "apikey",
+                                                                                         "value":  "={{ $json.evo_api_key }}"
+                                                                                     }
+                                                                                 ]
+                                                              },
+                                         "sendBody":  true,
+                                         "specifyBody":  "json",
+                                         "jsonBody":  "={\n  \"number\": \"{{ $json.remoteJid }}\",\n  \"text\": \"?? PROBLEMA DE ACESSO\\n\\nSiga os passos abaixo:\\n\\n1?? Verifique se o link do grupo ainda esta ativo\\n2?? Tente abrir pelo celular, nao pelo computador\\n3?? Se o problema persistir, responda 4 para falar com um atendente\\n\\n// AJUSTE: adicione aqui os passos especificos para resolver problemas de acesso ao seu produto\"\n}",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "n40-resp-opcao3",
+                      "name":  "Resp Opcao 3 Acesso",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.2,
+                      "position":  [
+                                       1312,
+                                       2608
+                                   ],
+                      "onError":  "continueRegularOutput"
+                  },
+                  {
+                      "parameters":  {
+                                         "method":  "POST",
+                                         "url":  "={{ $json.evo_api_url }}/message/sendText/{{ $json.instancia_whatsapp }}",
+                                         "sendHeaders":  true,
+                                         "headerParameters":  {
+                                                                  "parameters":  [
+                                                                                     {
+                                                                                         "name":  "apikey",
+                                                                                         "value":  "={{ $json.evo_api_key }}"
+                                                                                     }
+                                                                                 ]
+                                                              },
+                                         "sendBody":  true,
+                                         "specifyBody":  "json",
+                                         "jsonBody":  "={\n  \"number\": \"{{ $json.remoteJid }}\",\n  \"text\": \"?? Entendido! Vou chamar um atendente para te ajudar. Um momento! ??\"\n}",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "n41-resp-opcao4",
+                      "name":  "Resp Opcao 4 Humano",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.2,
+                      "position":  [
+                                       1312,
+                                       2864
+                                   ],
+                      "onError":  "continueRegularOutput"
+                  },
+                  {
+                      "parameters":  {
+                                         "method":  "POST",
+                                         "url":  "={{ $(\u0027Montar Contexto Suporte\u0027).first().json.evo_api_url }}/message/sendText/{{ $(\u0027Montar Contexto Suporte\u0027).first().json.instancia_whatsapp }}",
+                                         "sendHeaders":  true,
+                                         "headerParameters":  {
+                                                                  "parameters":  [
+                                                                                     {
+                                                                                         "name":  "apikey",
+                                                                                         "value":  "={{ $(\u0027Montar Contexto Suporte\u0027).first().json.evo_api_key }}"
+                                                                                     }
+                                                                                 ]
+                                                              },
+                                         "sendBody":  true,
+                                         "specifyBody":  "json",
+                                         "jsonBody":  "={\n  \"number\": \"{{ $(\u0027Montar Contexto Suporte\u0027).first().json.telefone_proprietario }}@s.whatsapp.net\",\n  \"text\": \"?? ATENDIMENTO HUMANO SOLICITADO\\n\\nCliente: {{ $(\u0027Montar Contexto Suporte\u0027).first().json.pushName }}\\nTelefone: {{ $(\u0027Montar Contexto Suporte\u0027).first().json.telefone }}\\n\\nUltima msg: {{ $(\u0027Montar Contexto Suporte\u0027).first().json.text }}\"\n}",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "n42-notif-dono-suporte",
+                      "name":  "Notificar Dono Suporte",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.2,
+                      "position":  [
+                                       1568,
+                                       2864
+                                   ],
+                      "onError":  "continueRegularOutput"
+                  },
+                  {
+                      "parameters":  {
+                                         "method":  "POST",
+                                         "url":  "={{ $json.evo_api_url }}/message/sendText/{{ $json.instancia_whatsapp }}",
+                                         "sendHeaders":  true,
+                                         "headerParameters":  {
+                                                                  "parameters":  [
+                                                                                     {
+                                                                                         "name":  "apikey",
+                                                                                         "value":  "={{ $json.evo_api_key }}"
+                                                                                     }
+                                                                                 ]
+                                                              },
+                                         "sendBody":  true,
+                                         "specifyBody":  "json",
+                                         "jsonBody":  "={\n  \"number\": \"{{ $json.remoteJid }}\",\n  \"text\": \"Ola! ?? Sou o assistente da {{ $json.nome_empresa }}.\\n\\nComo posso te ajudar?\\n\\n1?? Status do pedido\\n2?? Duvida sobre o produto\\n3?? Problema de acesso\\n4?? Falar com atendente\\n\\nResponda o numero da opcao ??\"\n}",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "n43-resp-menu",
+                      "name":  "Resp Menu Principal",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.2,
+                      "position":  [
+                                       1312,
+                                       3104
+                                   ],
+                      "onError":  "continueRegularOutput"
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "executeQuery",
+                                         "query":  "INSERT INTO public.conversas_vendedor (telefone, role, mensagem, instancia) VALUES (\u0027{{ $json.telefone }}\u0027, \u0027user\u0027, \u0027{{ $json.text }}\u0027, \u0027{{ $json.instancia_whatsapp }}\u0027);",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "n44-salvar-conversa",
+                      "name":  "Salvar Conversa Suporte",
+                      "type":  "n8n-nodes-base.postgres",
+                      "typeVersion":  2.5,
+                      "position":  [
+                                       1568,
+                                       2608
+                                   ],
+                      "credentials":  {
+                                          "postgres":  {
+                                                           "id":  "Dym0Y2qw1VYqERST",
+                                                           "name":  "Postgres account 3"
+                                                       }
+                                      },
+                      "onError":  "continueRegularOutput"
+                  }
+              ],
+    "connections":  {
+                        "Webhook Checkout":  {
+                                                 "main":  [
+                                                              [
+                                                                  {
+                                                                      "node":  "Extrair Dados Checkout",
+                                                                      "type":  "main",
+                                                                      "index":  0
+                                                                  }
+                                                              ]
+                                                          ]
+                                             },
+                        "Extrair Dados Checkout":  {
+                                                       "main":  [
+                                                                    [
+                                                                        {
+                                                                            "node":  "Rotear Evento",
+                                                                            "type":  "main",
+                                                                            "index":  0
+                                                                        }
+                                                                    ]
+                                                                ]
+                                                   },
+                        "Rotear Evento":  {
+                                              "main":  [
+                                                           [
+                                                               {
+                                                                   "node":  "Upsert Pedido Aprovado",
+                                                                   "type":  "main",
+                                                                   "index":  0
+                                                               }
+                                                           ],
+                                                           [
+                                                               {
+                                                                   "node":  "Salvar Checkout Iniciado",
+                                                                   "type":  "main",
+                                                                   "index":  0
+                                                               }
+                                                           ]
+                                                       ]
+                                          },
+                        "Upsert Pedido Aprovado":  {
+                                                       "main":  [
+                                                                    [
+                                                                        {
+                                                                            "node":  "Guard Ja Entregue",
+                                                                            "type":  "main",
+                                                                            "index":  0
+                                                                        }
+                                                                    ]
+                                                                ]
+                                                   },
+                        "Guard Ja Entregue":  {
+                                                  "main":  [
+                                                               [
+                                                                   {
+                                                                       "node":  "Carregar Config Aprovado",
+                                                                       "type":  "main",
+                                                                       "index":  0
+                                                                   }
+                                                               ],
+                                                               [
+
+                                                               ]
+                                                           ]
+                                              },
+                        "Carregar Config Aprovado":  {
+                                                         "main":  [
+                                                                      [
+                                                                          {
+                                                                              "node":  "Montar Msg Pos Compra",
+                                                                              "type":  "main",
+                                                                              "index":  0
+                                                                          }
+                                                                      ]
+                                                                  ]
+                                                     },
+                        "Montar Msg Pos Compra":  {
+                                                      "main":  [
+                                                                   [
+                                                                       {
+                                                                           "node":  "Enviar Msg Pos Compra",
+                                                                           "type":  "main",
+                                                                           "index":  0
+                                                                       }
+                                                                   ]
+                                                               ]
+                                                  },
+                        "Enviar Msg Pos Compra":  {
+                                                      "main":  [
+                                                                   [
+                                                                       {
+                                                                           "node":  "Marcar Entregue",
+                                                                           "type":  "main",
+                                                                           "index":  0
+                                                                       }
+                                                                   ]
+                                                               ]
+                                                  },
+                        "Marcar Entregue":  {
+                                                "main":  [
+                                                             [
+                                                                 {
+                                                                     "node":  "Notificar Dono Venda",
+                                                                     "type":  "main",
+                                                                     "index":  0
+                                                                 }
+                                                             ]
+                                                         ]
+                                            },
+                        "Check Abandono 1h":  {
+                                                  "main":  [
+                                                               [
+                                                                   {
+                                                                       "node":  "Buscar Abandonos 1h",
+                                                                       "type":  "main",
+                                                                       "index":  0
+                                                                   }
+                                                               ]
+                                                           ]
+                                              },
+                        "Buscar Abandonos 1h":  {
+                                                    "main":  [
+                                                                 [
+                                                                     {
+                                                                         "node":  "Preparar Lembrete 1h",
+                                                                         "type":  "main",
+                                                                         "index":  0
+                                                                     }
+                                                                 ]
+                                                             ]
+                                                },
+                        "Preparar Lembrete 1h":  {
+                                                     "main":  [
+                                                                  [
+                                                                      {
+                                                                          "node":  "Loop Abandono 1h",
+                                                                          "type":  "main",
+                                                                          "index":  0
+                                                                      }
+                                                                  ]
+                                                              ]
+                                                 },
+                        "Loop Abandono 1h":  {
+                                                 "main":  [
+                                                              [
+                                                                  {
+                                                                      "node":  "Anti-Spam Delay 1h",
+                                                                      "type":  "main",
+                                                                      "index":  0
+                                                                  }
+                                                              ],
+                                                              [
+
+                                                              ]
+                                                          ]
+                                             },
+                        "Anti-Spam Delay 1h":  {
+                                                   "main":  [
+                                                                [
+                                                                    {
+                                                                        "node":  "Enviar Lembrete 1h",
+                                                                        "type":  "main",
+                                                                        "index":  0
+                                                                    }
+                                                                ]
+                                                            ]
+                                               },
+                        "Enviar Lembrete 1h":  {
+                                                   "main":  [
+                                                                [
+                                                                    {
+                                                                        "node":  "Marcar Abandono 1h",
+                                                                        "type":  "main",
+                                                                        "index":  0
+                                                                    }
+                                                                ]
+                                                            ]
+                                               },
+                        "Marcar Abandono 1h":  {
+                                                   "main":  [
+                                                                [
+                                                                    {
+                                                                        "node":  "Loop Abandono 1h",
+                                                                        "type":  "main",
+                                                                        "index":  0
+                                                                    }
+                                                                ]
+                                                            ]
+                                               },
+                        "Check Abandono 6h":  {
+                                                  "main":  [
+                                                               [
+                                                                   {
+                                                                       "node":  "Buscar Abandonos 6h",
+                                                                       "type":  "main",
+                                                                       "index":  0
+                                                                   }
+                                                               ]
+                                                           ]
+                                              },
+                        "Buscar Abandonos 6h":  {
+                                                    "main":  [
+                                                                 [
+                                                                     {
+                                                                         "node":  "Preparar Lembrete 6h",
+                                                                         "type":  "main",
+                                                                         "index":  0
+                                                                     }
+                                                                 ]
+                                                             ]
+                                                },
+                        "Preparar Lembrete 6h":  {
+                                                     "main":  [
+                                                                  [
+                                                                      {
+                                                                          "node":  "Loop Abandono 6h",
+                                                                          "type":  "main",
+                                                                          "index":  0
+                                                                      }
+                                                                  ]
+                                                              ]
+                                                 },
+                        "Loop Abandono 6h":  {
+                                                 "main":  [
+                                                              [
+                                                                  {
+                                                                      "node":  "Anti-Spam Delay 6h",
+                                                                      "type":  "main",
+                                                                      "index":  0
+                                                                  }
+                                                              ],
+                                                              [
+
+                                                              ]
+                                                          ]
+                                             },
+                        "Anti-Spam Delay 6h":  {
+                                                   "main":  [
+                                                                [
+                                                                    {
+                                                                        "node":  "Enviar Lembrete 6h",
+                                                                        "type":  "main",
+                                                                        "index":  0
+                                                                    }
+                                                                ]
+                                                            ]
+                                               },
+                        "Enviar Lembrete 6h":  {
+                                                   "main":  [
+                                                                [
+                                                                    {
+                                                                        "node":  "Marcar Abandono 6h",
+                                                                        "type":  "main",
+                                                                        "index":  0
+                                                                    }
+                                                                ]
+                                                            ]
+                                               },
+                        "Marcar Abandono 6h":  {
+                                                   "main":  [
+                                                                [
+                                                                    {
+                                                                        "node":  "Loop Abandono 6h",
+                                                                        "type":  "main",
+                                                                        "index":  0
+                                                                    }
+                                                                ]
+                                                            ]
+                                               },
+                        "Check Abandono 24h":  {
+                                                   "main":  [
+                                                                [
+                                                                    {
+                                                                        "node":  "Buscar Abandonos 24h",
+                                                                        "type":  "main",
+                                                                        "index":  0
+                                                                    }
+                                                                ]
+                                                            ]
+                                               },
+                        "Buscar Abandonos 24h":  {
+                                                     "main":  [
+                                                                  [
+                                                                      {
+                                                                          "node":  "Preparar Lembrete 24h",
+                                                                          "type":  "main",
+                                                                          "index":  0
+                                                                      }
+                                                                  ]
+                                                              ]
+                                                 },
+                        "Preparar Lembrete 24h":  {
+                                                      "main":  [
+                                                                   [
+                                                                       {
+                                                                           "node":  "Loop Abandono 24h",
+                                                                           "type":  "main",
+                                                                           "index":  0
+                                                                       }
+                                                                   ]
+                                                               ]
+                                                  },
+                        "Loop Abandono 24h":  {
+                                                  "main":  [
+                                                               [
+                                                                   {
+                                                                       "node":  "Anti-Spam Delay 24h",
+                                                                       "type":  "main",
+                                                                       "index":  0
+                                                                   }
+                                                               ],
+                                                               [
+
+                                                               ]
+                                                           ]
+                                              },
+                        "Anti-Spam Delay 24h":  {
+                                                    "main":  [
+                                                                 [
+                                                                     {
+                                                                         "node":  "Enviar Lembrete 24h",
+                                                                         "type":  "main",
+                                                                         "index":  0
+                                                                     }
+                                                                 ]
+                                                             ]
+                                                },
+                        "Enviar Lembrete 24h":  {
+                                                    "main":  [
+                                                                 [
+                                                                     {
+                                                                         "node":  "Marcar Abandono 24h",
+                                                                         "type":  "main",
+                                                                         "index":  0
+                                                                     }
+                                                                 ]
+                                                             ]
+                                                },
+                        "Marcar Abandono 24h":  {
+                                                    "main":  [
+                                                                 [
+                                                                     {
+                                                                         "node":  "Loop Abandono 24h",
+                                                                         "type":  "main",
+                                                                         "index":  0
+                                                                     }
+                                                                 ]
+                                                             ]
+                                                },
+                        "Webhook Suporte WA":  {
+                                                   "main":  [
+                                                                [
+                                                                    {
+                                                                        "node":  "Filtro Mensagem WA",
+                                                                        "type":  "main",
+                                                                        "index":  0
+                                                                    }
+                                                                ]
+                                                            ]
+                                               },
+                        "Filtro Mensagem WA":  {
+                                                   "main":  [
+                                                                [
+                                                                    {
+                                                                        "node":  "Carregar Config Suporte",
+                                                                        "type":  "main",
+                                                                        "index":  0
+                                                                    }
+                                                                ]
+                                                            ]
+                                               },
+                        "Carregar Config Suporte":  {
+                                                        "main":  [
+                                                                     [
+                                                                         {
+                                                                             "node":  "Montar Contexto Suporte",
+                                                                             "type":  "main",
+                                                                             "index":  0
+                                                                         }
+                                                                     ]
+                                                                 ]
+                                                    },
+                        "Montar Contexto Suporte":  {
+                                                        "main":  [
+                                                                     [
+                                                                         {
+                                                                             "node":  "Rotear Opcao",
+                                                                             "type":  "main",
+                                                                             "index":  0
+                                                                         },
+                                                                         {
+                                                                             "node":  "Salvar Conversa Suporte",
+                                                                             "type":  "main",
+                                                                             "index":  0
+                                                                         }
+                                                                     ]
+                                                                 ]
+                                                    },
+                        "Rotear Opcao":  {
+                                             "main":  [
+                                                          [
+                                                              {
+                                                                  "node":  "Resp Opcao 1 Status",
+                                                                  "type":  "main",
+                                                                  "index":  0
+                                                              }
+                                                          ],
+                                                          [
+                                                              {
+                                                                  "node":  "Resp Opcao 2 Duvida",
+                                                                  "type":  "main",
+                                                                  "index":  0
+                                                              }
+                                                          ],
+                                                          [
+                                                              {
+                                                                  "node":  "Resp Opcao 3 Acesso",
+                                                                  "type":  "main",
+                                                                  "index":  0
+                                                              }
+                                                          ],
+                                                          [
+                                                              {
+                                                                  "node":  "Resp Opcao 4 Humano",
+                                                                  "type":  "main",
+                                                                  "index":  0
+                                                              }
+                                                          ],
+                                                          [
+                                                              {
+                                                                  "node":  "Resp Menu Principal",
+                                                                  "type":  "main",
+                                                                  "index":  0
+                                                              }
+                                                          ]
+                                                      ]
+                                         },
+                        "Resp Opcao 4 Humano":  {
+                                                    "main":  [
+                                                                 [
+                                                                     {
+                                                                         "node":  "Notificar Dono Suporte",
+                                                                         "type":  "main",
+                                                                         "index":  0
+                                                                     }
+                                                                 ]
+                                                             ]
+                                                }
+                    },
+    "settings":  {
+                     "executionOrder":  "v1",
+                     "binaryMode":  "separate"
+                 },
+    "staticData":  null,
+    "meta":  null,
+    "pinData":  {
+
+                },
+    "versionId":  "172cc8b5-10ef-4040-9f54-6de17ec13038",
+    "activeVersionId":  null,
+    "versionCounter":  2,
+    "triggerCount":  0,
+    "shared":  [
+                   {
+                       "updatedAt":  "2026-07-02T14:12:03.925Z",
+                       "createdAt":  "2026-07-02T14:12:03.925Z",
+                       "role":  "workflow:owner",
+                       "workflowId":  "z0LwxrlY0WRztd3N",
+                       "projectId":  "wvVR5bxXzTLlLBhJ",
+                       "project":  {
+                                       "updatedAt":  "2026-06-24T13:23:41.357Z",
+                                       "createdAt":  "2026-05-23T22:44:43.627Z",
+                                       "id":  "wvVR5bxXzTLlLBhJ",
+                                       "name":  "Elisa Andrade \u003cupvianegocios@gmail.com\u003e",
+                                       "type":  "personal",
+                                       "icon":  null,
+                                       "description":  null,
+                                       "creatorId":  "63b6bda0-d1aa-4abc-beaa-0fbb599f2288"
+                                   }
+                   }
+               ],
+    "tags":  [
+
+             ],
+    "activeVersion":  null
+}

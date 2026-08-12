@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-08-12 (tarde) — AtendenteIA - Fisa Games Infoproduto (feat: substitui menu estático de suporte por AI Agent + estrutura genérica reutilizável)
+
+**Contexto:** criação de uma estrutura genérica de suporte via AI Agent, pensada pra ser reutilizável em qualquer infoproduto, aplicada primeiro no workflow já existente `AtendenteIA - Fisa Games Infoproduto` (id `z0LwxrlY0WRztd3N`, projeto Supabase `clcyyogtvygpehgcmeyj`, mesmo da VendedorIA/GásIA).
+
+**Supabase — 3 tabelas novas** (`suporte_fisa_qa`, `suporte_fisa_videos`, `suporte_fisa_conversas`), isoladas por `instancia_whatsapp`, vazias após criação. `suporte_fisa_chat_memory` é criada automaticamente pelo node de memória do LangChain no primeiro uso.
+
+**N8N — bloco de suporte substituído:** os 12 nodes do menu estático antigo (`Webhook Suporte WA` respondendo 1/2/3/4 com texto fixo) foram **renomeados com prefixo `ARQUIVADO -`** e desconectados do fluxo ativo (preservados no workflow pra eventual reuso futuro, não deletados). Entraram 20 nodes novos formando um AI Agent real (OpenAI + memória por telefone via Postgres), que: responde com base em `suporte_fisa_qa`, pode enviar vídeo (YouTube direto ou download+reenvio via Google Drive) usando `suporte_fisa_videos`, e notifica o dono quando a IA sinaliza `[PRECISA_HUMANO]`. Webhook novo em `suporte-fisa` (path antigo `suporte-infoproduto-wa` preservado só no bloco arquivado). Bloco de checkout + abandono de carrinho (1h/6h/24h, 32 nodes) intocado.
+
+**Correção de segurança:** o node "Salvar Conversa" (grava a conversa em `suporte_fisa_conversas`) usa texto livre do WhatsApp — em vez de interpolar direto na query SQL (padrão já usado em outros workflows da casa, mas arriscado com texto 100% controlado pelo contato), o Code node anterior (`Parse Resposta IA`) escapa aspas simples antes de montar o INSERT.
+
+**Credenciais:** `Postgres account 3` (`Dym0Y2qw1VYqERST`), `OpenAI account` (`sjemA3sd4BGEaIHJ`), `Google Drive account` (`r3sysG7EBAp9qEfd`) — as três já usadas em outros workflows da casa, confirmadas por grep antes de aplicar.
+
+**Descoberta lateral:** a API pública do N8N (`/api/v1/workflows/:id`) não aceita HTTP PATCH (405) — só GET/PUT/DELETE. Toda atualização precisa ir por PUT com o payload completo (nodes + connections inteiros), equivalente ao "Import from File" mencionado no `SKILL_GOVERNANCA.md`. O campo `settings` da API só aceita `executionOrder` — `binaryMode` (presente no export via GET) é rejeitado num PUT (`"settings must NOT have additional properties"`).
+
+**Validado antes de aplicar:** script Node local conferiu nomes/IDs únicos, toda referência `$('NodeName')` apontando pra node existente, e toda chave/alvo de `connections` resolvendo — antes do PUT real no workflow de produção.
+
+**Backup:** `AtendenteIA-Fisa-Games-Infoproduto-backup-2026-08-12-1544.json` (antes, 44 nodes) → `AtendenteIA-Fisa-Games-Infoproduto-backup-2026-08-12-1646-pos-ai-agent-suporte.json` (depois, 64 nodes). `active: false` mantido — ativação manual.
+
+---
+
 ## 2026-08-12 (manhã) — AtendentIA Multi-Atendimento SaaS (hotfix: regressão na trava automática, causada pelo fix de notificação de ontem)
 
 **Problema (relato real da Ariane):** depois dos testes de ontem à noite, a IA voltou a responder clientes mesmo com a Ariane já respondendo manualmente pelo WhatsApp — a trava automática (`trava_conversas_iniciadas_pelo_owner`) parou de ativar.
