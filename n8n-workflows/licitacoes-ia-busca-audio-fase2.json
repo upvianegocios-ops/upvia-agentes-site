@@ -1,0 +1,214 @@
+{
+  "name": "Licitacoes IA - Busca Avulsa por Audio (FASE 2 - NAO ATIVAR)",
+  "nodes": [
+    {
+      "id": "aud-0001",
+      "name": "AVISO FASE 2 NAO ATIVAR",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -320
+      ],
+      "parameters": {
+        "content": "# FASE 2 - ESQUELETO, NAO ATIVAR\n\nEste workflow NAO esta pronto pra producao. E so a estrutura do fluxo de busca avulsa\npor audio (usuario manda audio no WhatsApp perguntando por uma licitacao especifica,\nsem precisar ter um perfil salvo).\n\nFalta antes de ativar:\n- Testar o node de transcricao (OpenAI Whisper) com audio real do WhatsApp/Evolution API\n- Escrever e validar o prompt de interpretacao (extrair palavras-chave/modalidade/valor/UF\n  do pedido em linguagem natural)\n- \"Executar Busca PNCP Avulsa\" hoje e um placeholder -- precisa reaproveitar a mesma logica\n  de match de licitacoes-ia-busca-pncp.json (filtro por palavra-chave/valor/UF/municipio)\n- Definir como o usuario aciona esse fluxo (webhook separado da Evolution API apontando\n  pra esse workflow, filtrando so mensagens de audio dos usuarios cadastrados)\n- Testar ponta a ponta e SO ENTAO marcar active:true",
+        "width": 900,
+        "height": 320,
+        "color": 3
+      }
+    },
+    {
+      "id": "aud-0002",
+      "name": "Webhook Busca Audio (rascunho)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "aud-0003",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "licitacoes/busca-audio",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "aud-0004",
+      "name": "Extrair Audio Mensagem",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// PLACEHOLDER -- ajustar conforme o formato real que a Evolution API manda\n// pra mensagens de audio (provavelmente body.data.message.audioMessage ou similar,\n// igual ja e tratado no fluxo principal do AtendentIA).\nconst body = $input.first().json.body || $input.first().json;\nreturn [{ json: {\n  whatsapp_numero: body.whatsapp_numero || '',\n  audio_url_ou_base64: body.audio || null\n} }];"
+      }
+    },
+    {
+      "id": "aud-0005",
+      "name": "Transcrever Audio",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.6,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "sjemA3sd4BGEaIHJ",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "id": "aud-0006",
+      "name": "Interpretar Pedido com IA",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.6,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "resource": "chat",
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list"
+        },
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "Voce extrai criterios de busca de licitacoes publicas a partir de um pedido falado em portugues.\nResponda em JSON com: { \"palavras_chave\": string[], \"modalidades\": (\"pregao_eletronico\"|\"dispensa\")[], \"valor_min\": number|null, \"valor_max\": number|null, \"uf\": string[] }"
+            },
+            {
+              "role": "user",
+              "content": "={{ $json.transcricao }}"
+            }
+          ]
+        },
+        "options": {
+          "responseFormat": "json_object"
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "sjemA3sd4BGEaIHJ",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "id": "aud-0007",
+      "name": "Executar Busca PNCP Avulsa (placeholder)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// PLACEHOLDER -- fase 2.\n// Aqui entraria a mesma logica de \"Extrair e Filtrar Editais\" do workflow\n// licitacoes-ia-busca-pncp.json, mas consultando o PNCP na hora (sem salvar perfil)\n// com os criterios que vieram de \"Interpretar Pedido com IA\".\nthrow new Error('Fase 2 nao implementada ainda -- ver sticky note no topo do workflow.');"
+      }
+    },
+    {
+      "id": "aud-0008",
+      "name": "Responder Busca Audio WhatsApp (placeholder)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        0
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "https://evo.upviaagentes.com/message/sendText/agentematriz",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"number\":\"{{ $json.numero }}\",\"text\":{{ JSON.stringify($json.texto) }}}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Busca Audio (rascunho)": {
+      "main": [
+        [
+          {
+            "node": "Extrair Audio Mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Audio Mensagem": {
+      "main": [
+        [
+          {
+            "node": "Transcrever Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcrever Audio": {
+      "main": [
+        [
+          {
+            "node": "Interpretar Pedido com IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Interpretar Pedido com IA": {
+      "main": [
+        [
+          {
+            "node": "Executar Busca PNCP Avulsa (placeholder)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Executar Busca PNCP Avulsa (placeholder)": {
+      "main": [
+        [
+          {
+            "node": "Responder Busca Audio WhatsApp (placeholder)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

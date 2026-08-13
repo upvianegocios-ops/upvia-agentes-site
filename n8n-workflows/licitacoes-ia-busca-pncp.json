@@ -1,0 +1,526 @@
+{
+  "name": "Licitacoes IA - Busca PNCP (cron 3h)",
+  "nodes": [
+    {
+      "id": "pncp-0001",
+      "name": "Nota Geral Busca PNCP",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -320
+      ],
+      "parameters": {
+        "content": "## Licitacoes IA - Busca no PNCP (a cada 3h)\nFluxo: busca perfis ativos -> para cada perfil, consulta o PNCP por modalidade -> filtra por\npalavra-chave/valor/UF/municipio -> ignora o que ja foi enviado -> manda WhatsApp e registra.\n\nCodigos de modalidade oficiais (Manual de Integracao PNCP): Pregao Eletronico = 6, Dispensa = 8.\nEndpoint: GET https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao\n\nATENCAO Split In Batches: nesta instancia, testado ao vivo, output 0 = Done, output 1 = Loop\n(inverso do que a maioria espera). Ver CLAUDE.md.",
+        "width": 900,
+        "height": 260,
+        "color": 4
+      }
+    },
+    {
+      "id": "pncp-0002",
+      "name": "Schedule Busca PNCP",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "pncp-0003",
+      "name": "Buscar Perfis Ativos",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        220,
+        0
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT p.id AS perfil_id, p.nome_perfil, p.objeto_palavras_chave, p.modalidades,\n       p.valor_min, p.valor_max, p.uf, p.municipio, u.whatsapp_numero\nFROM licitacoes_perfis_busca p\nJOIN licitacoes_usuarios u ON u.id = p.usuario_id\nWHERE p.ativo = true AND u.ativo = true;",
+        "options": {
+          "queryReplacement": "={{ [] }}"
+        }
+      }
+    },
+    {
+      "id": "pncp-0004",
+      "name": "Loop Perfis",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "options": {}
+      }
+    },
+    {
+      "id": "pncp-0005",
+      "name": "Fim Busca PNCP",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        660,
+        -160
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "pncp-0006",
+      "name": "Montar Consultas Modalidade",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        160
+      ],
+      "parameters": {
+        "jsCode": "const perfil = $input.first().json;\nconst MODALIDADES = { pregao_eletronico: 6, dispensa: 8 };\n\nconst hoje = new Date();\nconst ontem = new Date(hoje.getTime() - 24 * 60 * 60 * 1000);\nconst fmt = (d) => d.toISOString().slice(0, 10).replace(/-/g, '');\n\nconst modalidades = Array.isArray(perfil.modalidades) ? perfil.modalidades : [];\nconst out = [];\nfor (const m of modalidades) {\n  const codigo = MODALIDADES[m];\n  if (!codigo) continue;\n  out.push({ json: {\n    perfil_id: perfil.perfil_id,\n    nome_perfil: perfil.nome_perfil,\n    whatsapp_numero: perfil.whatsapp_numero,\n    palavras: perfil.objeto_palavras_chave || [],\n    valor_min: perfil.valor_min,\n    valor_max: perfil.valor_max,\n    uf: perfil.uf || [],\n    municipio: perfil.municipio || [],\n    modalidade_codigo: codigo,\n    dataInicial: fmt(ontem),\n    dataFinal: fmt(hoje)\n  } });\n}\nreturn out;"
+      }
+    },
+    {
+      "id": "pncp-0007",
+      "name": "Buscar Editais PNCP",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        160
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "GET",
+        "url": "https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "dataInicial",
+              "value": "={{ $json.dataInicial }}"
+            },
+            {
+              "name": "dataFinal",
+              "value": "={{ $json.dataFinal }}"
+            },
+            {
+              "name": "codigoModalidadeContratacao",
+              "value": "={{ $json.modalidade_codigo }}"
+            },
+            {
+              "name": "pagina",
+              "value": "1"
+            },
+            {
+              "name": "tamanhoPagina",
+              "value": "50"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "pncp-0008",
+      "name": "Extrair e Filtrar Editais",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        160
+      ],
+      "parameters": {
+        "jsCode": "function normalizar(s) {\n  return String(s || '').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '');\n}\n\nconst consultas = $('Montar Consultas Modalidade').all();\nconst respostas = $input.all();\nconst resultados = [];\n\nfor (let i = 0; i < respostas.length; i++) {\n  const consulta = consultas[i] ? consultas[i].json : null;\n  if (!consulta) continue;\n  const registros = (respostas[i].json && respostas[i].json.data) || [];\n  const palavrasNorm = (consulta.palavras || []).map(normalizar).filter(Boolean);\n  const ufsPerfil = consulta.uf || [];\n  const municipiosNorm = (consulta.municipio || []).map(normalizar).filter(Boolean);\n\n  for (const r of registros) {\n    const objetoNorm = normalizar(r.objetoCompra);\n    const bateuPalavra = palavrasNorm.some(p => objetoNorm.includes(p));\n    if (!bateuPalavra) continue;\n\n    const valor = r.valorTotalEstimado != null ? Number(r.valorTotalEstimado) : null;\n    if (consulta.valor_min != null && (valor == null || valor < consulta.valor_min)) continue;\n    if (consulta.valor_max != null && (valor == null || valor > consulta.valor_max)) continue;\n\n    const uf = r.unidadeOrgao ? r.unidadeOrgao.ufSigla : null;\n    if (ufsPerfil.length && !ufsPerfil.includes(uf)) continue;\n\n    const municipio = r.unidadeOrgao ? r.unidadeOrgao.municipioNome : null;\n    if (municipiosNorm.length && !municipiosNorm.includes(normalizar(municipio))) continue;\n\n    const cnpj = (r.orgaoEntidade && r.orgaoEntidade.cnpj) || (r.orgaoSubRogado && r.orgaoSubRogado.cnpj) || '';\n    const link = 'https://pncp.gov.br/app/editais/' + cnpj + '/' + r.anoCompra + '/' + r.sequencialCompra;\n\n    resultados.push({ json: {\n      perfil_id: consulta.perfil_id,\n      nome_perfil: consulta.nome_perfil,\n      whatsapp_numero: consulta.whatsapp_numero,\n      pncp_id: r.numeroControlePNCP,\n      objeto: r.objetoCompra,\n      orgao: (r.orgaoEntidade && r.orgaoEntidade.razaoSocial) || '',\n      valor,\n      uf,\n      municipio,\n      modalidade_nome: r.modalidadeNome,\n      link\n    } });\n  }\n}\nreturn resultados;"
+      }
+    },
+    {
+      "id": "pncp-0009",
+      "name": "Fim Iteracao Perfil",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2760,
+        160
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "pncp-000a",
+      "name": "Tem Resultados Filtrados?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        160
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "pncp-000b",
+              "leftValue": "={{ $input.all().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "pncp-000c",
+      "name": "Verificar Duplicados",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1540,
+        160
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT pncp_id FROM licitacoes_resultados_enviados WHERE perfil_id = $1;",
+        "options": {
+          "queryReplacement": "={{ [ $input.all()[0].json.perfil_id ] }}"
+        }
+      }
+    },
+    {
+      "id": "pncp-000d",
+      "name": "Filtrar Duplicados",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        160
+      ],
+      "parameters": {
+        "jsCode": "const candidatos = $('Extrair e Filtrar Editais').all().map(i => i.json);\nconst jaEnviados = new Set($input.all().map(i => i.json && i.json.pncp_id).filter(Boolean));\nreturn candidatos.filter(c => !jaEnviados.has(c.pncp_id)).map(json => ({ json }));"
+      }
+    },
+    {
+      "id": "pncp-000e",
+      "name": "Tem Novos Para Enviar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1980,
+        160
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "pncp-000f",
+              "leftValue": "={{ $input.all().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "pncp-000g",
+      "name": "Montar Mensagem Edital",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2200,
+        0
+      ],
+      "parameters": {
+        "jsCode": "function formataValor(v) {\n  if (v == null) return 'valor nao informado';\n  return 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 });\n}\nconst item = $input.first().json;\nconst texto = 'Nova licitacao para o alerta \"' + item.nome_perfil + '\":\\n\\n' +\n  item.objeto.slice(0, 300) + (item.objeto.length > 300 ? '...' : '') + '\\n\\n' +\n  'Orgao: ' + item.orgao + '\\n' +\n  'Valor estimado: ' + formataValor(item.valor) + '\\n' +\n  'Modalidade: ' + item.modalidade_nome + '\\n' +\n  (item.municipio ? ('Local: ' + item.municipio + '/' + item.uf + '\\n') : '') +\n  '\\nEdital: ' + item.link;\nreturn [{ json: { ...item, numero: item.whatsapp_numero.replace(/\\D/g, ''), texto } }];"
+      }
+    },
+    {
+      "id": "pncp-000h",
+      "name": "Enviar Edital WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2420,
+        -100
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "https://evo.upviaagentes.com/message/sendText/agentematriz",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"number\":\"{{ $json.numero }}\",\"text\":{{ JSON.stringify($json.texto) }}}",
+        "options": {}
+      }
+    },
+    {
+      "id": "pncp-000i",
+      "name": "Registrar Envio",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        2420,
+        100
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO licitacoes_resultados_enviados (perfil_id, pncp_id) VALUES ($1, $2) ON CONFLICT (perfil_id, pncp_id) DO NOTHING;",
+        "options": {
+          "queryReplacement": "={{ [ $json.perfil_id, $json.pncp_id ] }}"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Busca PNCP": {
+      "main": [
+        [
+          {
+            "node": "Buscar Perfis Ativos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Perfis Ativos": {
+      "main": [
+        [
+          {
+            "node": "Loop Perfis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Perfis": {
+      "main": [
+        [
+          {
+            "node": "Fim Busca PNCP",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Montar Consultas Modalidade",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Consultas Modalidade": {
+      "main": [
+        [
+          {
+            "node": "Buscar Editais PNCP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Editais PNCP": {
+      "main": [
+        [
+          {
+            "node": "Extrair e Filtrar Editais",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair e Filtrar Editais": {
+      "main": [
+        [
+          {
+            "node": "Tem Resultados Filtrados?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tem Resultados Filtrados?": {
+      "main": [
+        [
+          {
+            "node": "Verificar Duplicados",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fim Iteracao Perfil",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verificar Duplicados": {
+      "main": [
+        [
+          {
+            "node": "Filtrar Duplicados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar Duplicados": {
+      "main": [
+        [
+          {
+            "node": "Tem Novos Para Enviar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tem Novos Para Enviar?": {
+      "main": [
+        [
+          {
+            "node": "Montar Mensagem Edital",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fim Iteracao Perfil",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Mensagem Edital": {
+      "main": [
+        [
+          {
+            "node": "Enviar Edital WhatsApp",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Registrar Envio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Edital WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Fim Iteracao Perfil",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar Envio": {
+      "main": [
+        [
+          {
+            "node": "Fim Iteracao Perfil",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fim Iteracao Perfil": {
+      "main": [
+        [
+          {
+            "node": "Loop Perfis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

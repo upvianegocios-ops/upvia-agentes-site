@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Licitações IA — Painel</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #07070D;
+  --bg-card: #0D0D1A;
+  --bg-input: #12121E;
+  --bg-hover: #1A1A2E;
+  --cyan: #00D2FF;
+  --cyan-glow: rgba(0,210,255,0.1);
+  --violet: #6C5CE7;
+  --violet-light: #A29BFE;
+  --violet-glow: rgba(108,92,231,0.1);
+  --grad: linear-gradient(135deg,#00D2FF,#6C5CE7);
+  --text: #E8E8F0;
+  --text-muted: #6868A0;
+  --border: rgba(255,255,255,0.07);
+  --border-cyan: rgba(0,210,255,0.35);
+  --border-violet: rgba(108,92,231,0.3);
+  --danger: #FF6B6B;
+  --success: #00CF9D;
+  --success-glow: rgba(0,207,157,0.12);
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);
+  min-height:100vh;padding:24px 16px 64px;position:relative;overflow-x:hidden;
+}
+body::before,body::after{
+  content:'';position:fixed;border-radius:50%;pointer-events:none;z-index:0;filter:blur(120px);
+}
+body::before{width:700px;height:700px;background:radial-gradient(circle,rgba(0,210,255,0.07) 0%,transparent 70%);top:-200px;left:-200px}
+body::after{width:700px;height:700px;background:radial-gradient(circle,rgba(108,92,231,0.09) 0%,transparent 70%);bottom:-200px;right:-200px}
+.wrap{position:relative;z-index:1;max-width:560px;margin:0 auto}
+
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+.logo{font-size:22px;font-weight:900;letter-spacing:-0.5px;
+  background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.btn-sair{font-size:12px;color:var(--text-muted);background:none;border:none;cursor:pointer;font-family:'Outfit',sans-serif}
+.btn-sair:hover{color:var(--text)}
+
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);
+  box-shadow:0 32px 80px rgba(0,0,0,0.6);overflow:hidden}
+.card-head{padding:26px 28px 16px}
+.card-head h1{font-size:22px;font-weight:800;margin-bottom:6px}
+.card-head p{font-size:13px;color:var(--text-muted);line-height:1.6}
+.card-body{padding:0 28px 28px}
+
+.view{display:none}
+.view.active{display:block;animation:fadeIn .25s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+label{display:block;font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px}
+input[type=text],input[type=tel],input[type=number]{
+  width:100%;padding:13px 14px;background:var(--bg-input);border:1px solid var(--border);
+  border-radius:var(--radius-sm);color:var(--text);font-family:'Outfit',sans-serif;
+  font-size:15px;transition:all .2s;outline:none;
+}
+input:focus{border-color:var(--border-cyan);box-shadow:0 0 0 3px rgba(0,210,255,0.08);background:var(--bg-hover)}
+input::placeholder{color:var(--text-muted);opacity:.55}
+.fg{margin-bottom:18px}
+.hint{font-size:12px;color:var(--text-muted);margin-top:6px;line-height:1.5}
+.err-box{font-size:12px;color:var(--danger);margin-top:8px;display:none;line-height:1.5}
+.err-box.show{display:block}
+
+.btn{width:100%;padding:15px 22px;border-radius:var(--radius-sm);border:none;
+  background:var(--grad);color:#fff;font-family:'Outfit',sans-serif;font-size:16px;
+  font-weight:700;cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:10px}
+.btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.5;cursor:not-allowed;filter:none;transform:none}
+.btn-secondary{background:transparent;border:1px solid var(--border-violet);color:var(--text-muted)}
+.btn-secondary:hover{background:var(--bg-hover);color:var(--text);filter:none;transform:none}
+.btn-link{background:none;border:none;color:var(--cyan);font-family:'Outfit',sans-serif;font-size:13px;
+  font-weight:600;cursor:pointer;padding:8px}
+
+.spin{width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;
+  border-radius:50%;animation:rotate .8s linear infinite;display:none}
+.spin.show{display:block}
+@keyframes rotate{to{transform:rotate(360deg)}}
+
+/* Lista de perfis */
+.fab{position:fixed;left:0;right:0;bottom:20px;display:flex;justify-content:center;z-index:5}
+.fab-inner{width:100%;max-width:560px;padding:0 16px}
+.perfil-list{display:flex;flex-direction:column;gap:12px;padding-bottom:70px}
+.perfil-card{background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px 16px 14px}
+.perfil-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px}
+.perfil-nome{font-size:16px;font-weight:700}
+.perfil-resumo{font-size:13px;color:var(--text-muted);line-height:1.8}
+.perfil-actions{display:flex;gap:14px;margin-top:12px}
+.perfil-actions button{background:none;border:none;color:var(--violet-light);font-family:'Outfit',sans-serif;
+  font-size:13px;font-weight:600;cursor:pointer;padding:0}
+.perfil-actions button.del{color:var(--danger)}
+.empty-state{text-align:center;padding:40px 20px}
+.empty-state .ic{font-size:44px;margin-bottom:14px}
+.empty-state p{font-size:14px;color:var(--text-muted);line-height:1.7;max-width:360px;margin:0 auto 24px}
+
+/* Toggle */
+.toggle{position:relative;width:46px;height:26px;flex-shrink:0}
+.toggle input{display:none}
+.tslider{position:absolute;inset:0;background:var(--bg-hover);border:1px solid var(--border);
+  border-radius:13px;cursor:pointer;transition:all .3s}
+.tslider::after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;
+  background:var(--text-muted);top:3px;left:3px;transition:all .3s}
+.toggle input:checked+.tslider{background:var(--success-glow);border-color:var(--success)}
+.toggle input:checked+.tslider::after{background:var(--success);transform:translateX(20px)}
+
+/* Chips (palavras-chave / cidade) */
+.chip-box{display:flex;flex-wrap:wrap;gap:8px;padding:10px;background:var(--bg-input);
+  border:1px solid var(--border);border-radius:var(--radius-sm)}
+.chip-box.focus{border-color:var(--border-cyan);box-shadow:0 0 0 3px rgba(0,210,255,0.08)}
+.chip{display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--violet-glow);
+  border:1px solid var(--border-violet);border-radius:20px;font-size:13px;color:var(--violet-light)}
+.chip button{background:none;border:none;color:var(--violet-light);cursor:pointer;font-size:14px;line-height:1;padding:0}
+.chip-input{flex:1;min-width:120px;border:none;background:none;color:var(--text);font-family:'Outfit',sans-serif;
+  font-size:14px;outline:none;padding:6px 2px}
+
+/* Checkbox grande (modalidade) */
+.check-card{display:flex;align-items:center;gap:12px;padding:14px;background:var(--bg-input);
+  border:2px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;margin-bottom:10px;transition:all .2s}
+.check-card.sel{border-color:var(--cyan);background:var(--cyan-glow)}
+.check-card input{width:20px;height:20px;accent-color:var(--cyan);cursor:pointer;flex-shrink:0}
+.check-card .cc-label{font-size:14px;font-weight:600}
+.check-card .cc-desc{font-size:12px;color:var(--text-muted);margin-top:2px}
+
+/* UF chips grid */
+.uf-grid{display:flex;flex-wrap:wrap;gap:6px}
+.uf-chip{padding:7px 12px;border-radius:16px;border:1px solid var(--border);background:var(--bg-input);
+  font-size:12px;font-weight:700;color:var(--text-muted);cursor:pointer;transition:all .15s;user-select:none}
+.uf-chip.sel{background:var(--violet-glow);border-color:var(--violet);color:var(--violet-light)}
+
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.sec-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px}
+.sec-title small{display:block;font-size:11px;color:var(--text-muted);font-weight:400;margin-top:2px;text-transform:none;letter-spacing:0}
+
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-20px);
+  background:var(--bg-card);border:1px solid var(--danger);color:var(--text);padding:12px 20px;
+  border-radius:var(--radius-sm);font-size:13px;box-shadow:0 12px 30px rgba(0,0,0,.5);
+  z-index:50;opacity:0;transition:all .25s;pointer-events:none;max-width:90vw}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.ok{border-color:var(--success)}
+
+.footer{text-align:center;margin-top:20px;font-size:11px;color:var(--text-muted)}
+
+@media(max-width:420px){.card-head,.card-body{padding-left:18px;padding-right:18px}.row2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <div class="logo">Licitações IA</div>
+    <button class="btn-sair" id="btnSair" style="display:none" onclick="logout()">Sair</button>
+  </div>
+
+  <!-- LOGIN: passo 1, número -->
+  <div class="view active" id="view-login-numero">
+    <div class="card">
+      <div class="card-head">
+        <h1>Entrar</h1>
+        <p>Digite seu WhatsApp com DDD. A gente manda um código por lá — sem senha pra decorar.</p>
+      </div>
+      <div class="card-body">
+        <div class="fg">
+          <label for="in-whatsapp">Seu WhatsApp</label>
+          <input type="tel" id="in-whatsapp" placeholder="(11) 99999-8888" inputmode="tel">
+        </div>
+        <div class="err-box" id="err-login1"></div>
+        <button class="btn" id="btn-enviar-codigo" onclick="enviarCodigo()">
+          <span>Receber código</span>
+          <div class="spin" id="spin-login1"></div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOGIN: passo 2, código -->
+  <div class="view" id="view-login-codigo">
+    <div class="card">
+      <div class="card-head">
+        <h1>Confirme o código</h1>
+        <p>Enviamos um código de 6 dígitos pro seu WhatsApp <strong id="numero-confirmado"></strong>. Ele vale por 5 minutos.</p>
+      </div>
+      <div class="card-body">
+        <div class="fg">
+          <label for="in-codigo">Código recebido</label>
+          <input type="text" id="in-codigo" placeholder="000000" inputmode="numeric" maxlength="6">
+        </div>
+        <div class="err-box" id="err-login2"></div>
+        <button class="btn" id="btn-confirmar-codigo" onclick="confirmarCodigo()">
+          <span>Entrar</span>
+          <div class="spin" id="spin-login2"></div>
+        </button>
+        <button class="btn-link" onclick="voltarParaNumero()" style="margin-top:10px;width:100%;text-align:center">← Usar outro número</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LISTA DE PERFIS -->
+  <div class="view" id="view-perfis">
+    <div class="card-head" style="padding-left:0;padding-right:0">
+      <h1>Meus alertas de licitação</h1>
+      <p>Cada perfil abaixo é um alerta ativo. Quando sai um edital novo que combina, avisamos no seu WhatsApp.</p>
+    </div>
+    <div id="perfis-container"></div>
+    <div class="fab">
+      <div class="fab-inner">
+        <button class="btn" onclick="abrirForm()">+ Criar novo alerta</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FORM NOVO/EDITAR PERFIL -->
+  <div class="view" id="view-form">
+    <div class="card">
+      <div class="card-head">
+        <h1 id="form-titulo">Novo alerta</h1>
+        <p>Preencha só o que fizer sentido pra você. Quanto mais específico, mais certeiro o alerta.</p>
+      </div>
+      <div class="card-body">
+
+        <div class="fg">
+          <label for="f-nome">Nome do alerta</label>
+          <input type="text" id="f-nome" placeholder="Ex: Material de construção RS">
+        </div>
+
+        <div class="fg">
+          <label>O que você vende ou faz</label>
+          <div class="chip-box" id="chipbox-palavras" onclick="focarChipInput('palavras')">
+            <input type="text" class="chip-input" id="input-palavras" placeholder="Digite e aperte Enter (ex: cimento)">
+          </div>
+          <div class="hint">Avisamos quando essas palavras aparecerem no objeto da licitação.</div>
+        </div>
+
+        <div class="fg">
+          <div class="sec-title">Tipo de licitação</div>
+          <label class="check-card" id="card-pregao">
+            <input type="checkbox" id="chk-pregao" onchange="toggleModalidadeCard('pregao')">
+            <div>
+              <div class="cc-label">Pregão Eletrônico</div>
+              <div class="cc-desc">A forma mais comum de licitação pública</div>
+            </div>
+          </label>
+          <label class="check-card" id="card-dispensa">
+            <input type="checkbox" id="chk-dispensa" onchange="toggleModalidadeCard('dispensa')">
+            <div>
+              <div class="cc-label">Dispensa de Licitação</div>
+              <div class="cc-desc">Compras diretas, sem disputa formal</div>
+            </div>
+          </label>
+        </div>
+
+        <div class="fg">
+          <div class="sec-title">Faixa de valor <small>opcional</small></div>
+          <div class="row2">
+            <div>
+              <label for="f-valor-min">Valor mínimo (R$)</label>
+              <input type="number" id="f-valor-min" placeholder="0" min="0">
+            </div>
+            <div>
+              <label for="f-valor-max">Valor máximo (R$)</label>
+              <input type="number" id="f-valor-max" placeholder="Sem limite" min="0">
+            </div>
+          </div>
+        </div>
+
+        <div class="fg">
+          <div class="sec-title">Estados <small>opcional — deixe em branco pra receber de todo o Brasil</small></div>
+          <div class="uf-grid" id="uf-grid"></div>
+        </div>
+
+        <div class="fg">
+          <label>Cidades <small style="text-transform:none;font-weight:400;color:var(--text-muted)">(opcional)</small></label>
+          <div class="chip-box" id="chipbox-cidades" onclick="focarChipInput('cidades')">
+            <input type="text" class="chip-input" id="input-cidades" placeholder="Digite e aperte Enter">
+          </div>
+        </div>
+
+        <div class="err-box" id="err-form"></div>
+
+        <button class="btn" id="btn-salvar-perfil" onclick="salvarPerfil()">
+          <span>Salvar alerta</span>
+          <div class="spin" id="spin-form"></div>
+        </button>
+        <button class="btn-secondary btn" style="margin-top:10px" onclick="fecharForm()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <p class="footer">Licitações IA · UpVia Agentes</p>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── Config ─────────────────────────────────────────────────────────
+// TODO: confirmar a URL final dos webhooks depois que o Passo 4 (N8N) estiver ativo.
+const API_BASE = 'https://n8n.upviaagentes.com/webhook/licitacoes';
+const UFS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
+
+// ─── Estado ─────────────────────────────────────────────────────────
+let session = JSON.parse(localStorage.getItem('licitacoes_session') || 'null');
+let whatsappPendente = '';
+let palavrasChave = [];
+let cidades = [];
+let ufsSelecionadas = new Set();
+let modalidades = new Set();
+let perfilEditandoId = null;
+let perfisCache = [];
+
+// ─── Init ───────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  buildUfGrid();
+  wireChipInput('palavras');
+  wireChipInput('cidades');
+  if (session && session.token) {
+    document.getElementById('btnSair').style.display = 'block';
+    showView('view-perfis');
+    carregarPerfis();
+  } else {
+    showView('view-login-numero');
+  }
+});
+
+// ─── Navegação de views ────────────────────────────────────────────
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function toast(msg, ok) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (ok ? ' ok' : '');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// ─── Máscara de telefone ────────────────────────────────────────────
+function maskPhone(v) {
+  v = v.replace(/\D/g,'').slice(0,11);
+  if (v.length > 6) return `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`;
+  if (v.length > 2) return `(${v.slice(0,2)}) ${v.slice(2)}`;
+  return v;
+}
+document.addEventListener('input', (e) => {
+  if (e.target.id === 'in-whatsapp') e.target.value = maskPhone(e.target.value);
+  if (e.target.id === 'in-codigo') e.target.value = e.target.value.replace(/\D/g,'').slice(0,6);
+});
+
+function whatsappParaE164(v) {
+  const digits = v.replace(/\D/g,'');
+  if (!digits) return '';
+  return digits.startsWith('55') ? '+' + digits : '+55' + digits;
+}
+
+// ─── Chamada genérica à API (webhooks N8N) ─────────────────────────
+async function apiCall(path, body) {
+  const payload = { ...body };
+  if (session && session.token) payload.token = session.token;
+  const res = await fetch(`${API_BASE}/${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (res.status === 401) {
+    logout();
+    throw new Error('Sessão expirada. Entre novamente.');
+  }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || data.erro) throw new Error(data.erro || 'Não foi possível completar a ação. Tente novamente.');
+  return data;
+}
+
+// ─── Login: passo 1 — pedir código ──────────────────────────────────
+async function enviarCodigo() {
+  const input = document.getElementById('in-whatsapp');
+  const errBox = document.getElementById('err-login1');
+  errBox.classList.remove('show');
+  const numero = whatsappParaE164(input.value);
+  if (!input.value.trim() || input.value.replace(/\D/g,'').length < 10) {
+    errBox.textContent = 'Digite um WhatsApp válido com DDD.';
+    errBox.classList.add('show');
+    return;
+  }
+  setLoading('btn-enviar-codigo', 'spin-login1', true);
+  try {
+    await apiCall('login-solicitar', { whatsapp_numero: numero });
+    whatsappPendente = numero;
+    document.getElementById('numero-confirmado').textContent = input.value;
+    document.getElementById('in-codigo').value = '';
+    showView('view-login-codigo');
+  } catch (e) {
+    errBox.textContent = e.message;
+    errBox.classList.add('show');
+  } finally {
+    setLoading('btn-enviar-codigo', 'spin-login1', false);
+  }
+}
+
+function voltarParaNumero() {
+  showView('view-login-numero');
+}
+
+// ─── Login: passo 2 — confirmar código ──────────────────────────────
+async function confirmarCodigo() {
+  const codigo = document.getElementById('in-codigo').value;
+  const errBox = document.getElementById('err-login2');
+  errBox.classList.remove('show');
+  if (codigo.length !== 6) {
+    errBox.textContent = 'O código tem 6 dígitos.';
+    errBox.classList.add('show');
+    return;
+  }
+  setLoading('btn-confirmar-codigo', 'spin-login2', true);
+  try {
+    const data = await apiCall('login-confirmar', { whatsapp_numero: whatsappPendente, codigo });
+    session = { token: data.token, usuario: data.usuario };
+    localStorage.setItem('licitacoes_session', JSON.stringify(session));
+    document.getElementById('btnSair').style.display = 'block';
+    showView('view-perfis');
+    carregarPerfis();
+  } catch (e) {
+    errBox.textContent = e.message;
+    errBox.classList.add('show');
+  } finally {
+    setLoading('btn-confirmar-codigo', 'spin-login2', false);
+  }
+}
+
+function logout() {
+  localStorage.removeItem('licitacoes_session');
+  session = null;
+  document.getElementById('btnSair').style.display = 'none';
+  showView('view-login-numero');
+}
+
+function setLoading(btnId, spinId, loading) {
+  document.getElementById(btnId).disabled = loading;
+  document.getElementById(spinId).classList.toggle('show', loading);
+}
+
+// ─── Lista de perfis ────────────────────────────────────────────────
+async function carregarPerfis() {
+  const cont = document.getElementById('perfis-container');
+  cont.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:30px 0">Carregando...</p>';
+  try {
+    const data = await apiCall('perfis-listar', {});
+    perfisCache = data.perfis || [];
+    renderPerfis();
+  } catch (e) {
+    toast(e.message);
+    cont.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:30px 0">Não foi possível carregar seus alertas.</p>';
+  }
+}
+
+function resumoPerfil(p) {
+  const partes = [];
+  if (p.objeto_palavras_chave && p.objeto_palavras_chave.length) partes.push('🔍 ' + p.objeto_palavras_chave.join(', '));
+  const modNomes = { pregao_eletronico: 'Pregão Eletrônico', dispensa: 'Dispensa' };
+  if (p.modalidades && p.modalidades.length) partes.push('📋 ' + p.modalidades.map(m => modNomes[m] || m).join(' + '));
+  if (p.valor_min || p.valor_max) {
+    const min = p.valor_min ? 'R$ ' + Number(p.valor_min).toLocaleString('pt-BR') : 'R$ 0';
+    const max = p.valor_max ? 'R$ ' + Number(p.valor_max).toLocaleString('pt-BR') : 'sem limite';
+    partes.push('💰 ' + min + ' até ' + max);
+  }
+  if (p.uf && p.uf.length) partes.push('📍 ' + p.uf.join(', '));
+  return partes.length ? partes.join(' · ') : 'Sem filtros específicos — recebe tudo que sair.';
+}
+
+function renderPerfis() {
+  const cont = document.getElementById('perfis-container');
+  if (!perfisCache.length) {
+    cont.innerHTML = `
+      <div class="empty-state">
+        <div class="ic">📭</div>
+        <p>Você ainda não tem nenhum alerta. Crie o primeiro e a gente avisa no seu WhatsApp toda vez que sair uma licitação que combina com o que você procura.</p>
+      </div>`;
+    return;
+  }
+  cont.innerHTML = `<div class="perfil-list">${perfisCache.map(p => `
+    <div class="perfil-card">
+      <div class="perfil-top">
+        <div>
+          <div class="perfil-nome">${escapeHtml(p.nome_perfil)}</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" ${p.ativo ? 'checked' : ''} onchange="toggleAtivo('${p.id}', this.checked)">
+          <div class="tslider"></div>
+        </label>
+      </div>
+      <div class="perfil-resumo">${resumoPerfil(p)}</div>
+      <div class="perfil-actions">
+        <button onclick="editarPerfil('${p.id}')">Editar</button>
+        <button class="del" onclick="excluirPerfil('${p.id}')">Excluir</button>
+      </div>
+    </div>
+  `).join('')}</div>`;
+}
+
+function escapeHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+
+async function toggleAtivo(id, ativo) {
+  try {
+    await apiCall('perfil-toggle', { perfil_id: id, ativo });
+    const p = perfisCache.find(x => x.id === id);
+    if (p) p.ativo = ativo;
+    toast(ativo ? 'Alerta ativado.' : 'Alerta pausado.', true);
+  } catch (e) {
+    toast(e.message);
+    carregarPerfis();
+  }
+}
+
+async function excluirPerfil(id) {
+  if (!confirm('Excluir esse alerta? Essa ação não pode ser desfeita.')) return;
+  try {
+    await apiCall('perfil-excluir', { perfil_id: id });
+    perfisCache = perfisCache.filter(p => p.id !== id);
+    renderPerfis();
+    toast('Alerta excluído.', true);
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
+// ─── Formulário novo/editar ──────────────────────────────────────────
+function abrirForm() {
+  perfilEditandoId = null;
+  document.getElementById('form-titulo').textContent = 'Novo alerta';
+  document.getElementById('f-nome').value = '';
+  document.getElementById('f-valor-min').value = '';
+  document.getElementById('f-valor-max').value = '';
+  palavrasChave = []; renderChips('palavras');
+  cidades = []; renderChips('cidades');
+  modalidades = new Set();
+  document.getElementById('chk-pregao').checked = false;
+  document.getElementById('chk-dispensa').checked = false;
+  document.getElementById('card-pregao').classList.remove('sel');
+  document.getElementById('card-dispensa').classList.remove('sel');
+  ufsSelecionadas = new Set();
+  buildUfGrid();
+  document.getElementById('err-form').classList.remove('show');
+  showView('view-form');
+}
+
+function editarPerfil(id) {
+  const p = perfisCache.find(x => x.id === id);
+  if (!p) return;
+  perfilEditandoId = id;
+  document.getElementById('form-titulo').textContent = 'Editar alerta';
+  document.getElementById('f-nome').value = p.nome_perfil || '';
+  document.getElementById('f-valor-min').value = p.valor_min || '';
+  document.getElementById('f-valor-max').value = p.valor_max || '';
+  palavrasChave = [...(p.objeto_palavras_chave || [])]; renderChips('palavras');
+  cidades = [...(p.municipio || [])]; renderChips('cidades');
+  modalidades = new Set(p.modalidades || []);
+  document.getElementById('chk-pregao').checked = modalidades.has('pregao_eletronico');
+  document.getElementById('chk-dispensa').checked = modalidades.has('dispensa');
+  document.getElementById('card-pregao').classList.toggle('sel', modalidades.has('pregao_eletronico'));
+  document.getElementById('card-dispensa').classList.toggle('sel', modalidades.has('dispensa'));
+  ufsSelecionadas = new Set(p.uf || []);
+  buildUfGrid();
+  document.getElementById('err-form').classList.remove('show');
+  showView('view-form');
+}
+
+function fecharForm() {
+  showView('view-perfis');
+}
+
+function toggleModalidadeCard(qual) {
+  const map = { pregao: ['chk-pregao', 'card-pregao', 'pregao_eletronico'], dispensa: ['chk-dispensa', 'card-dispensa', 'dispensa'] };
+  const [chkId, cardId, valor] = map[qual];
+  const checked = document.getElementById(chkId).checked;
+  document.getElementById(cardId).classList.toggle('sel', checked);
+  if (checked) modalidades.add(valor); else modalidades.delete(valor);
+}
+// Nao precisa de listener manual pra "clicar no card": o <label> ja
+// alterna o <input type=checkbox> nativamente em qualquer clique dentro
+// dele, e isso dispara o onchange sozinho. Um listener extra aqui causava
+// duplo toggle (o clique cancelava a si mesmo) quando o clique nao caia
+// exatamente em cima do quadradinho do checkbox.
+
+function buildUfGrid() {
+  const grid = document.getElementById('uf-grid');
+  grid.innerHTML = UFS.map(uf => `<div class="uf-chip ${ufsSelecionadas.has(uf) ? 'sel' : ''}" data-uf="${uf}" onclick="toggleUf('${uf}')">${uf}</div>`).join('');
+}
+function toggleUf(uf) {
+  if (ufsSelecionadas.has(uf)) ufsSelecionadas.delete(uf); else ufsSelecionadas.add(uf);
+  buildUfGrid();
+}
+
+// ─── Chips genéricos (palavras-chave / cidades) ─────────────────────
+// Resolve sempre a variável atual (nunca guarda o array em closure): abrirForm()/
+// editarPerfil() reatribuem palavrasChave/cidades a um array novo a cada abertura,
+// e uma referência guardada em closure ficaria presa no array antigo.
+const CHIP_CFG = {
+  palavras: { boxId: 'chipbox-palavras', inputId: 'input-palavras', arr: () => palavrasChave },
+  cidades:  { boxId: 'chipbox-cidades',  inputId: 'input-cidades',  arr: () => cidades }
+};
+
+function wireChipInput(key) {
+  const cfg = CHIP_CFG[key];
+  const input = document.getElementById(cfg.inputId);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      const arr = cfg.arr();
+      const v = input.value.trim().replace(/,$/,'');
+      if (v && !arr.includes(v)) { arr.push(v); renderChips(key); }
+      input.value = '';
+    } else if (e.key === 'Backspace' && !input.value && cfg.arr().length) {
+      cfg.arr().pop();
+      renderChips(key);
+    }
+  });
+  input.addEventListener('focus', () => document.getElementById(cfg.boxId).classList.add('focus'));
+  input.addEventListener('blur', () => document.getElementById(cfg.boxId).classList.remove('focus'));
+}
+function renderChips(key) {
+  const cfg = CHIP_CFG[key];
+  const box = document.getElementById(cfg.boxId);
+  const input = document.getElementById(cfg.inputId);
+  box.querySelectorAll('.chip').forEach(c => c.remove());
+  cfg.arr().forEach((v, i) => {
+    const chip = document.createElement('span');
+    chip.className = 'chip';
+    chip.innerHTML = `${escapeHtml(v)} <button type="button" onclick="removerChip('${key}',${i})">×</button>`;
+    box.insertBefore(chip, input);
+  });
+}
+function removerChip(key, idx) {
+  CHIP_CFG[key].arr().splice(idx, 1);
+  renderChips(key);
+}
+function focarChipInput(key) {
+  document.getElementById(CHIP_CFG[key].inputId).focus();
+}
+
+// ─── Salvar perfil ────────────────────────────────────────────────
+async function salvarPerfil() {
+  const errBox = document.getElementById('err-form');
+  errBox.classList.remove('show');
+  const nome = document.getElementById('f-nome').value.trim();
+  if (!nome) { errBox.textContent = 'Dê um nome pro alerta.'; errBox.classList.add('show'); return; }
+  if (!palavrasChave.length) { errBox.textContent = 'Adicione pelo menos uma palavra-chave do que você procura.'; errBox.classList.add('show'); return; }
+  if (!modalidades.size) { errBox.textContent = 'Marque pelo menos um tipo de licitação.'; errBox.classList.add('show'); return; }
+  const valorMin = document.getElementById('f-valor-min').value;
+  const valorMax = document.getElementById('f-valor-max').value;
+  if (valorMin && valorMax && Number(valorMin) > Number(valorMax)) {
+    errBox.textContent = 'O valor mínimo não pode ser maior que o máximo.'; errBox.classList.add('show'); return;
+  }
+
+  const payload = {
+    perfil_id: perfilEditandoId,
+    nome_perfil: nome,
+    objeto_palavras_chave: palavrasChave,
+    modalidades: Array.from(modalidades),
+    valor_min: valorMin ? Number(valorMin) : null,
+    valor_max: valorMax ? Number(valorMax) : null,
+    uf: Array.from(ufsSelecionadas),
+    municipio: cidades
+  };
+
+  setLoading('btn-salvar-perfil', 'spin-form', true);
+  try {
+    await apiCall('perfil-salvar', payload);
+    toast('Alerta salvo!', true);
+    showView('view-perfis');
+    carregarPerfis();
+  } catch (e) {
+    errBox.textContent = e.message;
+    errBox.classList.add('show');
+  } finally {
+    setLoading('btn-salvar-perfil', 'spin-form', false);
+  }
+}
+</script>
+</body>
+</html>
