@@ -68,8 +68,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
       "position": [
-        440,
-        0
+        220,
+        300
       ],
       "alwaysOutputData": true,
       "onError": "continueRegularOutput",
@@ -347,13 +347,7 @@
             "node": "Buscar Nichos Ativos",
             "type": "main",
             "index": 0
-          }
-        ]
-      ]
-    },
-    "Buscar Nichos Ativos": {
-      "main": [
-        [
+          },
           {
             "node": "Buscar Config",
             "type": "main",
@@ -362,7 +356,7 @@
         ]
       ]
     },
-    "Buscar Config": {
+    "Buscar Nichos Ativos": {
       "main": [
         [
           {
