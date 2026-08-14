@@ -203,7 +203,7 @@
       ],
       "alwaysOutputData": true,
       "parameters": {
-        "jsCode": "return $json.anuncios.map(json => ({ json }));"
+        "jsCode": "// Code node roda em modo \"Run Once for All Items\" por padrao -- $json NAO existe\n// nesse modo (so em \"Run Once for Each Item\"). Usar $input.first().json.\nreturn $input.first().json.anuncios.map(json => ({ json }));"
       }
     },
     {
@@ -290,7 +290,7 @@
       ],
       "alwaysOutputData": true,
       "parameters": {
-        "jsCode": "return $json.leads.map(json => ({ json }));"
+        "jsCode": "// mesmo motivo do \"Expandir Anuncios do Nicho\": $json nao existe em \"Run Once for\n// All Items\" (modo padrao do Code node) -- usar $input.first().json.\nreturn $input.first().json.leads.map(json => ({ json }));"
       }
     },
     {
