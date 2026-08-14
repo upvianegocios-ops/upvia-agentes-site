@@ -367,6 +367,20 @@
           "queryReplacement": "={{ [ $json.message.content, $('Loop Leads Novos').item.json.id ] }}"
         }
       }
+    },
+    {
+      "id": "pros-000l",
+      "name": "Esperar Entre Nichos",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2860,
+        160
+      ],
+      "parameters": {
+        "amount": 10,
+        "unit": "seconds"
+      }
     }
   ],
   "connections": {
@@ -558,6 +572,17 @@
       ]
     },
     "Fim Iteracao Nicho": {
+      "main": [
+        [
+          {
+            "node": "Esperar Entre Nichos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Esperar Entre Nichos": {
       "main": [
         [
           {

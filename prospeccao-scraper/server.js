@@ -16,6 +16,9 @@ function checarToken(req, res, next) {
 
 app.get('/health', (req, res) => res.json({ ok: true }));
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const delayAleatorio = (minMs, maxMs) => sleep(minMs + Math.random() * (maxMs - minMs));
+
 // POST /buscar { termos: string[], pais?: string }
 // Devolve { ok, resultados: [{ termo, anuncios: [...] }] }
 app.post('/buscar', checarToken, async (req, res) => {
@@ -27,8 +30,13 @@ app.post('/buscar', checarToken, async (req, res) => {
   try {
     browser = await chromium.launch({ args: ['--no-sandbox'] });
     const resultados = [];
-    for (const termo of termos) {
-      const r = await buscarTermo(browser, termo, pais);
+    for (let i = 0; i < termos.length; i++) {
+      // atraso aleatorio entre buscas pra nao bater na Ad Library num padrao
+      // obviamente automatizado (rajada de requests identicas de um so IP) --
+      // confirmado em producao que isso derruba os resultados a zero depois de
+      // ~20-30 buscas seguidas em poucos minutos.
+      if (i > 0) await delayAleatorio(3000, 7000);
+      const r = await buscarTermo(browser, termos[i], pais);
       resultados.push(r);
     }
     res.json({ ok: true, resultados });
