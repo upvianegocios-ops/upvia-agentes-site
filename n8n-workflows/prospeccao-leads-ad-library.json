@@ -156,7 +156,6 @@
         1320,
         160
       ],
-      "alwaysOutputData": true,
       "parameters": {
         "conditions": {
           "options": {
@@ -254,7 +253,6 @@
         2100,
         160
       ],
-      "alwaysOutputData": true,
       "parameters": {
         "conditions": {
           "options": {
