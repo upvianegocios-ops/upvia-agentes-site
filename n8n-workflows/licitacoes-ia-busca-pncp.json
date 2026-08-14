@@ -295,7 +295,7 @@
       "onError": "continueRegularOutput",
       "parameters": {
         "method": "POST",
-        "url": "https://evo.upviaagentes.com/message/sendText/agentematriz",
+        "url": "https://evo.upviaagentes.com/message/sendText/Upvia_adm",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -307,7 +307,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "{\"number\":\"{{ $json.numero }}\",\"text\":{{ JSON.stringify($json.texto) }}}",
+        "jsonBody": "={{ JSON.stringify({ number: $json.numero, text: $json.texto }) }}",
         "options": {}
       }
     },
