@@ -142,8 +142,9 @@
         1100,
         160
       ],
+      "alwaysOutputData": true,
       "parameters": {
-        "jsCode": "const nicho = $('Loop Nichos').first().json;\nconst resposta = $input.first().json;\nconst resultados = (resposta && resposta.resultados) || [];\nconst anuncios = [];\nfor (const r of resultados) {\n  for (const a of (r.anuncios || [])) {\n    anuncios.push({\n      nicho_id: nicho.nicho_id,\n      ad_archive_id: a.ad_archive_id,\n      page_name: a.page_name,\n      ad_creative_body: a.ad_creative_body,\n      ad_snapshot_url: a.ad_snapshot_url,\n      ad_delivery_start_time: a.ad_delivery_start_time\n    });\n  }\n}\nreturn anuncios.map(json => ({ json }));"
+        "jsCode": "const nicho = $('Loop Nichos').first().json;\nconst resposta = $input.first().json;\nconst resultados = (resposta && resposta.resultados) || [];\nconst anuncios = [];\nfor (const r of resultados) {\n  for (const a of (r.anuncios || [])) {\n    anuncios.push({\n      nicho_id: nicho.nicho_id,\n      ad_archive_id: a.ad_archive_id,\n      page_name: a.page_name,\n      ad_creative_body: a.ad_creative_body,\n      ad_snapshot_url: a.ad_snapshot_url,\n      ad_delivery_start_time: a.ad_delivery_start_time\n    });\n  }\n}\nreturn [{ json: { anuncios } }];"
       }
     },
     {
@@ -155,6 +156,7 @@
         1320,
         160
       ],
+      "alwaysOutputData": true,
       "parameters": {
         "conditions": {
           "options": {
@@ -166,7 +168,7 @@
           "conditions": [
             {
               "id": "pros-000a",
-              "leftValue": "={{ $input.all().length }}",
+              "leftValue": "={{ $json.anuncios.length }}",
               "rightValue": 0,
               "operator": {
                 "type": "number",
@@ -192,11 +194,25 @@
     },
     {
       "id": "pros-000c",
+      "name": "Expandir Anuncios do Nicho",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        160
+      ],
+      "alwaysOutputData": true,
+      "parameters": {
+        "jsCode": "return $json.anuncios.map(json => ({ json }));"
+      }
+    },
+    {
+      "id": "pros-000d",
       "name": "Upsert Lead (dedup)",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
       "position": [
-        1540,
+        1660,
         160
       ],
       "alwaysOutputData": true,
@@ -209,34 +225,36 @@
       },
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO prospeccao_leads (nicho_id, ad_archive_id, page_name, ad_creative_body, ad_snapshot_url, ad_delivery_start_time, status)\nVALUES ($1, $2, $3, $4, $5, $6, 'novo')\nON CONFLICT (ad_archive_id) DO NOTHING\nRETURNING id;",
+        "query": "INSERT INTO prospeccao_leads (nicho_id, ad_archive_id, page_name, ad_creative_body, ad_snapshot_url, ad_delivery_start_time, status)\nVALUES ($1, $2, $3, $4, $5, $6, 'novo')\nON CONFLICT (ad_archive_id) DO NOTHING\nRETURNING id, page_name, ad_creative_body;",
         "options": {
           "queryReplacement": "={{ [ $json.nicho_id, $json.ad_archive_id, $json.page_name, $json.ad_creative_body, $json.ad_snapshot_url, $json.ad_delivery_start_time ] }}"
         }
       }
     },
     {
-      "id": "pros-000d",
-      "name": "Filtrar Novos Leads",
+      "id": "pros-000e",
+      "name": "Coletar Novos Leads",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1760,
+        1880,
         160
       ],
+      "alwaysOutputData": true,
       "parameters": {
-        "jsCode": "// so segue com leads que realmente foram inseridos agora (RETURNING id nao-vazio);\n// duplicados (ON CONFLICT DO NOTHING) voltam sem \"id\" e sao ignorados aqui.\nreturn $input.all().filter(i => i.json && i.json.id);"
+        "jsCode": "// so ficam os leads que realmente foram inseridos agora (RETURNING nao-vazio);\n// duplicados (ON CONFLICT DO NOTHING) voltam sem \"id\" e sao descartados aqui.\n// Sempre devolve 1 item (envelope), mesmo que \"leads\" fique vazio -- ver nota acima\n// sobre o node Postgres poder devolver 0 linhas quando o lote inteiro e duplicado.\nconst leads = $input.all().filter(i => i.json && i.json.id).map(i => i.json);\nreturn [{ json: { leads } }];"
       }
     },
     {
-      "id": "pros-000e",
+      "id": "pros-000f",
       "name": "Tem Leads Novos Pra Mensagem?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        1980,
+        2100,
         160
       ],
+      "alwaysOutputData": true,
       "parameters": {
         "conditions": {
           "options": {
@@ -247,8 +265,8 @@
           },
           "conditions": [
             {
-              "id": "pros-000f",
-              "leftValue": "={{ $input.all().length }}",
+              "id": "pros-000g",
+              "leftValue": "={{ $json.leads.length }}",
               "rightValue": 0,
               "operator": {
                 "type": "number",
@@ -262,12 +280,26 @@
       }
     },
     {
-      "id": "pros-000g",
+      "id": "pros-000h",
+      "name": "Expandir Leads Novos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2320,
+        160
+      ],
+      "alwaysOutputData": true,
+      "parameters": {
+        "jsCode": "return $json.leads.map(json => ({ json }));"
+      }
+    },
+    {
+      "id": "pros-000i",
       "name": "Loop Leads Novos",
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        2200,
+        2540,
         160
       ],
       "parameters": {
@@ -275,12 +307,12 @@
       }
     },
     {
-      "id": "pros-000h",
+      "id": "pros-000j",
       "name": "Gerar Mensagem Personalizada",
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.6,
       "position": [
-        2420,
+        2760,
         60
       ],
       "alwaysOutputData": true,
@@ -314,12 +346,12 @@
       }
     },
     {
-      "id": "pros-000i",
+      "id": "pros-000k",
       "name": "Salvar Mensagem e Marcar Pronto",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
       "position": [
-        2420,
+        2760,
         260
       ],
       "alwaysOutputData": true,
@@ -411,7 +443,7 @@
       "main": [
         [
           {
-            "node": "Upsert Lead (dedup)",
+            "node": "Expandir Anuncios do Nicho",
             "type": "main",
             "index": 0
           }
@@ -425,18 +457,29 @@
         ]
       ]
     },
-    "Upsert Lead (dedup)": {
+    "Expandir Anuncios do Nicho": {
       "main": [
         [
           {
-            "node": "Filtrar Novos Leads",
+            "node": "Upsert Lead (dedup)",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Filtrar Novos Leads": {
+    "Upsert Lead (dedup)": {
+      "main": [
+        [
+          {
+            "node": "Coletar Novos Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Coletar Novos Leads": {
       "main": [
         [
           {
@@ -451,7 +494,7 @@
       "main": [
         [
           {
-            "node": "Loop Leads Novos",
+            "node": "Expandir Leads Novos",
             "type": "main",
             "index": 0
           }
@@ -459,6 +502,17 @@
         [
           {
             "node": "Fim Iteracao Nicho",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Expandir Leads Novos": {
+      "main": [
+        [
+          {
+            "node": "Loop Leads Novos",
             "type": "main",
             "index": 0
           }
