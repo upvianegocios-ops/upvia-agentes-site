@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prospecção Leads — Painel</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #07070D;
+  --bg-card: #0D0D1A;
+  --bg-input: #12121E;
+  --bg-hover: #1A1A2E;
+  --cyan: #00D2FF;
+  --cyan-glow: rgba(0,210,255,0.1);
+  --violet: #6C5CE7;
+  --violet-light: #A29BFE;
+  --violet-glow: rgba(108,92,231,0.1);
+  --grad: linear-gradient(135deg,#00D2FF,#6C5CE7);
+  --text: #E8E8F0;
+  --text-muted: #6868A0;
+  --border: rgba(255,255,255,0.07);
+  --border-cyan: rgba(0,210,255,0.35);
+  --border-violet: rgba(108,92,231,0.3);
+  --danger: #FF6B6B;
+  --success: #00CF9D;
+  --success-glow: rgba(0,207,157,0.12);
+  --warning: #F7C948;
+  --warning-glow: rgba(247,201,72,0.12);
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);
+  min-height:100vh;padding:24px 16px 64px;position:relative;overflow-x:hidden;
+}
+body::before,body::after{content:'';position:fixed;border-radius:50%;pointer-events:none;z-index:0;filter:blur(120px)}
+body::before{width:700px;height:700px;background:radial-gradient(circle,rgba(0,210,255,0.07) 0%,transparent 70%);top:-200px;left:-200px}
+body::after{width:700px;height:700px;background:radial-gradient(circle,rgba(108,92,231,0.09) 0%,transparent 70%);bottom:-200px;right:-200px}
+.wrap{position:relative;z-index:1;max-width:840px;margin:0 auto}
+
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.logo{font-size:22px;font-weight:900;letter-spacing:-0.5px;
+  background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+
+.contador{display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--bg-card);
+  border:1px solid var(--border);border-radius:20px;font-size:13px;font-weight:700}
+.contador.alerta{border-color:var(--warning);background:var(--warning-glow);color:var(--warning)}
+.contador .num{font-size:15px}
+
+.filtros{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+.chip-nicho{padding:7px 14px;border-radius:16px;border:1px solid var(--border);background:var(--bg-input);
+  font-size:12px;font-weight:700;color:var(--text-muted);cursor:pointer;transition:all .15s;user-select:none}
+.chip-nicho.sel{background:var(--violet-glow);border-color:var(--violet);color:var(--violet-light)}
+
+.grupo-nicho{margin-bottom:28px}
+.grupo-titulo{font-size:14px;font-weight:800;color:var(--cyan);text-transform:uppercase;letter-spacing:.5px;
+  margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.grupo-titulo .qtd{font-size:11px;color:var(--text-muted);font-weight:600;text-transform:none;letter-spacing:0}
+
+.lead-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);
+  padding:18px 20px;margin-bottom:14px}
+.lead-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px}
+.lead-nome{font-size:16px;font-weight:700}
+.lead-data{font-size:11px;color:var(--text-muted);white-space:nowrap}
+.lead-anuncio{font-size:13px;color:var(--text-muted);line-height:1.6;margin-bottom:10px;
+  background:var(--bg-input);border-radius:var(--radius-sm);padding:10px 12px;
+  max-height:80px;overflow-y:auto}
+.lead-link{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--cyan);
+  text-decoration:none;font-weight:600;margin-bottom:14px}
+.lead-link:hover{text-decoration:underline}
+
+.fg{margin-bottom:12px}
+label{display:block;font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;
+  letter-spacing:.5px;margin-bottom:6px}
+input[type=text],input[type=tel],textarea{
+  width:100%;padding:10px 12px;background:var(--bg-input);border:1px solid var(--border);
+  border-radius:var(--radius-sm);color:var(--text);font-family:'Outfit',sans-serif;
+  font-size:14px;transition:all .2s;outline:none;resize:vertical
+}
+input:focus,textarea:focus{border-color:var(--border-cyan);box-shadow:0 0 0 3px rgba(0,210,255,0.08);background:var(--bg-hover)}
+textarea{min-height:80px;line-height:1.5}
+
+.lead-actions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+.btn{padding:11px 18px;border-radius:var(--radius-sm);border:none;font-family:'Outfit',sans-serif;
+  font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:8px}
+.btn-wpp{background:var(--grad);color:#fff;flex:1;justify-content:center}
+.btn-wpp:hover{filter:brightness(1.08)}
+.btn-wpp:disabled{opacity:.35;cursor:not-allowed;filter:none}
+.btn-contatado{background:var(--bg-input);border:1px solid var(--border-violet);color:var(--violet-light)}
+.btn-contatado:hover{background:var(--violet-glow)}
+
+.select-contatado{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--text-muted)}
+.select-contatado select{padding:8px 10px;background:var(--bg-input);border:1px solid var(--border);
+  border-radius:var(--radius-sm);color:var(--text);font-family:'Outfit',sans-serif;font-size:12px}
+
+.badge-contatado{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;background:var(--success-glow);
+  border:1px solid var(--success);border-radius:14px;font-size:11px;font-weight:700;color:var(--success)}
+
+.empty-state{text-align:center;padding:60px 20px;color:var(--text-muted)}
+.empty-state .ic{font-size:44px;margin-bottom:14px}
+
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-20px);
+  background:var(--bg-card);border:1px solid var(--danger);color:var(--text);padding:12px 20px;
+  border-radius:var(--radius-sm);font-size:13px;box-shadow:0 12px 30px rgba(0,0,0,.5);
+  z-index:50;opacity:0;transition:all .25s;pointer-events:none;max-width:90vw}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.ok{border-color:var(--success)}
+
+.footer{text-align:center;margin-top:20px;font-size:11px;color:var(--text-muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <div class="logo">Prospecção Leads</div>
+    <div class="contador" id="contador">
+      <span>📞</span>
+      <span><span class="num" id="contador-num">0</span> de <span id="contador-limite">20</span> contatos hoje</span>
+    </div>
+  </div>
+
+  <div class="filtros" id="filtros"></div>
+
+  <div id="conteudo">
+    <p style="text-align:center;color:var(--text-muted);padding:40px 0">Carregando leads...</p>
+  </div>
+
+  <p class="footer">Prospecção Leads · UpVia Agentes</p>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+// TODO: confirmar se esses valores continuam corretos antes de ativar em producao
+const SUPABASE_URL = 'https://qzgokcxvyasftuqgqonn.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_YJkDncx9gbHMXUDH--U6nw_q9edq7Xe';
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let leadsPorNicho = {};
+let nichoFiltro = null;
+let limiteDiario = 20;
+let contatosHoje = 0;
+
+function toast(msg, ok) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (ok ? ' ok' : '');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+function escapeHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+
+function soDigitos(v) { return (v || '').replace(/\D/g, ''); }
+
+function inicioDoDiaISO() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString();
+}
+
+async function carregarConfig() {
+  const { data, error } = await supabase.from('prospeccao_config').select('limite_diario_contato').eq('id', 1).single();
+  if (!error && data) limiteDiario = data.limite_diario_contato;
+  document.getElementById('contador-limite').textContent = limiteDiario;
+}
+
+async function carregarContadorHoje() {
+  const { count, error } = await supabase
+    .from('prospeccao_leads')
+    .select('id', { count: 'exact', head: true })
+    .eq('status', 'contatado')
+    .gte('data_contatado', inicioDoDiaISO());
+  contatosHoje = error ? 0 : (count || 0);
+  const el = document.getElementById('contador');
+  document.getElementById('contador-num').textContent = contatosHoje;
+  el.classList.toggle('alerta', contatosHoje >= limiteDiario);
+}
+
+async function carregarLeads() {
+  const { data, error } = await supabase
+    .from('prospeccao_leads')
+    .select('*, prospeccao_nichos(nome)')
+    .eq('status', 'pronto_para_contato')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    document.getElementById('conteudo').innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:40px 0">Não foi possível carregar os leads.</p>';
+    console.error(error);
+    return;
+  }
+
+  leadsPorNicho = {};
+  for (const lead of data) {
+    const nome = lead.prospeccao_nichos ? lead.prospeccao_nichos.nome : 'Outros';
+    leadsPorNicho[nome] = leadsPorNicho[nome] || [];
+    leadsPorNicho[nome].push(lead);
+  }
+
+  renderFiltros();
+  renderLeads();
+}
+
+function renderFiltros() {
+  const nichos = Object.keys(leadsPorNicho).sort();
+  const wrap = document.getElementById('filtros');
+  if (!nichos.length) { wrap.innerHTML = ''; return; }
+  wrap.innerHTML = `<div class="chip-nicho ${nichoFiltro === null ? 'sel' : ''}" data-nicho="">Todos</div>` +
+    nichos.map(n => `<div class="chip-nicho ${nichoFiltro === n ? 'sel' : ''}" data-nicho="${escapeHtml(n)}">${escapeHtml(n)} (${leadsPorNicho[n].length})</div>`).join('');
+  wrap.querySelectorAll('.chip-nicho').forEach(el => {
+    el.addEventListener('click', () => {
+      nichoFiltro = el.dataset.nicho || null;
+      renderFiltros();
+      renderLeads();
+    });
+  });
+}
+
+function renderLeads() {
+  const cont = document.getElementById('conteudo');
+  const nichos = Object.keys(leadsPorNicho).sort().filter(n => !nichoFiltro || n === nichoFiltro);
+
+  if (!nichos.length || nichos.every(n => !leadsPorNicho[n].length)) {
+    cont.innerHTML = `<div class="empty-state"><div class="ic">📭</div><p>Nenhum lead pronto pra contato no momento. A busca roda automaticamente 3x por dia.</p></div>`;
+    return;
+  }
+
+  cont.innerHTML = nichos.map(nome => `
+    <div class="grupo-nicho">
+      <div class="grupo-titulo">${escapeHtml(nome)} <span class="qtd">${leadsPorNicho[nome].length} lead(s)</span></div>
+      ${leadsPorNicho[nome].map(lead => renderCard(lead)).join('')}
+    </div>
+  `).join('');
+
+  cont.querySelectorAll('[data-tel-input]').forEach(input => {
+    input.addEventListener('input', () => atualizarBotaoWpp(input.dataset.telInput));
+  });
+  cont.querySelectorAll('[data-wpp-btn]').forEach(btn => {
+    btn.addEventListener('click', () => enviarWhatsapp(btn.dataset.wppBtn));
+  });
+  cont.querySelectorAll('[data-contatado-btn]').forEach(btn => {
+    btn.addEventListener('click', () => marcarContatado(btn.dataset.contatadoBtn));
+  });
+}
+
+function renderCard(lead) {
+  const jaContatado = lead.status === 'contatado';
+  return `
+    <div class="lead-card" id="card-${lead.id}">
+      <div class="lead-top">
+        <div class="lead-nome">${escapeHtml(lead.page_name || 'Sem nome')}</div>
+        <div class="lead-data">${lead.ad_delivery_start_time ? new Date(lead.ad_delivery_start_time).toLocaleDateString('pt-BR') : ''}</div>
+      </div>
+      <div class="lead-anuncio">${escapeHtml(lead.ad_creative_body || 'Sem texto de anúncio.')}</div>
+      ${lead.ad_snapshot_url ? `<a class="lead-link" href="${escapeHtml(lead.ad_snapshot_url)}" target="_blank" rel="noopener">🔗 Ver anúncio na Ad Library</a>` : ''}
+
+      <div class="fg">
+        <label for="tel-${lead.id}">WhatsApp do negócio</label>
+        <input type="tel" id="tel-${lead.id}" data-tel-input="${lead.id}" placeholder="(11) 99999-8888" value="${escapeHtml(lead.telefone || '')}">
+      </div>
+      <div class="fg">
+        <label for="msg-${lead.id}">Mensagem sugerida</label>
+        <textarea id="msg-${lead.id}">${escapeHtml(lead.mensagem_personalizada || '')}</textarea>
+      </div>
+
+      <div class="lead-actions">
+        <button class="btn btn-wpp" data-wpp-btn="${lead.id}" ${soDigitos(lead.telefone).length < 10 ? 'disabled' : ''}>
+          📲 Entrar em contato
+        </button>
+        ${jaContatado
+          ? `<span class="badge-contatado">✓ Contatado</span>`
+          : `<div class="select-contatado">
+               por <select id="por-${lead.id}"><option value="elisa">Elisa</option><option value="jean">Jean</option></select>
+             </div>
+             <button class="btn btn-contatado" data-contatado-btn="${lead.id}">Marcar como contatado</button>`
+        }
+      </div>
+    </div>
+  `;
+}
+
+function atualizarBotaoWpp(leadId) {
+  const tel = document.getElementById('tel-' + leadId).value;
+  const btn = document.querySelector(`[data-wpp-btn="${leadId}"]`);
+  if (btn) btn.disabled = soDigitos(tel).length < 10;
+}
+
+async function enviarWhatsapp(leadId) {
+  const tel = soDigitos(document.getElementById('tel-' + leadId).value);
+  const msg = document.getElementById('msg-' + leadId).value;
+  if (tel.length < 10) return;
+
+  // salva o telefone (e a mensagem, se foi editada) antes de abrir o WhatsApp
+  await supabase.from('prospeccao_leads').update({
+    telefone: tel,
+    telefone_origem: 'manual',
+    mensagem_personalizada: msg
+  }).eq('id', leadId);
+
+  const numeroCompleto = tel.startsWith('55') ? tel : '55' + tel;
+  const url = `https://wa.me/${numeroCompleto}?text=${encodeURIComponent(msg)}`;
+  window.open(url, '_blank');
+}
+
+async function marcarContatado(leadId) {
+  const porSelect = document.getElementById('por-' + leadId);
+  const contatadoPor = porSelect ? porSelect.value : 'elisa';
+
+  const { error } = await supabase.from('prospeccao_leads').update({
+    status: 'contatado',
+    data_contatado: new Date().toISOString(),
+    contatado_por: contatadoPor
+  }).eq('id', leadId);
+
+  if (error) { toast('Não foi possível marcar como contatado.'); return; }
+
+  toast('Marcado como contatado!', true);
+  for (const nome of Object.keys(leadsPorNicho)) {
+    leadsPorNicho[nome] = leadsPorNicho[nome].filter(l => l.id !== leadId);
+  }
+  renderFiltros();
+  renderLeads();
+  carregarContadorHoje();
+}
+
+(async function init() {
+  await carregarConfig();
+  await carregarContadorHoje();
+  await carregarLeads();
+})();
+</script>
+</body>
+</html>

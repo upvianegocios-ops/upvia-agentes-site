@@ -1,0 +1,530 @@
+{
+  "name": "Prospeccao Leads - Ad Library",
+  "nodes": [
+    {
+      "id": "pros-0001",
+      "name": "Nota Geral Prospeccao",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -320
+      ],
+      "parameters": {
+        "content": "## Prospeccao Leads - Ad Library\nRoda 3x/dia (9h, 13h, 17h). Busca cada nicho ativo no servico de scraping (prospeccao-scraper,\nsem login, sem token do Meta), filtra so anuncios clique-pra-WhatsApp, deduplica por\nad_archive_id, gera mensagem personalizada e deixa pronto pra contato manual no CRM.\n\nREGRA DE GOVERNANCA: este workflow NUNCA envia mensagem pro lead. O primeiro contato e\nsempre manual, feito pela pagina CRM (leads.upviaagentes.com.br), clicando um link wa.me.",
+        "width": 900,
+        "height": 240,
+        "color": 4
+      }
+    },
+    {
+      "id": "pros-0002",
+      "name": "Schedule Prospeccao 3x Dia",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9,13,17 * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "pros-0003",
+      "name": "Buscar Nichos Ativos",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        220,
+        0
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id AS nicho_id, nome, palavras_chave FROM prospeccao_nichos WHERE ativo = true;",
+        "options": {
+          "queryReplacement": "={{ [] }}"
+        }
+      }
+    },
+    {
+      "id": "pros-0004",
+      "name": "Buscar Config",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        440,
+        0
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT leads_por_rodada FROM prospeccao_config WHERE id = 1;",
+        "options": {
+          "queryReplacement": "={{ [] }}"
+        }
+      }
+    },
+    {
+      "id": "pros-0005",
+      "name": "Loop Nichos",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "options": {}
+      }
+    },
+    {
+      "id": "pros-0006",
+      "name": "Fim Busca Nichos",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        880,
+        -160
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "pros-0007",
+      "name": "Chamar Servico de Scraping",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        160
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "http://prospeccao-scraper:3500/buscar",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ termos: $json.palavras_chave, pais: 'BR' }) }}",
+        "options": {
+          "timeout": 120000
+        }
+      }
+    },
+    {
+      "id": "pros-0008",
+      "name": "Extrair Anuncios do Nicho",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        160
+      ],
+      "parameters": {
+        "jsCode": "const nicho = $('Loop Nichos').first().json;\nconst resposta = $input.first().json;\nconst resultados = (resposta && resposta.resultados) || [];\nconst anuncios = [];\nfor (const r of resultados) {\n  for (const a of (r.anuncios || [])) {\n    anuncios.push({\n      nicho_id: nicho.nicho_id,\n      ad_archive_id: a.ad_archive_id,\n      page_name: a.page_name,\n      ad_creative_body: a.ad_creative_body,\n      ad_snapshot_url: a.ad_snapshot_url,\n      ad_delivery_start_time: a.ad_delivery_start_time\n    });\n  }\n}\nreturn anuncios.map(json => ({ json }));"
+      }
+    },
+    {
+      "id": "pros-0009",
+      "name": "Tem Anuncios do Nicho?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        160
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "pros-000a",
+              "leftValue": "={{ $input.all().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "pros-000b",
+      "name": "Fim Iteracao Nicho",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2640,
+        160
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "pros-000c",
+      "name": "Upsert Lead (dedup)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1540,
+        160
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO prospeccao_leads (nicho_id, ad_archive_id, page_name, ad_creative_body, ad_snapshot_url, ad_delivery_start_time, status)\nVALUES ($1, $2, $3, $4, $5, $6, 'novo')\nON CONFLICT (ad_archive_id) DO NOTHING\nRETURNING id;",
+        "options": {
+          "queryReplacement": "={{ [ $json.nicho_id, $json.ad_archive_id, $json.page_name, $json.ad_creative_body, $json.ad_snapshot_url, $json.ad_delivery_start_time ] }}"
+        }
+      }
+    },
+    {
+      "id": "pros-000d",
+      "name": "Filtrar Novos Leads",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        160
+      ],
+      "parameters": {
+        "jsCode": "// so segue com leads que realmente foram inseridos agora (RETURNING id nao-vazio);\n// duplicados (ON CONFLICT DO NOTHING) voltam sem \"id\" e sao ignorados aqui.\nreturn $input.all().filter(i => i.json && i.json.id);"
+      }
+    },
+    {
+      "id": "pros-000e",
+      "name": "Tem Leads Novos Pra Mensagem?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1980,
+        160
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "pros-000f",
+              "leftValue": "={{ $input.all().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "pros-000g",
+      "name": "Loop Leads Novos",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2200,
+        160
+      ],
+      "parameters": {
+        "options": {}
+      }
+    },
+    {
+      "id": "pros-000h",
+      "name": "Gerar Mensagem Personalizada",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.6,
+      "position": [
+        2420,
+        60
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "resource": "chat",
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list"
+        },
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "Voce escreve uma primeira mensagem de prospeccao B2B pelo WhatsApp, em portugues do Brasil,\ntom consultivo e natural (nunca robotico, nunca com cara de copy generico). A mensagem deve\nmencionar especificamente o anuncio que a pessoa esta rodando (sem citar textualmente frases\ninteiras, so referenciar o assunto/oferta dele) e perguntar, de forma leve, se o negocio ja\ntem algum tipo de atendimento/agendamento automatizado no WhatsApp. Maximo 4 frases curtas.\nResponda so com o texto da mensagem, sem aspas, sem explicacao."
+            },
+            {
+              "role": "user",
+              "content": "={{ 'Nome do negocio: ' + $('Loop Leads Novos').item.json.page_name + '\\nTexto do anuncio dele: ' + ($('Loop Leads Novos').item.json.ad_creative_body || '').slice(0, 500) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "sjemA3sd4BGEaIHJ",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "id": "pros-000i",
+      "name": "Salvar Mensagem e Marcar Pronto",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        2420,
+        260
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE prospeccao_leads\nSET mensagem_personalizada = $1, status = 'pronto_para_contato'\nWHERE id = $2;",
+        "options": {
+          "queryReplacement": "={{ [ $json.message.content, $('Loop Leads Novos').item.json.id ] }}"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Prospeccao 3x Dia": {
+      "main": [
+        [
+          {
+            "node": "Buscar Nichos Ativos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Nichos Ativos": {
+      "main": [
+        [
+          {
+            "node": "Buscar Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Config": {
+      "main": [
+        [
+          {
+            "node": "Loop Nichos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Nichos": {
+      "main": [
+        [
+          {
+            "node": "Fim Busca Nichos",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Chamar Servico de Scraping",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chamar Servico de Scraping": {
+      "main": [
+        [
+          {
+            "node": "Extrair Anuncios do Nicho",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Anuncios do Nicho": {
+      "main": [
+        [
+          {
+            "node": "Tem Anuncios do Nicho?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tem Anuncios do Nicho?": {
+      "main": [
+        [
+          {
+            "node": "Upsert Lead (dedup)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fim Iteracao Nicho",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Lead (dedup)": {
+      "main": [
+        [
+          {
+            "node": "Filtrar Novos Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar Novos Leads": {
+      "main": [
+        [
+          {
+            "node": "Tem Leads Novos Pra Mensagem?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tem Leads Novos Pra Mensagem?": {
+      "main": [
+        [
+          {
+            "node": "Loop Leads Novos",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fim Iteracao Nicho",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Leads Novos": {
+      "main": [
+        [
+          {
+            "node": "Fim Iteracao Nicho",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Gerar Mensagem Personalizada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gerar Mensagem Personalizada": {
+      "main": [
+        [
+          {
+            "node": "Salvar Mensagem e Marcar Pronto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Salvar Mensagem e Marcar Pronto": {
+      "main": [
+        [
+          {
+            "node": "Loop Leads Novos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fim Iteracao Nicho": {
+      "main": [
+        [
+          {
+            "node": "Loop Nichos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "prospeccao-scraper",
+  "version": "1.0.0",
+  "description": "Servico interno que busca anuncios clique-pra-WhatsApp na Ad Library publica do Meta, sem login. Usado pelo workflow N8N de Prospeccao Leads.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "playwright": "^1.48.0"
+  }
+}
