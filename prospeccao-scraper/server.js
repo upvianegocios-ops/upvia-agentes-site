@@ -23,8 +23,9 @@ app.post('/buscar', checarToken, async (req, res) => {
   const pais = req.body.pais || 'BR';
   if (!termos.length) return res.status(400).json({ erro: 'informe "termos" (array de strings)' });
 
-  const browser = await chromium.launch({ args: ['--no-sandbox'] });
+  let browser;
   try {
+    browser = await chromium.launch({ args: ['--no-sandbox'] });
     const resultados = [];
     for (const termo of termos) {
       const r = await buscarTermo(browser, termo, pais);
@@ -34,7 +35,7 @@ app.post('/buscar', checarToken, async (req, res) => {
   } catch (err) {
     res.status(500).json({ ok: false, erro: err.message });
   } finally {
-    await browser.close();
+    if (browser) await browser.close();
   }
 });
 
