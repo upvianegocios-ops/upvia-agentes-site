@@ -124,7 +124,7 @@
       "onError": "continueRegularOutput",
       "parameters": {
         "method": "POST",
-        "url": "http://prospeccao-scraper:3500/buscar",
+        "url": "http://n8n-ipaagentes_prospeccao-scraper/buscar",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ termos: $json.palavras_chave, pais: 'BR' }) }}",
