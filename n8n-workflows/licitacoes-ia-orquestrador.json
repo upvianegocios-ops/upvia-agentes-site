@@ -199,7 +199,7 @@
         "url": "https://n8n.upviaagentes.com/webhook/licitacoes/busca-livre",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { \"palavras_chave_csv\": \"{palavras}\", \"uf_csv\": \"{ufs}\", \"modalidades_csv\": \"{modalidades}\", \"valor_min\": \"{valor_min}\", \"valor_max\": \"{valor_max}\" } }}",
+        "jsonBody": "={{ `{ \"palavras_chave_csv\": \"{palavras}\", \"uf_csv\": \"{ufs}\", \"modalidades_csv\": \"{modalidades}\", \"valor_min\": \"{valor_min}\", \"valor_max\": \"{valor_max}\" }` }}",
         "placeholderDefinitions": {
           "values": [
             {
@@ -242,7 +242,7 @@
         "url": "https://n8n.upviaagentes.com/webhook/licitacoes/agente-resumidor",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { \"link\": \"{link}\", \"objeto\": \"{objeto_se_souber}\", \"orgao\": \"\", \"valor\": null, \"modalidade_nome\": \"\", \"tipo_perfil\": \"produto\" } }}",
+        "jsonBody": "={{ `{ \"link\": \"{link}\", \"objeto\": \"{objeto_se_souber}\", \"orgao\": \"\", \"valor\": null, \"modalidade_nome\": \"\", \"tipo_perfil\": \"produto\" }` }}",
         "placeholderDefinitions": {
           "values": [
             {
@@ -273,7 +273,7 @@
         "url": "https://n8n.upviaagentes.com/webhook/licitacoes/agente-redator",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { \"resumo_id\": \"{resumo_id}\", \"usuario_id\": $('Resolver Usuario Orquestrador').first().json.usuario_id } }}",
+        "jsonBody": "={{ `{ \"resumo_id\": \"{resumo_id}\", \"usuario_id\": \"${$('Resolver Usuario Orquestrador').first().json.usuario_id}\" }` }}",
         "placeholderDefinitions": {
           "values": [
             {
@@ -300,7 +300,7 @@
         "url": "https://n8n.upviaagentes.com/webhook/licitacoes/agente-fornecedores",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { \"tipo_produto\": \"{tipo_produto}\", \"usuario_id\": $('Resolver Usuario Orquestrador').first().json.usuario_id } }}",
+        "jsonBody": "={{ `{ \"tipo_produto\": \"{tipo_produto}\", \"usuario_id\": \"${$('Resolver Usuario Orquestrador').first().json.usuario_id}\" }` }}",
         "placeholderDefinitions": {
           "values": [
             {
