@@ -1502,6 +1502,571 @@
           "responseCode": 404
         }
       }
+    },
+    {
+      "id": "lic-002e",
+      "name": "Nota Editais Listar",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        2240
+      ],
+      "parameters": {
+        "content": "## Listar Licitacoes Recebidas (\"Minhas Licitacoes\")\nRota: POST /webhook/licitacoes/editais-listar\nBody: { token }\nDevolve o historico de editais ja enviados pro usuario (join com os perfis dele), com o campo \"salvo\" e o resumo de documentacao se ja tiver sido gerado.",
+        "width": 900,
+        "height": 160,
+        "color": 4
+      }
+    },
+    {
+      "id": "lic-002f",
+      "name": "Webhook Editais Listar",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        2500
+      ],
+      "webhookId": "lic-002g",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "licitacoes/editais-listar",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "lic-002h",
+      "name": "Extrair Corpo Editais Listar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        2500
+      ],
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nreturn [{ json: { token: String(body.token || '') } }];"
+      }
+    },
+    {
+      "id": "lic-002i",
+      "name": "Buscar Sessao EditaisListar",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        440,
+        2500
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT s.usuario_id AS usuario_id, s.expira_em AS expira_em FROM licitacoes_sessoes s WHERE s.token = $1 ORDER BY s.created_at DESC LIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ [ $('Extrair Corpo Editais Listar').first().json.token ] }}"
+        }
+      }
+    },
+    {
+      "id": "lic-002j",
+      "name": "Checar Sessao EditaisListar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        2500
+      ],
+      "parameters": {
+        "jsCode": "const rows = $input.all();\nconst row = rows.length ? rows[0].json : null;\nconst valido = !!(row && new Date(row.expira_em).getTime() > Date.now());\nreturn [{ json: { valido, usuario_id: row ? row.usuario_id : null } }];"
+      }
+    },
+    {
+      "id": "lic-002k",
+      "name": "Sessao Valida EditaisListar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        880,
+        2500
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "lic-002l",
+              "leftValue": "={{ $json.valido }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "lic-002m",
+      "name": "Responder 401 EditaisListar",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1100,
+        2660
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { erro: 'Sessao expirada. Entre novamente.' } }}",
+        "options": {
+          "responseCode": 401
+        }
+      }
+    },
+    {
+      "id": "lic-002n",
+      "name": "Buscar Editais Enviados",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1320,
+        2500
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT re.id, re.pncp_id, re.objeto, re.orgao, re.valor, re.uf, re.municipio, re.modalidade_nome,\n       re.link, re.data_abertura_proposta, re.data_encerramento_proposta, re.salvo,\n       re.resumo_documentacao, re.enviado_em, p.nome_perfil\nFROM licitacoes_resultados_enviados re\nJOIN licitacoes_perfis_busca p ON p.id = re.perfil_id\nWHERE p.usuario_id = $1\nORDER BY re.enviado_em DESC\nLIMIT 100;",
+        "options": {
+          "queryReplacement": "={{ [ $('Checar Sessao EditaisListar').first().json.usuario_id ] }}"
+        }
+      }
+    },
+    {
+      "id": "lic-002o",
+      "name": "Formatar Editais",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        2500
+      ],
+      "parameters": {
+        "jsCode": "const editais = $input.all().map(i => i.json);\nreturn [{ json: { editais } }];"
+      }
+    },
+    {
+      "id": "lic-002p",
+      "name": "Responder Editais",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1760,
+        2500
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    },
+    {
+      "id": "lic-002q",
+      "name": "Nota Edital Salvar",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        2580
+      ],
+      "parameters": {
+        "content": "## Salvar/Remover Licitacao + Gerar Resumo\nRota: POST /webhook/licitacoes/edital-salvar\nBody: { token, edital_id, salvo }\n\nQuando salvo=true e ainda nao tem resumo_documentacao gerado, chama a IA na hora\n(sincrono, dentro da mesma chamada) pra gerar um resumo pratico de documentacao/\nproposta baseado na modalidade. Resumo generico baseado nos dados que temos do\nPNCP -- NAO le o edital completo (PDF), por isso sempre inclui aviso pra conferir\nas exigencias especificas no edital.",
+        "width": 1000,
+        "height": 220,
+        "color": 4
+      }
+    },
+    {
+      "id": "lic-002r",
+      "name": "Webhook Edital Salvar",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        2900
+      ],
+      "webhookId": "lic-002s",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "licitacoes/edital-salvar",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "lic-002t",
+      "name": "Extrair Corpo Edital Salvar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        2900
+      ],
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nreturn [{ json: { token: String(body.token || ''), edital_id: body.edital_id || null, salvo: !!body.salvo } }];"
+      }
+    },
+    {
+      "id": "lic-002u",
+      "name": "Buscar Sessao EditalSalvar",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        440,
+        2900
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT s.usuario_id AS usuario_id, s.expira_em AS expira_em FROM licitacoes_sessoes s WHERE s.token = $1 ORDER BY s.created_at DESC LIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ [ $('Extrair Corpo Edital Salvar').first().json.token ] }}"
+        }
+      }
+    },
+    {
+      "id": "lic-002v",
+      "name": "Checar Sessao EditalSalvar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        2900
+      ],
+      "parameters": {
+        "jsCode": "const rows = $input.all();\nconst row = rows.length ? rows[0].json : null;\nconst valido = !!(row && new Date(row.expira_em).getTime() > Date.now());\nreturn [{ json: { valido, usuario_id: row ? row.usuario_id : null } }];"
+      }
+    },
+    {
+      "id": "lic-002w",
+      "name": "Sessao Valida EditalSalvar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        880,
+        2900
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "lic-002x",
+              "leftValue": "={{ $json.valido }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "lic-002y",
+      "name": "Responder 401 EditalSalvar",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1100,
+        3060
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { erro: 'Sessao expirada. Entre novamente.' } }}",
+        "options": {
+          "responseCode": 401
+        }
+      }
+    },
+    {
+      "id": "lic-002z",
+      "name": "Atualizar Salvo Edital",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1320,
+        2900
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE licitacoes_resultados_enviados re\nSET salvo = $1\nFROM licitacoes_perfis_busca p\nWHERE re.id = $2 AND re.perfil_id = p.id AND p.usuario_id = $3\nRETURNING re.id, re.salvo, re.objeto, re.orgao, re.valor, re.uf, re.municipio,\n          re.modalidade_nome, re.link, re.resumo_documentacao;",
+        "options": {
+          "queryReplacement": "={{ [ $('Extrair Corpo Edital Salvar').first().json.salvo, $('Extrair Corpo Edital Salvar').first().json.edital_id, $('Checar Sessao EditalSalvar').first().json.usuario_id ] }}"
+        }
+      }
+    },
+    {
+      "id": "lic-0030",
+      "name": "Edital Encontrado Salvar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        2900
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "lic-0031",
+              "leftValue": "={{ $input.all().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "lic-0032",
+      "name": "Responder Erro Nao Encontrado Edital",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1760,
+        3120
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { erro: 'Licitacao nao encontrada.' } }}",
+        "options": {
+          "responseCode": 404
+        }
+      }
+    },
+    {
+      "id": "lic-0033",
+      "name": "Precisa Gerar Resumo?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        2900
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "lic-0034",
+              "leftValue": "={{ $json.salvo && !$json.resumo_documentacao }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "lic-0035",
+      "name": "Responder Sem Resumo Novo",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1980,
+        3040
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, salvo: $json.salvo, resumo_documentacao: $json.resumo_documentacao || null } }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    },
+    {
+      "id": "lic-0036",
+      "name": "Gerar Resumo Documentacao",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.6,
+      "position": [
+        1980,
+        2760
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "resource": "chat",
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list"
+        },
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "Voce e especialista em licitacoes publicas brasileiras (Lei 14.133/2021). Gere um\nresumo pratico (maximo 250 palavras, portugues do Brasil, tom direto sem enrolacao)\ndo que a empresa precisa preparar pra participar dessa licitacao especifica, de\nacordo com a modalidade informada.\n\nSe for Pregao Eletronico: liste os documentos de habilitacao juridica/fiscal/\ntecnica geralmente exigidos (certidoes negativas federal/estadual/municipal, FGTS,\ntrabalhista, contrato social, etc) e explique rapidamente como funciona a fase de\ndisputa (lances).\n\nSe for Dispensa: explique como montar a proposta de preco (o que geralmente precisa\nconter: valor, especificacao do objeto, prazo de entrega, dados da empresa) e quais\ndocumentos de regularidade fiscal costumam ser pedidos.\n\nSEMPRE termine com uma frase clara avisando que isso e um guia geral baseado na\nmodalidade, e que o edital completo pode exigir documentos adicionais especificos\ndesse processo - a empresa deve conferir o edital antes de participar.\n\nResponda so com o resumo, sem saudacao, sem repetir o objeto da licitacao."
+            },
+            {
+              "role": "user",
+              "content": "={{ 'Objeto: ' + $json.objeto + '\\nOrgao: ' + $json.orgao + '\\nModalidade: ' + $json.modalidade_nome + '\\nValor estimado: ' + ($json.valor != null ? ('R$ ' + $json.valor) : 'nao informado') + '\\nLocal: ' + ($json.municipio ? ($json.municipio + '/' + $json.uf) : 'nao informado') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "sjemA3sd4BGEaIHJ",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "id": "lic-0037",
+      "name": "Salvar Resumo Gerado",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        2200,
+        2760
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE licitacoes_resultados_enviados\nSET resumo_documentacao = $1, resumo_gerado_em = NOW()\nWHERE id = $2\nRETURNING resumo_documentacao;",
+        "options": {
+          "queryReplacement": "={{ [ $json.message.content, $('Atualizar Salvo Edital').first().json.id ] }}"
+        }
+      }
+    },
+    {
+      "id": "lic-0038",
+      "name": "Responder Com Resumo Novo",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2420,
+        2760
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, salvo: true, resumo_documentacao: $json.resumo_documentacao } }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
     }
   ],
   "connections": {
@@ -2082,6 +2647,221 @@
         [
           {
             "node": "Responder Erro Nao Encontrado Excluir",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Editais Listar": {
+      "main": [
+        [
+          {
+            "node": "Extrair Corpo Editais Listar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Sessao EditaisListar": {
+      "main": [
+        [
+          {
+            "node": "Checar Sessao EditaisListar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Checar Sessao EditaisListar": {
+      "main": [
+        [
+          {
+            "node": "Sessao Valida EditaisListar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sessao Valida EditaisListar?": {
+      "main": [
+        [
+          {
+            "node": "Buscar Editais Enviados",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder 401 EditaisListar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Corpo Editais Listar": {
+      "main": [
+        [
+          {
+            "node": "Buscar Sessao EditaisListar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Editais Enviados": {
+      "main": [
+        [
+          {
+            "node": "Formatar Editais",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatar Editais": {
+      "main": [
+        [
+          {
+            "node": "Responder Editais",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Edital Salvar": {
+      "main": [
+        [
+          {
+            "node": "Extrair Corpo Edital Salvar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Sessao EditalSalvar": {
+      "main": [
+        [
+          {
+            "node": "Checar Sessao EditalSalvar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Checar Sessao EditalSalvar": {
+      "main": [
+        [
+          {
+            "node": "Sessao Valida EditalSalvar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sessao Valida EditalSalvar?": {
+      "main": [
+        [
+          {
+            "node": "Atualizar Salvo Edital",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder 401 EditalSalvar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Corpo Edital Salvar": {
+      "main": [
+        [
+          {
+            "node": "Buscar Sessao EditalSalvar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualizar Salvo Edital": {
+      "main": [
+        [
+          {
+            "node": "Edital Encontrado Salvar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edital Encontrado Salvar?": {
+      "main": [
+        [
+          {
+            "node": "Precisa Gerar Resumo?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder Erro Nao Encontrado Edital",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Precisa Gerar Resumo?": {
+      "main": [
+        [
+          {
+            "node": "Gerar Resumo Documentacao",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder Sem Resumo Novo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gerar Resumo Documentacao": {
+      "main": [
+        [
+          {
+            "node": "Salvar Resumo Gerado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Salvar Resumo Gerado": {
+      "main": [
+        [
+          {
+            "node": "Responder Com Resumo Novo",
             "type": "main",
             "index": 0
           }

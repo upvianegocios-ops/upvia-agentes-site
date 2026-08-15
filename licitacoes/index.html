@@ -150,6 +150,32 @@ input::placeholder{color:var(--text-muted);opacity:.55}
 
 .footer{text-align:center;margin-top:20px;font-size:11px;color:var(--text-muted)}
 
+/* Tabs (Alertas / Licitacoes recebidas) */
+.tabbar{display:flex;gap:6px;background:var(--bg-input);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:4px;margin-bottom:20px}
+.tab{flex:1;text-align:center;padding:10px 8px;border-radius:8px;font-size:13px;font-weight:700;
+  color:var(--text-muted);cursor:pointer;transition:all .2s;font-family:'Outfit',sans-serif;border:none;background:none}
+.tab.sel{background:var(--grad);color:#fff}
+
+/* Card de licitacao recebida */
+.edital-card{background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px}
+.edital-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:6px}
+.edital-alerta{font-size:11px;color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+.edital-objeto{font-size:14px;font-weight:600;line-height:1.5;margin-bottom:8px}
+.edital-meta{font-size:12px;color:var(--text-muted);line-height:1.9}
+.edital-actions{display:flex;align-items:center;justify-content:space-between;margin-top:14px;gap:10px}
+.edital-actions .esq{display:flex;align-items:center;gap:8px}
+.edital-actions a{color:var(--violet-light);font-size:13px;font-weight:600;text-decoration:none}
+.btn-salvar{background:none;border:1px solid var(--border-violet);color:var(--violet-light);border-radius:20px;
+  padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s;
+  display:flex;align-items:center;gap:6px}
+.btn-salvar.on{background:var(--success-glow);border-color:var(--success);color:var(--success)}
+.resumo-box{margin-top:12px;padding:14px;background:var(--bg-card);border:1px solid var(--border-violet);
+  border-radius:var(--radius-sm);font-size:13px;line-height:1.7;color:var(--text);white-space:pre-line}
+.resumo-box .resumo-titulo{font-size:11px;font-weight:800;color:var(--violet-light);text-transform:uppercase;
+  letter-spacing:.5px;margin-bottom:8px}
+.resumo-loading{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-muted);padding:6px 0}
+
 @media(max-width:420px){.card-head,.card-body{padding-left:18px;padding-right:18px}.row2{grid-template-columns:1fr}}
 </style>
 </head>
@@ -206,6 +232,10 @@ input::placeholder{color:var(--text-muted);opacity:.55}
 
   <!-- LISTA DE PERFIS -->
   <div class="view" id="view-perfis">
+    <div class="tabbar" id="tabbar-perfis">
+      <button class="tab sel" data-aba="perfis" onclick="mudarAba('perfis')">Meus alertas</button>
+      <button class="tab" data-aba="editais" onclick="mudarAba('editais')">Licitações recebidas</button>
+    </div>
     <div class="card-head" style="padding-left:0;padding-right:0">
       <h1>Meus alertas de licitação</h1>
       <p>Cada perfil abaixo é um alerta ativo. Quando sai um edital novo que combina, avisamos no seu WhatsApp.</p>
@@ -216,6 +246,19 @@ input::placeholder{color:var(--text-muted);opacity:.55}
         <button class="btn" onclick="abrirForm()">+ Criar novo alerta</button>
       </div>
     </div>
+  </div>
+
+  <!-- LISTA DE LICITACOES RECEBIDAS ("Minhas Licitacoes") -->
+  <div class="view" id="view-editais">
+    <div class="tabbar" id="tabbar-editais">
+      <button class="tab" data-aba="perfis" onclick="mudarAba('perfis')">Meus alertas</button>
+      <button class="tab sel" data-aba="editais" onclick="mudarAba('editais')">Licitações recebidas</button>
+    </div>
+    <div class="card-head" style="padding-left:0;padding-right:0">
+      <h1>Licitações recebidas</h1>
+      <p>Tudo que já mandamos pro seu WhatsApp. Salve as que mais te interessam pra ver um resumo do que precisa preparar — e, se for pregão, avisamos quando a sessão de disputa estiver perto de começar.</p>
+    </div>
+    <div id="editais-container" style="padding-bottom:40px"></div>
   </div>
 
   <!-- FORM NOVO/EDITAR PERFIL -->
@@ -315,6 +358,8 @@ let ufsSelecionadas = new Set();
 let modalidades = new Set();
 let perfilEditandoId = null;
 let perfisCache = [];
+let editaisCache = [];
+let editaisCarregados = false;
 
 // ─── Init ───────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
@@ -685,6 +730,112 @@ async function salvarPerfil() {
     errBox.classList.add('show');
   } finally {
     setLoading('btn-salvar-perfil', 'spin-form', false);
+  }
+}
+
+// ─── Licitações recebidas ("Minhas Licitações") ─────────────────────
+function mudarAba(qual) {
+  document.querySelectorAll('.tab').forEach(btn => btn.classList.toggle('sel', btn.dataset.aba === qual));
+  if (qual === 'editais') {
+    showView('view-editais');
+    if (!editaisCarregados) carregarEditais();
+  } else {
+    showView('view-perfis');
+  }
+}
+
+async function carregarEditais() {
+  const cont = document.getElementById('editais-container');
+  cont.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:30px 0">Carregando...</p>';
+  try {
+    const data = await apiCall('editais-listar', {});
+    editaisCache = data.editais || [];
+    editaisCarregados = true;
+    renderEditais();
+  } catch (e) {
+    toast(e.message);
+    cont.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:30px 0">Não foi possível carregar suas licitações.</p>';
+  }
+}
+
+function formatarValorEdital(v) {
+  if (v === null || v === undefined) return 'valor não informado';
+  return 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+}
+
+function formatarDataEdital(iso) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+function renderEditais() {
+  const cont = document.getElementById('editais-container');
+  if (!editaisCache.length) {
+    cont.innerHTML = `
+      <div class="empty-state">
+        <div class="ic">📨</div>
+        <p>Ainda não te mandamos nenhuma licitação. Assim que uma licitação combinar com algum dos seus alertas, ela aparece aqui.</p>
+      </div>`;
+    return;
+  }
+  cont.innerHTML = `<div class="perfil-list">${editaisCache.map(e => `
+    <div class="edital-card" id="edital-${e.id}">
+      <div class="edital-top">
+        <div style="flex:1">
+          <div class="edital-alerta">${escapeHtml(e.nome_perfil || '')}</div>
+          <div class="edital-objeto">${escapeHtml((e.objeto || '').slice(0, 200))}${(e.objeto || '').length > 200 ? '…' : ''}</div>
+        </div>
+      </div>
+      <div class="edital-meta">
+        🏛️ ${escapeHtml(e.orgao || '—')}<br>
+        💰 ${formatarValorEdital(e.valor)} · 📋 ${escapeHtml(e.modalidade_nome || '—')}${e.municipio ? ' · 📍 ' + escapeHtml(e.municipio) + '/' + escapeHtml(e.uf || '') : ''}<br>
+        🗓️ Recebida em ${formatarDataEdital(e.enviado_em)}
+      </div>
+      <div class="edital-actions">
+        <div class="esq">
+          <a href="${escapeHtml(e.link)}" target="_blank" rel="noopener">Ver edital →</a>
+        </div>
+        <button class="btn-salvar ${e.salvo ? 'on' : ''}" id="btn-salvar-${e.id}" onclick="toggleSalvoEdital('${e.id}')">
+          <span>${e.salvo ? '★ Salva' : '☆ Salvar'}</span>
+        </button>
+      </div>
+      <div id="resumo-${e.id}">${e.salvo ? renderResumoBox(e) : ''}</div>
+    </div>
+  `).join('')}</div>`;
+}
+
+function renderResumoBox(e) {
+  if (e.resumo_documentacao) {
+    return `<div class="resumo-box"><div class="resumo-titulo">O que preparar</div>${escapeHtml(e.resumo_documentacao)}</div>`;
+  }
+  return `<div class="resumo-box resumo-loading"><div class="spin show" style="border-top-color:var(--violet-light);border-color:rgba(108,92,231,.3)"></div> Gerando resumo do que você precisa preparar...</div>`;
+}
+
+async function toggleSalvoEdital(id) {
+  const edital = editaisCache.find(e => e.id === id);
+  if (!edital) return;
+  const novoSalvo = !edital.salvo;
+  const btn = document.getElementById(`btn-salvar-${id}`);
+  const resumoSlot = document.getElementById(`resumo-${id}`);
+
+  // otimista: atualiza a UI na hora; se salvando e ainda nao tem resumo, mostra o
+  // loading (a chamada de baixo so retorna depois que a IA termina de gerar).
+  edital.salvo = novoSalvo;
+  btn.classList.toggle('on', novoSalvo);
+  btn.innerHTML = `<span>${novoSalvo ? '★ Salva' : '☆ Salvar'}</span>`;
+  resumoSlot.innerHTML = novoSalvo ? renderResumoBox(edital) : '';
+
+  try {
+    const data = await apiCall('edital-salvar', { edital_id: id, salvo: novoSalvo });
+    if (data.resumo_documentacao) edital.resumo_documentacao = data.resumo_documentacao;
+    resumoSlot.innerHTML = edital.salvo ? renderResumoBox(edital) : '';
+  } catch (e) {
+    // desfaz o otimismo se der erro
+    edital.salvo = !novoSalvo;
+    btn.classList.toggle('on', edital.salvo);
+    btn.innerHTML = `<span>${edital.salvo ? '★ Salva' : '☆ Salvar'}</span>`;
+    resumoSlot.innerHTML = edital.salvo ? renderResumoBox(edital) : '';
+    toast(e.message);
   }
 }
 </script>

@@ -1,0 +1,183 @@
+{
+  "name": "Licitacoes IA - Aviso Pregao (cron 1h)",
+  "nodes": [
+    {
+      "id": "avp-0001",
+      "name": "Nota Aviso Pregao",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -300
+      ],
+      "parameters": {
+        "content": "## Licitacoes IA - Aviso de Inicio do Pregao\nRoda de hora em hora. Busca licitacoes SALVAS (usuario marcou \"salvar\" no mini app)\nem modalidade Pregao Eletronico cuja sessao de disputa (dataAberturaProposta) comeca\nnos proximos 90 minutos, e ainda nao teve aviso enviado. Manda um lembrete por\nWhatsApp e marca aviso_pregao_enviado = true (nunca reenvia o mesmo aviso).\n\nJanela de 90 min com cron de 60 min = margem de seguranca (mesma logica ja usada\nno cron de busca PNCP - garante que nenhuma sessao passe batido mesmo se um ciclo\natrasar).",
+        "width": 900,
+        "height": 220,
+        "color": 4
+      }
+    },
+    {
+      "id": "avp-0002",
+      "name": "Aviso Pregao a Cada Hora",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "avp-0003",
+      "name": "Buscar Pregoes Proximos",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        220,
+        0
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT re.id, re.objeto, re.orgao, re.link, re.data_abertura_proposta, u.whatsapp_numero\nFROM licitacoes_resultados_enviados re\nJOIN licitacoes_perfis_busca p ON p.id = re.perfil_id\nJOIN licitacoes_usuarios u ON u.id = p.usuario_id\nWHERE re.salvo = true\n  AND re.aviso_pregao_enviado = false\n  AND re.modalidade_nome ILIKE 'Preg%'\n  AND re.data_abertura_proposta IS NOT NULL\n  AND re.data_abertura_proposta BETWEEN NOW() AND NOW() + INTERVAL '90 minutes'\n  AND u.ativo = true;",
+        "options": {
+          "queryReplacement": "={{ [] }}"
+        }
+      }
+    },
+    {
+      "id": "avp-0004",
+      "name": "Montar Mensagem Aviso",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const fmtHora = (iso) => new Date(iso).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' });\nreturn $input.all().map(({ json: item }) => {\n  const texto = 'Comeca em breve: sessao de disputa do pregao que voce salvou.\\n\\n' +\n    item.objeto.slice(0, 250) + (item.objeto.length > 250 ? '...' : '') + '\\n\\n' +\n    'Orgao: ' + item.orgao + '\\n' +\n    'Abertura da sessao: ' + fmtHora(item.data_abertura_proposta) + '\\n' +\n    '\\nEdital: ' + item.link;\n  return { json: { ...item, numero: item.whatsapp_numero.replace(/\\D/g, ''), texto } };\n});"
+      }
+    },
+    {
+      "id": "avp-0005",
+      "name": "Enviar Aviso WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        0
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "https://evo.upviaagentes.com/message/sendText/Upvia_adm",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: $json.numero, text: $json.texto }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "avp-0006",
+      "name": "Marcar Aviso Enviado",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        880,
+        0
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE licitacoes_resultados_enviados SET aviso_pregao_enviado = true WHERE id = $1;",
+        "options": {
+          "queryReplacement": "={{ [ $json.id ] }}"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Aviso Pregao a Cada Hora": {
+      "main": [
+        [
+          {
+            "node": "Buscar Pregoes Proximos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Pregoes Proximos": {
+      "main": [
+        [
+          {
+            "node": "Montar Mensagem Aviso",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Mensagem Aviso": {
+      "main": [
+        [
+          {
+            "node": "Enviar Aviso WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Aviso WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Marcar Aviso Enviado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
