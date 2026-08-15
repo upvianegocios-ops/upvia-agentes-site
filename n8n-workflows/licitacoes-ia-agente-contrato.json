@@ -1,0 +1,818 @@
+{
+  "name": "Licitacoes IA - Agente Redator de Contrato",
+  "nodes": [
+    {
+      "id": "ctr-0001",
+      "name": "Nota Agente Contrato",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -380
+      ],
+      "parameters": {
+        "content": "## Agente Redator de Contrato (Passo 10)\nSub-workflow reutilizavel via webhook: POST /webhook/licitacoes/agente-contrato\nBody: { resumo_id, usuario_id }\n\nChamado sob demanda pelo Orquestrador Central (tool_redigir_contrato) e automaticamente\npelo monitor de homologacao (Passo 12) quando o usuario vence uma licitacao.\n\nBusca a minuta de contrato OFICIAL entre os anexos do edital (pelo titulo/tipo do\ndocumento, endpoint de metadados do PNCP -- nao baixa arquivos as cegas). Se nao achar\nminuta, avisa o usuario e NAO tenta redigir do zero. Se achar, preenche os campos\nvariaveis (empresa, valor, prazo) mantendo a estrutura original -- nunca reescreve\nclausulas. Valor sempre \"[VALOR A DEFINIR PELO USUARIO]\" se nao houver valor_ofertado\nregistrado. Sempre rascunho pra revisao humana, nunca documento final assinavel.",
+        "width": 900,
+        "height": 280,
+        "color": 4
+      }
+    },
+    {
+      "id": "ctr-0002",
+      "name": "Webhook Contrato",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "ctr-0003",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "licitacoes/agente-contrato",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "ctr-0004",
+      "name": "Extrair Corpo Contrato",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nreturn [{ json: { resumo_id: body.resumo_id || null, usuario_id: body.usuario_id || null } }];"
+      }
+    },
+    {
+      "id": "ctr-0005",
+      "name": "Buscar Resumo Contrato",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        440,
+        0
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id AS resumo_id, pncp_id, objeto_resumo, prazo_entrega FROM licitacoes_resumos WHERE id = $1;",
+        "options": {
+          "queryReplacement": "={{ [ $json.resumo_id ] }}"
+        }
+      }
+    },
+    {
+      "id": "ctr-0006",
+      "name": "Extrair CNPJ Ano Sequencial Contrato",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// pncp_id no formato numeroControlePNCP: {cnpj}-{tipo}-{sequencial}/{ano}\n// (ex: \"07251534000130-1-000071/2026\") -- carrega tudo que precisamos sem\n// depender de um link salvo (licitacoes_resumos nao guarda link).\nconst item = $input.first().json;\nconst m = String(item.pncp_id || '').match(/^(\\d{14})-\\d+-(\\d+)\\/(\\d{4})$/);\nreturn [{ json: { ...item,\n  cnpj: m ? m[1] : null,\n  sequencial: m ? String(parseInt(m[2], 10)) : null,\n  ano: m ? m[3] : null\n} }];"
+      }
+    },
+    {
+      "id": "ctr-0007",
+      "name": "Buscar Metadados Anexos",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        0
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://pncp.gov.br/pncp-api/v1/orgaos/' + $json.cnpj + '/compras/' + $json.ano + '/' + $json.sequencial + '/arquivos' }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "ctr-0008",
+      "name": "Encontrar Minuta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Descoberta desta sessao: o PNCP tem um endpoint de METADADOS dos anexos\n// (titulo/tipoDocumentoDescricao reais), bem melhor que baixar arquivo_id as\n// cegas (jeito que o Resumidor -- Passo 3 -- ainda usa). Aqui da pra achar a\n// minuta de contrato pelo TITULO antes de baixar qualquer coisa.\n// Resposta do PNCP e um array JSON no nivel raiz. O node httpRequest do n8n\n// PODE quebrar isso em 1 item por elemento (comportamento padrao documentado\n// pra respostas JSON array) OU vir como 1 item so contendo o array -- trata os\n// dois formatos pra nao depender de suposicao nao validada ao vivo ainda.\nfunction normalizar(s) {\n  return String(s || '').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '');\n}\nconst base = $('Extrair CNPJ Ano Sequencial Contrato').first().json;\nconst rawItems = $input.all().map(i => i.json);\nlet arquivos;\nif (rawItems.length === 1 && Array.isArray(rawItems[0])) {\n  arquivos = rawItems[0];\n} else {\n  arquivos = rawItems.filter(a => a && a.sequencialDocumento != null);\n}\n// BUG REAL encontrado buscando um edital real com minuta pra testar: orgaos\n// publicos frequentemente titulam o anexo \"MODELO DE CONTRATO\" em vez de\n// \"MINUTA DE CONTRATO\" (ex real achado ao vivo: \"MODELO CONTRATO AQUISICAO DE\n// MOBILIARIOS - PREGAO.pdf\") -- so procurar \"minuta\" deixava esse caso passar\n// batido. Agora aceita minuta OU modelo, sempre exigindo a palavra contrato/ata\n// junto (pra nao confundir com \"Modelo de Proposta\", que e outro anexo comum).\nconst minuta = arquivos.find(a => {\n  const t = normalizar(a.titulo) + ' ' + normalizar(a.tipoDocumentoDescricao);\n  return (t.includes('minuta') || t.includes('modelo')) && (t.includes('contrato') || t.includes('ata'));\n}) || arquivos.find(a => normalizar(a.titulo).includes('minuta'));\nreturn [{ json: { ...base,\n  minuta_encontrada: !!minuta,\n  minuta_sequencial: minuta ? minuta.sequencialDocumento : null,\n  minuta_titulo: minuta ? minuta.titulo : null\n} }];"
+      }
+    },
+    {
+      "id": "ctr-0009",
+      "name": "Minuta Encontrada?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ctr-000a",
+              "leftValue": "={{ $json.minuta_encontrada }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "ctr-000b",
+      "name": "Buscar Arquivo Minuta",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1540,
+        -120
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://pncp.gov.br/pncp-api/v1/orgaos/' + $json.cnpj + '/compras/' + $json.ano + '/' + $json.sequencial + '/arquivos/' + $json.minuta_sequencial }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "ctr-000c",
+      "name": "Extrair Texto Minuta",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        -120
+      ],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      }
+    },
+    {
+      "id": "ctr-000d",
+      "name": "Marcar Texto Minuta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1980,
+        -120
+      ],
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nconst texto = item.text || '';\nreturn [{ json: { ...($('Encontrar Minuta').first().json), texto_minuta: texto } }];"
+      }
+    },
+    {
+      "id": "ctr-000e",
+      "name": "Texto Minuta Valido?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2200,
+        -120
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ctr-000f",
+              "leftValue": "={{ ($json.texto_minuta || \"\").length }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "ctr-000g",
+      "name": "Buscar Usuario Contrato",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        2420,
+        -260
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT whatsapp_numero FROM licitacoes_usuarios WHERE id = $1;",
+        "options": {
+          "queryReplacement": "={{ [ $('Extrair Corpo Contrato').first().json.usuario_id ] }}"
+        }
+      }
+    },
+    {
+      "id": "ctr-000h",
+      "name": "Buscar Dados Empresa Contrato",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        2640,
+        -260
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT razao_social, cnpj, endereco, responsavel_legal FROM licitacoes_dados_empresa WHERE usuario_id = $1;",
+        "options": {
+          "queryReplacement": "={{ [ $('Extrair Corpo Contrato').first().json.usuario_id ] }}"
+        }
+      }
+    },
+    {
+      "id": "ctr-000i",
+      "name": "Buscar Valor Proposta",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        2860,
+        -260
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT valor_ofertado FROM licitacoes_propostas WHERE resumo_id = $1 ORDER BY criado_em DESC LIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ [ $('Extrair Corpo Contrato').first().json.resumo_id ] }}"
+        }
+      }
+    },
+    {
+      "id": "ctr-000j",
+      "name": "Montar Contexto Contrato",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3080,
+        -260
+      ],
+      "parameters": {
+        "jsCode": "// Buscar Dados Empresa/Buscar Valor Proposta podem devolver 0 linhas -- trata\n// com placeholders claros, nunca inventa dado (mesmo padrao do Redator de\n// Propostas). Valor NUNCA e decidido aqui -- so repassa o que ja foi\n// registrado por um humano em licitacoes_propostas.valor_ofertado.\nconst proposta = $input.first().json || {};\nconst empresa = $('Buscar Dados Empresa Contrato').first().json || {};\nconst usuario = $('Buscar Usuario Contrato').first().json || {};\nconst base = $('Marcar Texto Minuta').first().json;\nreturn [{ json: {\n  resumo_id: base.resumo_id,\n  perfil_id: base.perfil_id || null,\n  usuario_id: $('Extrair Corpo Contrato').first().json.usuario_id,\n  whatsapp_numero: usuario.whatsapp_numero,\n  texto_minuta: base.texto_minuta,\n  razao_social: empresa.razao_social || '[RAZAO SOCIAL A PREENCHER]',\n  cnpj: empresa.cnpj || '[CNPJ A PREENCHER]',\n  endereco: empresa.endereco || '[ENDERECO A PREENCHER]',\n  responsavel_legal: empresa.responsavel_legal || '[RESPONSAVEL LEGAL A PREENCHER]',\n  objeto_resumo: base.objeto_resumo,\n  prazo_entrega: base.prazo_entrega,\n  valor_ofertado: proposta.valor_ofertado != null ? proposta.valor_ofertado : null\n} }];"
+      }
+    },
+    {
+      "id": "ctr-000k",
+      "name": "Preencher Minuta de Contrato",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.6,
+      "position": [
+        3300,
+        -260
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "resource": "text",
+        "operation": "message",
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list"
+        },
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "Voce e especialista em licitacoes publicas brasileiras (Lei 14.133/2021). Vai receber o\nTEXTO INTEGRAL de uma minuta de contrato OFICIAL, extraida dos anexos de um edital real.\n\nTAREFA: preencha APENAS os campos variaveis da minuta (nome/CNPJ/endereco da empresa\nCONTRATADA, responsavel legal, objeto especifico contratado, valor do contrato, prazo de\nvigencia/entrega) usando os dados fornecidos abaixo. MANTENHA a estrutura, as clausulas e\no texto original da minuta -- voce esta PREENCHENDO um formulario, nao escrevendo um\ncontrato novo. Nao invente, remova ou reescreva clausulas que ja existem no texto\noriginal.\n\nREGRA ABSOLUTA E INEGOCIAVEL: o valor do contrato NUNCA e decidido por voce. Em todo\nlugar que o valor apareceria, escreva literalmente o texto \"[VALOR A DEFINIR PELO USUARIO]\"\n-- a menos que um valor_ofertado real seja fornecido abaixo, nesse caso use exatamente\nesse valor (ele ja foi decidido por um humano, nao por voce).\n\nResponda so com o texto do contrato preenchido, pronto pra revisao humana, sem comentarios\nextras."
+            },
+            {
+              "role": "user",
+              "content": "={{ 'Empresa CONTRATADA: ' + $json.razao_social + ' | CNPJ: ' + $json.cnpj + ' | Endereco: ' + $json.endereco + ' | Responsavel: ' + $json.responsavel_legal + '\\nObjeto contratado: ' + $json.objeto_resumo + '\\nPrazo de entrega/vigencia: ' + ($json.prazo_entrega || 'nao especificado, manter conforme minuta original') + '\\nValor ofertado (ja decidido por humano): ' + ($json.valor_ofertado != null ? $json.valor_ofertado : 'AINDA NAO DEFINIDO -- usar [VALOR A DEFINIR PELO USUARIO]') + '\\n\\nTEXTO INTEGRAL DA MINUTA OFICIAL:\\n' + $json.texto_minuta }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "sjemA3sd4BGEaIHJ",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "id": "ctr-000l",
+      "name": "Extrair Texto Contrato",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3520,
+        -260
+      ],
+      "parameters": {
+        "jsCode": "const aiOutput = $input.first().json;\nconst texto = (aiOutput.message && aiOutput.message.content) || '';\nconst ctx = $('Montar Contexto Contrato').first().json;\nreturn [{ json: { ...ctx, conteudo_contrato: texto } }];"
+      }
+    },
+    {
+      "id": "ctr-000m",
+      "name": "Salvar Contrato",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        3740,
+        -260
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO licitacoes_contratos (resumo_id, perfil_id, usuario_id, conteudo_contrato, status)\nVALUES ($1, $2, $3, $4, 'rascunho')\nRETURNING id;",
+        "options": {
+          "queryReplacement": "={{ [ $json.resumo_id, $json.perfil_id, $json.usuario_id, $json.conteudo_contrato ] }}"
+        }
+      }
+    },
+    {
+      "id": "ctr-000n",
+      "name": "Montar Mensagem WhatsApp Contrato",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3960,
+        -260
+      ],
+      "parameters": {
+        "jsCode": "const ctx = $('Extrair Texto Contrato').first().json;\nconst texto = '📄 RASCUNHO DE CONTRATO -- revise antes de qualquer assinatura. A IA preencheu os campos variaveis da minuta oficial do edital, mas isso NAO e um documento final.\\n\\n' + ctx.conteudo_contrato;\nreturn [{ json: { numero: (ctx.whatsapp_numero || '').replace(/\\D/g, ''), texto } }];"
+      }
+    },
+    {
+      "id": "ctr-000o",
+      "name": "Enviar Contrato WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4180,
+        -260
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://evo.upviaagentes.com/message/sendText/Upvia_adm' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: $json.numero, text: $json.texto }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "ctr-000p",
+      "name": "Responder OK Contrato",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        4400,
+        -260
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true } }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    },
+    {
+      "id": "ctr-000q",
+      "name": "Buscar Usuario Sem Minuta",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1540,
+        240
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT whatsapp_numero FROM licitacoes_usuarios WHERE id = $1;",
+        "options": {
+          "queryReplacement": "={{ [ $('Extrair Corpo Contrato').first().json.usuario_id ] }}"
+        }
+      }
+    },
+    {
+      "id": "ctr-000r",
+      "name": "Montar Mensagem Sem Minuta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        240
+      ],
+      "parameters": {
+        "jsCode": "const usuario = $input.first().json || {};\nif (!usuario.whatsapp_numero) return [];\nconst texto = '📄 Nao encontrei uma minuta de contrato oficial entre os anexos deste edital. Nao vou redigir um contrato do zero -- se voce tiver o modelo em maos, me manda que eu preencho, ou fale com o orgao responsavel pra obter a minuta oficial.';\nreturn [{ json: { numero: usuario.whatsapp_numero.replace(/\\D/g, ''), texto } }];"
+      }
+    },
+    {
+      "id": "ctr-000s",
+      "name": "Enviar Sem Minuta WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1980,
+        240
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://evo.upviaagentes.com/message/sendText/Upvia_adm' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: $json.numero, text: $json.texto }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "ctr-000t",
+      "name": "Responder Sem Minuta",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2200,
+        240
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, minuta_encontrada: false } }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Contrato": {
+      "main": [
+        [
+          {
+            "node": "Extrair Corpo Contrato",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Corpo Contrato": {
+      "main": [
+        [
+          {
+            "node": "Buscar Resumo Contrato",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Resumo Contrato": {
+      "main": [
+        [
+          {
+            "node": "Extrair CNPJ Ano Sequencial Contrato",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair CNPJ Ano Sequencial Contrato": {
+      "main": [
+        [
+          {
+            "node": "Buscar Metadados Anexos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Metadados Anexos": {
+      "main": [
+        [
+          {
+            "node": "Encontrar Minuta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Encontrar Minuta": {
+      "main": [
+        [
+          {
+            "node": "Minuta Encontrada?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Minuta Encontrada?": {
+      "main": [
+        [
+          {
+            "node": "Buscar Arquivo Minuta",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Buscar Usuario Sem Minuta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Arquivo Minuta": {
+      "main": [
+        [
+          {
+            "node": "Extrair Texto Minuta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Texto Minuta": {
+      "main": [
+        [
+          {
+            "node": "Marcar Texto Minuta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Marcar Texto Minuta": {
+      "main": [
+        [
+          {
+            "node": "Texto Minuta Valido?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Texto Minuta Valido?": {
+      "main": [
+        [
+          {
+            "node": "Buscar Usuario Contrato",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Buscar Usuario Sem Minuta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Usuario Contrato": {
+      "main": [
+        [
+          {
+            "node": "Buscar Dados Empresa Contrato",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Dados Empresa Contrato": {
+      "main": [
+        [
+          {
+            "node": "Buscar Valor Proposta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Valor Proposta": {
+      "main": [
+        [
+          {
+            "node": "Montar Contexto Contrato",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Contexto Contrato": {
+      "main": [
+        [
+          {
+            "node": "Preencher Minuta de Contrato",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preencher Minuta de Contrato": {
+      "main": [
+        [
+          {
+            "node": "Extrair Texto Contrato",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Texto Contrato": {
+      "main": [
+        [
+          {
+            "node": "Salvar Contrato",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Salvar Contrato": {
+      "main": [
+        [
+          {
+            "node": "Montar Mensagem WhatsApp Contrato",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Mensagem WhatsApp Contrato": {
+      "main": [
+        [
+          {
+            "node": "Enviar Contrato WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Contrato WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Responder OK Contrato",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Usuario Sem Minuta": {
+      "main": [
+        [
+          {
+            "node": "Montar Mensagem Sem Minuta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Mensagem Sem Minuta": {
+      "main": [
+        [
+          {
+            "node": "Enviar Sem Minuta WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Sem Minuta WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Responder Sem Minuta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
