@@ -1,0 +1,146 @@
+{
+  "name": "Licitacoes IA - Alerta Prazo Fatal (cron diario)",
+  "nodes": [
+    {
+      "id": "prz-0001",
+      "name": "Nota Alerta Prazo",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -220
+      ],
+      "parameters": {
+        "content": "## Alerta de Prazo Fatal (Passo 13)\nCron diario (09h): licitacoes_resumos com prazo_proposta a menos de 2 dias,\nresultado ainda \"pendente\" e SEM proposta com status \"enviada\" registrada --\navisa o usuario que o prazo esta acabando. Sem alwaysOutputData na consulta\nprincipal -- 0 licitacoes nesse estado e o caso comum.",
+        "width": 900,
+        "height": 160,
+        "color": 4
+      }
+    },
+    {
+      "id": "prz-0002",
+      "name": "Schedule Alerta Prazo",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "prz-0003",
+      "name": "Buscar Prazos Proximos",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        220,
+        0
+      ],
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT r.id, r.objeto_resumo, r.pncp_id, r.prazo_proposta, u.whatsapp_numero\nFROM licitacoes_resumos r\nJOIN licitacoes_usuarios u ON u.id = r.usuario_id\nWHERE r.prazo_proposta BETWEEN NOW() AND NOW() + INTERVAL '2 days'\n  AND r.resultado = 'pendente'\n  AND u.ativo = true\n  AND NOT EXISTS (\n    SELECT 1 FROM licitacoes_propostas p\n    WHERE p.resumo_id = r.id AND p.status = 'enviada'\n  );",
+        "options": {
+          "queryReplacement": "={{ [] }}"
+        }
+      }
+    },
+    {
+      "id": "prz-0004",
+      "name": "Montar Mensagem Prazo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const agora = new Date();\nreturn $input.all().map(({ json: item }) => {\n  const prazo = new Date(item.prazo_proposta);\n  const diffHoras = Math.round((prazo - agora) / (1000 * 60 * 60));\n  const diffDias = Math.floor(diffHoras / 24);\n  const horasRestantes = diffHoras % 24;\n  let tempoTexto;\n  if (diffDias >= 1) {\n    tempoTexto = diffDias + ' dia(s)' + (horasRestantes > 0 ? ' e ' + horasRestantes + 'h' : '');\n  } else if (diffHoras > 0) {\n    tempoTexto = diffHoras + ' hora(s)';\n  } else {\n    tempoTexto = 'menos de 1 hora';\n  }\n  const texto = '⏰ Faltam ' + tempoTexto + ' para o prazo da licitacao \"' + (item.objeto_resumo || item.pncp_id) + '\". Ainda nao ha proposta enviada registrada -- corre!';\n  return { json: { numero: (item.whatsapp_numero || '').replace(/\\D/g, ''), texto } };\n});"
+      }
+    },
+    {
+      "id": "prz-0005",
+      "name": "Enviar Alerta Prazo WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        0
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://evo.upviaagentes.com/message/sendText/Upvia_adm' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: $json.numero, text: $json.texto }) }}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Alerta Prazo": {
+      "main": [
+        [
+          {
+            "node": "Buscar Prazos Proximos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Prazos Proximos": {
+      "main": [
+        [
+          {
+            "node": "Montar Mensagem Prazo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Mensagem Prazo": {
+      "main": [
+        [
+          {
+            "node": "Enviar Alerta Prazo WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
