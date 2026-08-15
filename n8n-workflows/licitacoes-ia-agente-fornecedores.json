@@ -1,0 +1,317 @@
+{
+  "name": "Licitacoes IA - Agente Buscador de Fornecedores",
+  "nodes": [
+    {
+      "id": "forn-0001",
+      "name": "Nota Agente Fornecedores",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -320
+      ],
+      "parameters": {
+        "content": "## Agente Buscador de Fornecedores\nSub-workflow reutilizavel via webhook: POST /webhook/licitacoes/agente-fornecedores\nBody: { resumo_id?, tipo_produto, perfil_id?, usuario_id? }\n\nChamado automaticamente pelo Agente Resumidor (so quando tipo_perfil='produto') e\nsob demanda pelo Orquestrador Central (tool_buscar_fornecedores).\n\nSo descoberta -- SEM confirmar triangulacao de nota nem contatar ninguem\nautomaticamente. Usa a API de Responses da OpenAI com a tool nativa de busca na\nweb (mesma credencial ja usada no resto do Licitacoes IA -- decisao tomada com o\nusuario: o padrao original do Shopee usava Anthropic direto, mas a chave nunca\nfoi configurada de verdade, entao adaptamos pra OpenAI pra nao depender de\ncredencial nova).",
+        "width": 900,
+        "height": 260,
+        "color": 4
+      }
+    },
+    {
+      "id": "forn-0002",
+      "name": "Webhook Fornecedores",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "forn-0003",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "licitacoes/agente-fornecedores",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "forn-0004",
+      "name": "Extrair Corpo Fornecedores",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nreturn [{ json: {\n  resumo_id: body.resumo_id || null,\n  tipo_produto: String(body.tipo_produto || ''),\n  perfil_id: body.perfil_id || null,\n  usuario_id: body.usuario_id || null\n} }];"
+      }
+    },
+    {
+      "id": "forn-0005",
+      "name": "Buscar Fornecedores Web",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/responses",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  model: 'gpt-4.1',\n  tools: [{ type: 'web_search' }],\n  input: 'Voce e especialista em compras/dropshipping no Brasil. Pesquise fornecedores, distribuidores ou atacadistas BRASILEIROS reais pra este tipo de produto: \"' + $json.tipo_produto + '\". Priorize fontes como Dropi Brasil, Wholesale Brazil, Bras Online, Bling, e outras fontes publicas de fornecedores/distribuidores/atacado no Brasil. Devolva SOMENTE um array JSON valido, sem markdown, no formato: [{\"nome_fornecedor\":\"...\", \"site\":\"...\", \"contato\":\"...\"}]. No maximo 5 candidatos. Se nao achar nada real e verificavel, devolva um array vazio [] -- nunca invente fornecedor.'\n}) }}",
+        "options": {
+          "timeout": 60000
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "credentials": {
+          "openAiApi": {
+            "id": "sjemA3sd4BGEaIHJ",
+            "name": "OpenAI account"
+          }
+        }
+      }
+    },
+    {
+      "id": "forn-0006",
+      "name": "Parse Fornecedores",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// resposta da API de Responses: procura o item \"message\" dentro de output[] e pega\n// o texto; usa output_text como atalho se existir.\nconst resp = $input.first().json;\nlet texto = resp.output_text || '';\nif (!texto && Array.isArray(resp.output)) {\n  const msg = resp.output.find(o => o.type === 'message');\n  if (msg && Array.isArray(msg.content) && msg.content[0]) texto = msg.content[0].text || '';\n}\nlet candidatos = [];\ntry {\n  const match = texto.match(/\\[[\\s\\S]*\\]/);\n  candidatos = match ? JSON.parse(match[0]) : [];\n} catch (e) {\n  candidatos = [];\n}\nif (!Array.isArray(candidatos)) candidatos = [];\nconst base = $('Extrair Corpo Fornecedores').first().json;\nreturn [{ json: { ...base, candidatos } }];"
+      }
+    },
+    {
+      "id": "forn-0007",
+      "name": "Expandir Candidatos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        -120
+      ],
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nreturn item.candidatos.map(c => ({ json: {\n  resumo_id: item.resumo_id,\n  nome_fornecedor: c.nome_fornecedor || null,\n  site: c.site || null,\n  contato: c.contato || null\n} }));"
+      }
+    },
+    {
+      "id": "forn-0008",
+      "name": "Salvar Candidato",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1100,
+        -120
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO licitacoes_fornecedores_candidatos (resumo_id, nome_fornecedor, site, contato) VALUES ($1, $2, $3, $4);",
+        "options": {
+          "queryReplacement": "={{ [ $json.resumo_id, $json.nome_fornecedor, $json.site, $json.contato ] }}"
+        }
+      }
+    },
+    {
+      "id": "forn-0009",
+      "name": "Buscar Usuario Fornecedores",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        880,
+        160
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT u.id AS usuario_id, u.whatsapp_numero\nFROM licitacoes_usuarios u\nWHERE u.id = $1\n   OR u.id = (SELECT usuario_id FROM licitacoes_perfis_busca WHERE id = $2)\nLIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ [ $('Extrair Corpo Fornecedores').first().json.usuario_id, $('Extrair Corpo Fornecedores').first().json.perfil_id ] }}"
+        }
+      }
+    },
+    {
+      "id": "forn-000a",
+      "name": "Montar Mensagem Fornecedores",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        160
+      ],
+      "parameters": {
+        "jsCode": "const parsed = $('Parse Fornecedores').first().json;\nconst usuario = $input.first().json;\nconst candidatos = parsed.candidatos || [];\nlet texto;\nif (!candidatos.length) {\n  texto = '🔎 Busquei fornecedores pra \"' + parsed.tipo_produto + '\" mas nao achei nenhum candidato confiavel no momento. Recomendo pesquisar manualmente ou tentar de novo mais tarde.';\n} else {\n  const lista = candidatos.map((c, i) => (i + 1) + '. ' + (c.nome_fornecedor || 'sem nome') +\n    (c.site ? ' — ' + c.site : '') + (c.contato ? ' (' + c.contato + ')' : '')).join('\\n');\n  texto = '🔎 Possiveis fornecedores para: ' + parsed.tipo_produto + '\\n\\n' + lista +\n    '\\n\\nIsso e so uma lista de descoberta -- confira e entre em contato manualmente antes de fechar qualquer negocio.';\n}\nreturn [{ json: { numero: (usuario.whatsapp_numero || '').replace(/\\D/g, ''), texto } }];"
+      }
+    },
+    {
+      "id": "forn-000b",
+      "name": "Enviar Fornecedores WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        160
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "https://evo.upviaagentes.com/message/sendText/Upvia_adm",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: $json.numero, text: $json.texto }) }}",
+        "options": {
+          "timeout": 60000
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "forn-000c",
+      "name": "Responder OK Fornecedores",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1540,
+        160
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true } }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Fornecedores": {
+      "main": [
+        [
+          {
+            "node": "Extrair Corpo Fornecedores",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Corpo Fornecedores": {
+      "main": [
+        [
+          {
+            "node": "Buscar Fornecedores Web",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Fornecedores Web": {
+      "main": [
+        [
+          {
+            "node": "Parse Fornecedores",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Fornecedores": {
+      "main": [
+        [
+          {
+            "node": "Expandir Candidatos",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Buscar Usuario Fornecedores",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Expandir Candidatos": {
+      "main": [
+        [
+          {
+            "node": "Salvar Candidato",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Usuario Fornecedores": {
+      "main": [
+        [
+          {
+            "node": "Montar Mensagem Fornecedores",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Mensagem Fornecedores": {
+      "main": [
+        [
+          {
+            "node": "Enviar Fornecedores WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Fornecedores WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Responder OK Fornecedores",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
