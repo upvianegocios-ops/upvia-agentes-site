@@ -242,7 +242,7 @@
         "url": "https://n8n.upviaagentes.com/webhook/licitacoes/agente-resumidor",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ `{ \"link\": \"{link}\", \"objeto\": \"{objeto_se_souber}\", \"orgao\": \"\", \"valor\": null, \"modalidade_nome\": \"\", \"tipo_perfil\": \"produto\" }` }}",
+        "jsonBody": "={{ `{ \"link\": \"{link}\", \"objeto\": \"{objeto_se_souber}\", \"orgao\": \"\", \"valor\": null, \"modalidade_nome\": \"\", \"tipo_perfil\": \"produto\", \"usuario_id\": \"${$('Resolver Usuario Orquestrador').first().json.usuario_id}\" }` }}",
         "placeholderDefinitions": {
           "values": [
             {

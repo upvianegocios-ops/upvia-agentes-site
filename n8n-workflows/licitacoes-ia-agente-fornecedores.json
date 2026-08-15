@@ -100,7 +100,7 @@
         -120
       ],
       "parameters": {
-        "jsCode": "const item = $input.first().json;\nreturn item.candidatos.map(c => ({ json: {\n  resumo_id: item.resumo_id,\n  nome_fornecedor: c.nome_fornecedor || null,\n  site: c.site || null,\n  contato: c.contato || null\n} }));"
+        "jsCode": "const item = $input.first().json;\nreturn item.candidatos.map(c => ({ json: {\n  resumo_id: item.resumo_id,\n  usuario_id: item.usuario_id || null,\n  nome_fornecedor: c.nome_fornecedor || null,\n  site: c.site || null,\n  contato: c.contato || null\n} }));"
       }
     },
     {
@@ -122,9 +122,9 @@
       },
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO licitacoes_fornecedores_candidatos (resumo_id, nome_fornecedor, site, contato) VALUES ($1, $2, $3, $4);",
+        "query": "INSERT INTO licitacoes_fornecedores_candidatos (resumo_id, nome_fornecedor, site, contato, usuario_id) VALUES ($1, $2, $3, $4, $5);",
         "options": {
-          "queryReplacement": "={{ [ $json.resumo_id, $json.nome_fornecedor, $json.site, $json.contato ] }}"
+          "queryReplacement": "={{ [ $json.resumo_id, $json.nome_fornecedor, $json.site, $json.contato, $json.usuario_id ] }}"
         }
       }
     },

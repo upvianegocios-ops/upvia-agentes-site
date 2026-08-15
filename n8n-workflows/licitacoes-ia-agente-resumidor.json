@@ -11,7 +11,7 @@
         -340
       ],
       "parameters": {
-        "content": "## Agente Resumidor de Edital\nSub-workflow reutilizavel via webhook: POST /webhook/licitacoes/agente-resumidor\nBody: { perfil_id?, pncp_id, objeto, orgao, valor, modalidade_nome, link, tipo_perfil? }\n\nChamado automaticamente pelo cron de busca (Busca PNCP) apos cada edital novo confirmado,\ne sob demanda pelo Agente Orquestrador Central (tool_resumir_edital).\n\nBaixa os documentos do edital (Termo de Referencia/Aviso) direto do PNCP, extrai o texto,\npede pra IA um resumo estruturado, grava em licitacoes_resumos + planilha Google Sheets,\ne encadeia o Agente Redator de Propostas (sempre) e o Agente Buscador de Fornecedores\n(so quando tipo_perfil = 'produto').",
+        "content": "## Agente Resumidor de Edital\nSub-workflow reutilizavel via webhook: POST /webhook/licitacoes/agente-resumidor\nBody: { perfil_id?, usuario_id?, pncp_id, objeto, orgao, valor, modalidade_nome, link, tipo_perfil? }\n\nChamado automaticamente pelo cron de busca (Busca PNCP) apos cada edital novo confirmado,\ne sob demanda pelo Agente Orquestrador Central (tool_resumir_edital).\n\nBaixa os documentos do edital (Termo de Referencia/Aviso) direto do PNCP, extrai o texto,\npede pra IA um resumo estruturado, grava em licitacoes_resumos + planilha Google Sheets,\ne encadeia o Agente Redator de Propostas (sempre) e o Agente Buscador de Fornecedores\n(so quando tipo_perfil = 'produto').",
         "width": 900,
         "height": 260,
         "color": 4
@@ -44,7 +44,7 @@
         0
       ],
       "parameters": {
-        "jsCode": "const body = $input.first().json.body || $input.first().json;\nreturn [{ json: {\n  perfil_id: body.perfil_id || null,\n  pncp_id: String(body.pncp_id || ''),\n  objeto: String(body.objeto || ''),\n  orgao: String(body.orgao || ''),\n  valor: body.valor != null ? Number(body.valor) : null,\n  modalidade_nome: String(body.modalidade_nome || ''),\n  link: String(body.link || ''),\n  tipo_perfil: body.tipo_perfil || 'produto'\n} }];"
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nreturn [{ json: {\n  perfil_id: body.perfil_id || null,\n  usuario_id: body.usuario_id || null,\n  pncp_id: String(body.pncp_id || ''),\n  objeto: String(body.objeto || ''),\n  orgao: String(body.orgao || ''),\n  valor: body.valor != null ? Number(body.valor) : null,\n  modalidade_nome: String(body.modalidade_nome || ''),\n  link: String(body.link || ''),\n  tipo_perfil: body.tipo_perfil || 'produto'\n} }];"
       }
     },
     {
@@ -241,7 +241,7 @@
           "values": [
             {
               "role": "system",
-              "content": "Voce e especialista em licitacoes publicas brasileiras (Lei 14.133/2021). A partir do\ntexto de documentos de um edital (Termo de Referencia/Aviso, quando disponivel) e dos\ndados basicos da licitacao, gere um resumo estruturado.\n\nResponda SOMENTE com um objeto JSON valido, sem markdown, com exatamente estes campos:\n{\n  \"objeto_resumo\": \"resumo curto e claro do que esta sendo comprado/contratado\",\n  \"tipo_disputa\": \"pregao_eletronico\" ou \"dispensa\" (baseado na modalidade informada),\n  \"valor_estimado\": numero ou null,\n  \"prazo_proposta\": \"data/hora em formato ISO se identificavel no texto, senao null\",\n  \"prazo_entrega\": \"texto livre descrevendo o prazo de entrega/execucao, ou null\",\n  \"documentos_exigidos\": \"resumo em linguagem natural dos documentos de habilitacao exigidos (certidoes, atestados, etc) -- se o texto do edital nao tiver detalhe suficiente, baseie-se no que costuma ser exigido nessa modalidade e deixe isso claro no texto\",\n  \"tipo_software\": \"se o objeto for de software/sistema/plataforma, descreva brevemente que tipo de software e; senao, null\"\n}\n\nSe o texto de documentos estiver vazio (nao foi possivel baixar o edital), preencha o\nque der pra inferir dos dados basicos e deixe os campos sem informacao suficiente como null,\nsem inventar dados."
+              "content": "Voce e especialista em licitacoes publicas brasileiras (Lei 14.133/2021). A partir do\ntexto de documentos de um edital (Termo de Referencia/Aviso, quando disponivel) e dos\ndados basicos da licitacao, gere um resumo estruturado.\n\nResponda SOMENTE com um objeto JSON valido, sem markdown, com exatamente estes campos:\n{\n  \"objeto_resumo\": \"resumo curto e claro do que esta sendo comprado/contratado\",\n  \"tipo_disputa\": \"pregao_eletronico\" ou \"dispensa\" (baseado na modalidade informada),\n  \"valor_estimado\": numero ou null,\n  \"prazo_proposta\": \"data/hora em formato ISO se identificavel no texto, senao null\",\n  \"prazo_entrega\": \"texto livre descrevendo o prazo de entrega/execucao, ou null\",\n  \"documentos_exigidos\": \"resumo em linguagem natural dos documentos de habilitacao exigidos (certidoes, atestados, etc) -- se o texto do edital nao tiver detalhe suficiente, baseie-se no que costuma ser exigido nessa modalidade e deixe isso claro no texto\",\n  \"tipo_software\": \"se o objeto for de software/sistema/plataforma, descreva brevemente que tipo de software e; senao, null\",\n  \"pontos_atencao\": [\"array de strings, um por ponto de atencao identificado no Termo de Referencia que elimina ou dificulta a participacao -- ex: exigencia de marca especifica, garantia contratual acima do usual, exigencia de atestado tecnico de alto valor, vedacao a MEI/ME/EPP, ou outro requisito restritivo. Array vazio se nao identificar nenhum.\"]\n}\n\nSe o texto de documentos estiver vazio (nao foi possivel baixar o edital), preencha o\nque der pra inferir dos dados basicos e deixe os campos sem informacao suficiente como null,\nsem inventar dados. Nesse caso \"pontos_atencao\" tambem deve vir vazio -- nunca inventar um\nponto de atencao sem base no texto real do edital."
             },
             {
               "role": "user",
@@ -268,7 +268,7 @@
         380
       ],
       "parameters": {
-        "jsCode": "// Code node roda em \"Run Once for All Items\" por padrao -- $json nao existe nesse\n// modo (ver gotcha ja documentado no Prospeccao/Licitacoes). Usar $input.first().json.\nconst aiOutput = $input.first().json;\nconst raw = (aiOutput.message && aiOutput.message.content) || '';\nlet parsed = null;\ntry {\n  const match = raw.match(/\\{[\\s\\S]*\\}/);\n  parsed = match ? JSON.parse(match[0]) : null;\n} catch (e) {\n  parsed = null;\n}\nconst base = $('Extrair Corpo Resumidor').first().json;\nif (!parsed) {\n  // fallback defensivo -- nunca quebra o fluxo por causa de JSON malformado da IA\n  parsed = { objeto_resumo: base.objeto, tipo_disputa: null, valor_estimado: base.valor,\n    prazo_proposta: null, prazo_entrega: null, documentos_exigidos: null, tipo_software: null };\n}\nconst tipoDisputa = base.modalidade_nome && /preg[aã]o/i.test(base.modalidade_nome) ? 'pregao_eletronico'\n  : base.modalidade_nome && /dispensa/i.test(base.modalidade_nome) ? 'dispensa' : parsed.tipo_disputa;\nreturn [{ json: {\n  perfil_id: base.perfil_id,\n  pncp_id: base.pncp_id,\n  objeto_resumo: parsed.objeto_resumo || base.objeto,\n  tipo_disputa: tipoDisputa,\n  valor_estimado: parsed.valor_estimado != null ? parsed.valor_estimado : base.valor,\n  prazo_proposta: parsed.prazo_proposta || null,\n  prazo_entrega: parsed.prazo_entrega || null,\n  documentos_exigidos: parsed.documentos_exigidos || null,\n  tipo_software: base.tipo_perfil === 'servico_software' ? (parsed.tipo_software || null) : null\n} }];"
+        "jsCode": "// Code node roda em \"Run Once for All Items\" por padrao -- $json nao existe nesse\n// modo (ver gotcha ja documentado no Prospeccao/Licitacoes). Usar $input.first().json.\nconst aiOutput = $input.first().json;\nconst raw = (aiOutput.message && aiOutput.message.content) || '';\nlet parsed = null;\ntry {\n  const match = raw.match(/\\{[\\s\\S]*\\}/);\n  parsed = match ? JSON.parse(match[0]) : null;\n} catch (e) {\n  parsed = null;\n}\nconst base = $('Extrair Corpo Resumidor').first().json;\nif (!parsed) {\n  // fallback defensivo -- nunca quebra o fluxo por causa de JSON malformado da IA\n  parsed = { objeto_resumo: base.objeto, tipo_disputa: null, valor_estimado: base.valor,\n    prazo_proposta: null, prazo_entrega: null, documentos_exigidos: null, tipo_software: null, pontos_atencao: [] };\n}\nconst tipoDisputa = base.modalidade_nome && /preg[aã]o/i.test(base.modalidade_nome) ? 'pregao_eletronico'\n  : base.modalidade_nome && /dispensa/i.test(base.modalidade_nome) ? 'dispensa' : parsed.tipo_disputa;\nconst pontosAtencao = Array.isArray(parsed.pontos_atencao) ? parsed.pontos_atencao.filter(Boolean) : [];\nreturn [{ json: {\n  perfil_id: base.perfil_id,\n  usuario_id: base.usuario_id,\n  pncp_id: base.pncp_id,\n  objeto_resumo: parsed.objeto_resumo || base.objeto,\n  tipo_disputa: tipoDisputa,\n  valor_estimado: parsed.valor_estimado != null ? parsed.valor_estimado : base.valor,\n  prazo_proposta: parsed.prazo_proposta || null,\n  prazo_entrega: parsed.prazo_entrega || null,\n  documentos_exigidos: parsed.documentos_exigidos || null,\n  tipo_software: base.tipo_perfil === 'servico_software' ? (parsed.tipo_software || null) : null,\n  pontos_atencao: pontosAtencao.length ? pontosAtencao.map(p => '• ' + p).join('\\n') : ''\n} }];"
       }
     },
     {
@@ -290,9 +290,9 @@
       },
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO licitacoes_resumos\n  (perfil_id, pncp_id, objeto_resumo, tipo_disputa, valor_estimado, prazo_proposta, prazo_entrega, documentos_exigidos, tipo_software)\nVALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)\nON CONFLICT (perfil_id, pncp_id) DO NOTHING\nRETURNING id;",
+        "query": "INSERT INTO licitacoes_resumos\n  (perfil_id, usuario_id, pncp_id, objeto_resumo, tipo_disputa, valor_estimado, prazo_proposta, prazo_entrega, documentos_exigidos, tipo_software, pontos_atencao)\nVALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)\nON CONFLICT (perfil_id, pncp_id) DO NOTHING\nRETURNING id;",
         "options": {
-          "queryReplacement": "={{ [ $json.perfil_id, $json.pncp_id, $json.objeto_resumo, $json.tipo_disputa, $json.valor_estimado, $json.prazo_proposta, $json.prazo_entrega, $json.documentos_exigidos, $json.tipo_software ] }}"
+          "queryReplacement": "={{ [ $json.perfil_id, $json.usuario_id, $json.pncp_id, $json.objeto_resumo, $json.tipo_disputa, $json.valor_estimado, $json.prazo_proposta, $json.prazo_entrega, $json.documentos_exigidos, $json.tipo_software, $json.pontos_atencao ] }}"
         }
       }
     },
@@ -348,6 +348,75 @@
     },
     {
       "id": "res-000n",
+      "name": "Buscar Usuario Resumidor",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        2200,
+        620
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT whatsapp_numero FROM licitacoes_usuarios WHERE id = $1;",
+        "options": {
+          "queryReplacement": "={{ [ $('Parse Resumo IA').first().json.usuario_id ] }}"
+        }
+      }
+    },
+    {
+      "id": "res-000o",
+      "name": "Montar Mensagem Resumo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2420,
+        620
+      ],
+      "parameters": {
+        "jsCode": "const resumo = $('Parse Resumo IA').first().json;\nconst usuario = $input.first().json || {};\n// sem usuario_id (nao deveria mais acontecer apos a correcao transversal, mas nao\n// quebra se acontecer) -- so nao manda mensagem nenhuma, sem erro.\nif (!usuario.whatsapp_numero) return [];\nfunction formataValor(v) {\n  if (v == null) return 'valor nao informado';\n  return 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 });\n}\nlet texto = '';\nif (resumo.pontos_atencao) {\n  texto += '⚠️ Pontos de atencao\\n' + resumo.pontos_atencao + '\\n\\n';\n}\ntexto += '📋 Resumo da licitacao\\n\\n' +\n  (resumo.objeto_resumo || 'objeto nao identificado') + '\\n\\n' +\n  'Valor estimado: ' + formataValor(resumo.valor_estimado) + '\\n' +\n  'Prazo de proposta: ' + (resumo.prazo_proposta || 'nao identificado') + '\\n' +\n  'Prazo de entrega: ' + (resumo.prazo_entrega || 'nao identificado') + '\\n' +\n  'Documentos exigidos: ' + (resumo.documentos_exigidos || 'nao identificado');\nreturn [{ json: { numero: usuario.whatsapp_numero.replace(/\\D/g, ''), texto } }];"
+      }
+    },
+    {
+      "id": "res-000p",
+      "name": "Enviar Resumo WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2640,
+        620
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://evo.upviaagentes.com/message/sendText/Upvia_adm' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: $json.numero, text: $json.texto }) }}",
+        "options": {
+          "timeout": 120000
+        }
+      }
+    },
+    {
+      "id": "res-000q",
       "name": "Registrar na Planilha",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.4,
@@ -392,7 +461,7 @@
       }
     },
     {
-      "id": "res-000o",
+      "id": "res-000r",
       "name": "Montar Chamada Redator",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -401,11 +470,11 @@
         240
       ],
       "parameters": {
-        "jsCode": "const resumo = $('Salvar Resumo').first().json;\nconst base = $('Extrair Corpo Resumidor').first().json;\nreturn [{ json: { resumo_id: resumo.id, perfil_id: base.perfil_id, tipo_perfil: base.tipo_perfil, objeto_resumo: $('Parse Resumo IA').first().json.objeto_resumo } }];"
+        "jsCode": "const resumo = $('Salvar Resumo').first().json;\nconst base = $('Extrair Corpo Resumidor').first().json;\nreturn [{ json: { resumo_id: resumo.id, perfil_id: base.perfil_id, usuario_id: base.usuario_id, tipo_perfil: base.tipo_perfil, objeto_resumo: $('Parse Resumo IA').first().json.objeto_resumo } }];"
       }
     },
     {
-      "id": "res-000p",
+      "id": "res-000s",
       "name": "Chamar Agente Redator",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -418,16 +487,17 @@
       "parameters": {
         "method": "POST",
         "url": "={{ 'https://n8n.upviaagentes.com/webhook/licitacoes/agente-redator' }}",
+        "sendHeaders": false,
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ resumo_id: $json.resumo_id, perfil_id: $json.perfil_id }) }}",
+        "jsonBody": "={{ JSON.stringify({ resumo_id: $json.resumo_id, perfil_id: $json.perfil_id, usuario_id: $json.usuario_id }) }}",
         "options": {
           "timeout": 120000
         }
       }
     },
     {
-      "id": "res-000q",
+      "id": "res-000t",
       "name": "E Perfil De Produto?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
@@ -445,7 +515,7 @@
           },
           "conditions": [
             {
-              "id": "res-000r",
+              "id": "res-000u",
               "leftValue": "={{ $('Montar Chamada Redator').first().json.tipo_perfil }}",
               "rightValue": "produto",
               "operator": {
@@ -460,7 +530,7 @@
       }
     },
     {
-      "id": "res-000s",
+      "id": "res-000v",
       "name": "Chamar Agente Fornecedores",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -473,16 +543,17 @@
       "parameters": {
         "method": "POST",
         "url": "={{ 'https://n8n.upviaagentes.com/webhook/licitacoes/agente-fornecedores' }}",
+        "sendHeaders": false,
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ resumo_id: $('Montar Chamada Redator').first().json.resumo_id, tipo_produto: $('Montar Chamada Redator').first().json.objeto_resumo, perfil_id: $('Montar Chamada Redator').first().json.perfil_id }) }}",
+        "jsonBody": "={{ JSON.stringify({ resumo_id: $('Montar Chamada Redator').first().json.resumo_id, tipo_produto: $('Montar Chamada Redator').first().json.objeto_resumo, perfil_id: $('Montar Chamada Redator').first().json.perfil_id, usuario_id: $('Montar Chamada Redator').first().json.usuario_id }) }}",
         "options": {
           "timeout": 120000
         }
       }
     },
     {
-      "id": "res-000t",
+      "id": "res-000w",
       "name": "Responder OK Resumidor",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
@@ -694,6 +765,11 @@
       "main": [
         [
           {
+            "node": "Buscar Usuario Resumidor",
+            "type": "main",
+            "index": 0
+          },
+          {
             "node": "Registrar na Planilha",
             "type": "main",
             "index": 0
@@ -702,6 +778,28 @@
         [
           {
             "node": "Responder Duplicado Ou Erro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Usuario Resumidor": {
+      "main": [
+        [
+          {
+            "node": "Montar Mensagem Resumo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Mensagem Resumo": {
+      "main": [
+        [
+          {
+            "node": "Enviar Resumo WhatsApp",
             "type": "main",
             "index": 0
           }

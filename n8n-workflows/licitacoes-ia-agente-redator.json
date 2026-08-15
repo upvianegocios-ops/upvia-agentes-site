@@ -132,7 +132,7 @@
         0
       ],
       "parameters": {
-        "jsCode": "// Buscar Dados Empresa pode devolver 0 linhas (empresa ainda nao cadastrada -- e o\n// caso hoje pro Jonas e pra UpVia) -- trata com placeholders claros, nunca inventa dado.\nconst empresa = $input.first().json || {};\nconst resumo = $('Buscar Resumo').first().json;\nconst usuario = $('Buscar Usuario').first().json;\nreturn [{ json: {\n  resumo_id: resumo.id,\n  razao_social: empresa.razao_social || '[RAZAO SOCIAL A PREENCHER]',\n  cnpj: empresa.cnpj || '[CNPJ A PREENCHER]',\n  endereco: empresa.endereco || '[ENDERECO A PREENCHER]',\n  responsavel_legal: empresa.responsavel_legal || '[RESPONSAVEL LEGAL A PREENCHER]',\n  objeto_resumo: resumo.objeto_resumo,\n  tipo_disputa: resumo.tipo_disputa,\n  prazo_entrega: resumo.prazo_entrega,\n  documentos_exigidos: resumo.documentos_exigidos,\n  whatsapp_numero: usuario.whatsapp_numero\n} }];"
+        "jsCode": "// Buscar Dados Empresa pode devolver 0 linhas (empresa ainda nao cadastrada -- e o\n// caso hoje pro Jonas e pra UpVia) -- trata com placeholders claros, nunca inventa dado.\nconst empresa = $input.first().json || {};\nconst resumo = $('Buscar Resumo').first().json;\nconst usuario = $('Buscar Usuario').first().json;\nreturn [{ json: {\n  resumo_id: resumo.id,\n  usuario_id: usuario.usuario_id || null,\n  razao_social: empresa.razao_social || '[RAZAO SOCIAL A PREENCHER]',\n  cnpj: empresa.cnpj || '[CNPJ A PREENCHER]',\n  endereco: empresa.endereco || '[ENDERECO A PREENCHER]',\n  responsavel_legal: empresa.responsavel_legal || '[RESPONSAVEL LEGAL A PREENCHER]',\n  objeto_resumo: resumo.objeto_resumo,\n  tipo_disputa: resumo.tipo_disputa,\n  prazo_entrega: resumo.prazo_entrega,\n  documentos_exigidos: resumo.documentos_exigidos,\n  whatsapp_numero: usuario.whatsapp_numero\n} }];"
       }
     },
     {
@@ -207,9 +207,9 @@
       },
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO licitacoes_propostas (resumo_id, perfil_id, conteudo_proposta, status)\nVALUES ($1, $2, $3, 'rascunho')\nRETURNING id;",
+        "query": "INSERT INTO licitacoes_propostas (resumo_id, perfil_id, usuario_id, conteudo_proposta, status)\nVALUES ($1, $2, $3, $4, 'rascunho')\nRETURNING id;",
         "options": {
-          "queryReplacement": "={{ [ $json.resumo_id, $('Extrair Corpo Redator').first().json.perfil_id, $json.conteudo_proposta ] }}"
+          "queryReplacement": "={{ [ $json.resumo_id, $('Extrair Corpo Redator').first().json.perfil_id, $json.usuario_id, $json.conteudo_proposta ] }}"
         }
       }
     },
