@@ -1,0 +1,764 @@
+{
+  "name": "Licitacoes IA - Agente Resumidor de Edital",
+  "nodes": [
+    {
+      "id": "res-0001",
+      "name": "Nota Agente Resumidor",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -340
+      ],
+      "parameters": {
+        "content": "## Agente Resumidor de Edital\nSub-workflow reutilizavel via webhook: POST /webhook/licitacoes/agente-resumidor\nBody: { perfil_id?, pncp_id, objeto, orgao, valor, modalidade_nome, link, tipo_perfil? }\n\nChamado automaticamente pelo cron de busca (Busca PNCP) apos cada edital novo confirmado,\ne sob demanda pelo Agente Orquestrador Central (tool_resumir_edital).\n\nBaixa os documentos do edital (Termo de Referencia/Aviso) direto do PNCP, extrai o texto,\npede pra IA um resumo estruturado, grava em licitacoes_resumos + planilha Google Sheets,\ne encadeia o Agente Redator de Propostas (sempre) e o Agente Buscador de Fornecedores\n(so quando tipo_perfil = 'produto').",
+        "width": 900,
+        "height": 260,
+        "color": 4
+      }
+    },
+    {
+      "id": "res-0002",
+      "name": "Webhook Resumidor",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "res-0003",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "licitacoes/agente-resumidor",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "res-0004",
+      "name": "Extrair Corpo Resumidor",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nreturn [{ json: {\n  perfil_id: body.perfil_id || null,\n  pncp_id: String(body.pncp_id || ''),\n  objeto: String(body.objeto || ''),\n  orgao: String(body.orgao || ''),\n  valor: body.valor != null ? Number(body.valor) : null,\n  modalidade_nome: String(body.modalidade_nome || ''),\n  link: String(body.link || ''),\n  tipo_perfil: body.tipo_perfil || 'produto'\n} }];"
+      }
+    },
+    {
+      "id": "res-0005",
+      "name": "Extrair CNPJ Ano Sequencial",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// link no formato https://pncp.gov.br/app/editais/{cnpj}/{ano}/{sequencial}\nconst item = $input.first().json;\nconst m = item.link.match(/editais\\/(\\d+)\\/(\\d+)\\/(\\d+)/);\nreturn [{ json: { ...item, cnpj: m ? m[1] : null, ano: m ? m[2] : null, sequencial: m ? m[3] : null } }];"
+      }
+    },
+    {
+      "id": "res-0006",
+      "name": "Expandir Ids De Arquivo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// tenta arquivos 1 a 5 -- a maioria das compras nao tem mais que isso; ver nota da\n// sticky. Sempre >=1 item (nunca 0), nao precisa de guarda especial pra loop vazio.\nconst base = $input.first().json;\nreturn [1,2,3,4,5].map(n => ({ json: { ...base, arquivo_n: n } }));"
+      }
+    },
+    {
+      "id": "res-0007",
+      "name": "Loop Arquivos",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        880,
+        0
+      ],
+      "parameters": {
+        "options": {}
+      }
+    },
+    {
+      "id": "res-0008",
+      "name": "Fim Busca Arquivos",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        -200
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "res-0009",
+      "name": "Buscar Arquivo N",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        160
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://pncp.gov.br/pncp-api/v1/orgaos/' + $json.cnpj + '/compras/' + $json.ano + '/' + $json.sequencial + '/arquivos/' + $json.arquivo_n }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "res-000a",
+      "name": "Arquivo Veio OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        160
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "res-000b",
+              "leftValue": "={{ $json.error ? 0 : 1 }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "res-000c",
+      "name": "Extrair Texto PDF",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        1540,
+        60
+      ],
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      }
+    },
+    {
+      "id": "res-000d",
+      "name": "Marcar Texto Extraido",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        60
+      ],
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nreturn [{ json: { texto: item.text || '' } }];"
+      }
+    },
+    {
+      "id": "res-000e",
+      "name": "Marcar Arquivo Ausente",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        260
+      ],
+      "parameters": {
+        "jsCode": "return [{ json: { texto: '' } }];"
+      }
+    },
+    {
+      "id": "res-000f",
+      "name": "Fim Iteracao Arquivo",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1980,
+        160
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "res-000g",
+      "name": "Combinar Textos Extraidos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        380
+      ],
+      "parameters": {
+        "jsCode": "const TETO_CHARS = 15000;\nconst textos = $input.all().map(i => i.json.texto || '').filter(Boolean);\nlet combinado = textos.join('\\n\\n---\\n\\n');\nif (combinado.length > TETO_CHARS) combinado = combinado.slice(0, TETO_CHARS) + '\\n\\n[...texto truncado...]';\nreturn [{ json: { texto_documentos: combinado, teve_documento: textos.length > 0 } }];"
+      }
+    },
+    {
+      "id": "res-000h",
+      "name": "Gerar Resumo Estruturado",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.6,
+      "position": [
+        1320,
+        380
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "resource": "text",
+        "operation": "message",
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list"
+        },
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "Voce e especialista em licitacoes publicas brasileiras (Lei 14.133/2021). A partir do\ntexto de documentos de um edital (Termo de Referencia/Aviso, quando disponivel) e dos\ndados basicos da licitacao, gere um resumo estruturado.\n\nResponda SOMENTE com um objeto JSON valido, sem markdown, com exatamente estes campos:\n{\n  \"objeto_resumo\": \"resumo curto e claro do que esta sendo comprado/contratado\",\n  \"tipo_disputa\": \"pregao_eletronico\" ou \"dispensa\" (baseado na modalidade informada),\n  \"valor_estimado\": numero ou null,\n  \"prazo_proposta\": \"data/hora em formato ISO se identificavel no texto, senao null\",\n  \"prazo_entrega\": \"texto livre descrevendo o prazo de entrega/execucao, ou null\",\n  \"documentos_exigidos\": \"resumo em linguagem natural dos documentos de habilitacao exigidos (certidoes, atestados, etc) -- se o texto do edital nao tiver detalhe suficiente, baseie-se no que costuma ser exigido nessa modalidade e deixe isso claro no texto\",\n  \"tipo_software\": \"se o objeto for de software/sistema/plataforma, descreva brevemente que tipo de software e; senao, null\"\n}\n\nSe o texto de documentos estiver vazio (nao foi possivel baixar o edital), preencha o\nque der pra inferir dos dados basicos e deixe os campos sem informacao suficiente como null,\nsem inventar dados."
+            },
+            {
+              "role": "user",
+              "content": "={{ 'Objeto (dado basico): ' + $('Extrair Corpo Resumidor').first().json.objeto + '\\nOrgao: ' + $('Extrair Corpo Resumidor').first().json.orgao + '\\nModalidade: ' + $('Extrair Corpo Resumidor').first().json.modalidade_nome + '\\nValor estimado (dado basico): ' + $('Extrair Corpo Resumidor').first().json.valor + '\\n\\nTexto extraido dos documentos do edital:\\n' + ($json.texto_documentos || '(nenhum documento conseguiu ser baixado)') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "sjemA3sd4BGEaIHJ",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "id": "res-000i",
+      "name": "Parse Resumo IA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        380
+      ],
+      "parameters": {
+        "jsCode": "// Code node roda em \"Run Once for All Items\" por padrao -- $json nao existe nesse\n// modo (ver gotcha ja documentado no Prospeccao/Licitacoes). Usar $input.first().json.\nconst aiOutput = $input.first().json;\nconst raw = (aiOutput.message && aiOutput.message.content) || '';\nlet parsed = null;\ntry {\n  const match = raw.match(/\\{[\\s\\S]*\\}/);\n  parsed = match ? JSON.parse(match[0]) : null;\n} catch (e) {\n  parsed = null;\n}\nconst base = $('Extrair Corpo Resumidor').first().json;\nif (!parsed) {\n  // fallback defensivo -- nunca quebra o fluxo por causa de JSON malformado da IA\n  parsed = { objeto_resumo: base.objeto, tipo_disputa: null, valor_estimado: base.valor,\n    prazo_proposta: null, prazo_entrega: null, documentos_exigidos: null, tipo_software: null };\n}\nconst tipoDisputa = base.modalidade_nome && /preg[aã]o/i.test(base.modalidade_nome) ? 'pregao_eletronico'\n  : base.modalidade_nome && /dispensa/i.test(base.modalidade_nome) ? 'dispensa' : parsed.tipo_disputa;\nreturn [{ json: {\n  perfil_id: base.perfil_id,\n  pncp_id: base.pncp_id,\n  objeto_resumo: parsed.objeto_resumo || base.objeto,\n  tipo_disputa: tipoDisputa,\n  valor_estimado: parsed.valor_estimado != null ? parsed.valor_estimado : base.valor,\n  prazo_proposta: parsed.prazo_proposta || null,\n  prazo_entrega: parsed.prazo_entrega || null,\n  documentos_exigidos: parsed.documentos_exigidos || null,\n  tipo_software: base.tipo_perfil === 'servico_software' ? (parsed.tipo_software || null) : null\n} }];"
+      }
+    },
+    {
+      "id": "res-000j",
+      "name": "Salvar Resumo",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1760,
+        380
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO licitacoes_resumos\n  (perfil_id, pncp_id, objeto_resumo, tipo_disputa, valor_estimado, prazo_proposta, prazo_entrega, documentos_exigidos, tipo_software)\nVALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)\nON CONFLICT (perfil_id, pncp_id) DO NOTHING\nRETURNING id;",
+        "options": {
+          "queryReplacement": "={{ [ $json.perfil_id, $json.pncp_id, $json.objeto_resumo, $json.tipo_disputa, $json.valor_estimado, $json.prazo_proposta, $json.prazo_entrega, $json.documentos_exigidos, $json.tipo_software ] }}"
+        }
+      }
+    },
+    {
+      "id": "res-000k",
+      "name": "Resumo Foi Salvo?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1980,
+        380
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "res-000l",
+              "leftValue": "={{ $input.all().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "res-000m",
+      "name": "Responder Duplicado",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2200,
+        520
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, duplicado: true } }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    },
+    {
+      "id": "res-000n",
+      "name": "Registrar na Planilha",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [
+        2200,
+        240
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "PENDENTE_CRIAR_PLANILHA",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Resumos",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "data": "={{ new Date().toISOString() }}",
+            "pncp_id": "={{ $('Parse Resumo IA').first().json.pncp_id }}",
+            "objeto_resumo": "={{ $('Parse Resumo IA').first().json.objeto_resumo }}",
+            "tipo_disputa": "={{ $('Parse Resumo IA').first().json.tipo_disputa }}",
+            "valor_estimado": "={{ $('Parse Resumo IA').first().json.valor_estimado }}",
+            "prazo_proposta": "={{ $('Parse Resumo IA').first().json.prazo_proposta }}",
+            "prazo_entrega": "={{ $('Parse Resumo IA').first().json.prazo_entrega }}",
+            "documentos_exigidos": "={{ $('Parse Resumo IA').first().json.documentos_exigidos }}"
+          }
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "HKdCmshTj2i8yZlO",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "id": "res-000o",
+      "name": "Montar Chamada Redator",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2420,
+        240
+      ],
+      "parameters": {
+        "jsCode": "const resumo = $('Salvar Resumo').first().json;\nconst base = $('Extrair Corpo Resumidor').first().json;\nreturn [{ json: { resumo_id: resumo.id, perfil_id: base.perfil_id, tipo_perfil: base.tipo_perfil, objeto_resumo: $('Parse Resumo IA').first().json.objeto_resumo } }];"
+      }
+    },
+    {
+      "id": "res-000p",
+      "name": "Chamar Agente Redator",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2640,
+        160
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://n8n.upviaagentes.com/webhook/licitacoes/agente-redator' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ resumo_id: $json.resumo_id, perfil_id: $json.perfil_id }) }}",
+        "options": {
+          "timeout": 120000
+        }
+      }
+    },
+    {
+      "id": "res-000q",
+      "name": "E Perfil De Produto?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        380
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "res-000r",
+              "leftValue": "={{ $('Montar Chamada Redator').first().json.tipo_perfil }}",
+              "rightValue": "produto",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "res-000s",
+      "name": "Chamar Agente Fornecedores",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2860,
+        480
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://n8n.upviaagentes.com/webhook/licitacoes/agente-fornecedores' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ resumo_id: $('Montar Chamada Redator').first().json.resumo_id, tipo_produto: $('Montar Chamada Redator').first().json.objeto_resumo, perfil_id: $('Montar Chamada Redator').first().json.perfil_id }) }}",
+        "options": {
+          "timeout": 120000
+        }
+      }
+    },
+    {
+      "id": "res-000t",
+      "name": "Responder OK Resumidor",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2860,
+        160
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, resumo_id: $('Montar Chamada Redator').first().json.resumo_id } }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Resumidor": {
+      "main": [
+        [
+          {
+            "node": "Extrair Corpo Resumidor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Corpo Resumidor": {
+      "main": [
+        [
+          {
+            "node": "Extrair CNPJ Ano Sequencial",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair CNPJ Ano Sequencial": {
+      "main": [
+        [
+          {
+            "node": "Expandir Ids De Arquivo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Expandir Ids De Arquivo": {
+      "main": [
+        [
+          {
+            "node": "Loop Arquivos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Arquivos": {
+      "main": [
+        [
+          {
+            "node": "Fim Busca Arquivos",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Buscar Arquivo N",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Arquivo N": {
+      "main": [
+        [
+          {
+            "node": "Arquivo Veio OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Arquivo Veio OK?": {
+      "main": [
+        [
+          {
+            "node": "Extrair Texto PDF",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Marcar Arquivo Ausente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Texto PDF": {
+      "main": [
+        [
+          {
+            "node": "Marcar Texto Extraido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Marcar Texto Extraido": {
+      "main": [
+        [
+          {
+            "node": "Fim Iteracao Arquivo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Marcar Arquivo Ausente": {
+      "main": [
+        [
+          {
+            "node": "Fim Iteracao Arquivo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fim Iteracao Arquivo": {
+      "main": [
+        [
+          {
+            "node": "Loop Arquivos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fim Busca Arquivos": {
+      "main": [
+        [
+          {
+            "node": "Combinar Textos Extraidos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combinar Textos Extraidos": {
+      "main": [
+        [
+          {
+            "node": "Gerar Resumo Estruturado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gerar Resumo Estruturado": {
+      "main": [
+        [
+          {
+            "node": "Parse Resumo IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Resumo IA": {
+      "main": [
+        [
+          {
+            "node": "Salvar Resumo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Salvar Resumo": {
+      "main": [
+        [
+          {
+            "node": "Resumo Foi Salvo?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resumo Foi Salvo?": {
+      "main": [
+        [
+          {
+            "node": "Registrar na Planilha",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder Duplicado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar na Planilha": {
+      "main": [
+        [
+          {
+            "node": "Montar Chamada Redator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Chamada Redator": {
+      "main": [
+        [
+          {
+            "node": "Chamar Agente Redator",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "E Perfil De Produto?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "E Perfil De Produto?": {
+      "main": [
+        [
+          {
+            "node": "Chamar Agente Fornecedores",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chamar Agente Redator": {
+      "main": [
+        [
+          {
+            "node": "Responder OK Resumidor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
