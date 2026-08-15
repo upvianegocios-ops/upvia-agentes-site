@@ -1,0 +1,403 @@
+{
+  "name": "Licitacoes IA - Agente Redator de Propostas",
+  "nodes": [
+    {
+      "id": "red-0001",
+      "name": "Nota Agente Redator",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -300
+      ],
+      "parameters": {
+        "content": "## Agente Redator de Propostas\nSub-workflow reutilizavel via webhook: POST /webhook/licitacoes/agente-redator\nBody: { resumo_id, perfil_id?, usuario_id? }\n\nChamado automaticamente pelo Agente Resumidor (sempre, apos gravar um resumo) e\nsob demanda pelo Orquestrador Central (tool_redigir_proposta).\n\nREGRA FIXA: o valor da proposta NUNCA e decidido pela IA -- sempre fica marcado\ncomo [VALOR A DEFINIR PELO USUARIO]. O rascunho e sempre enviado como rascunho\npra revisao humana, nunca enviado/submetido em nenhuma plataforma.",
+        "width": 900,
+        "height": 220,
+        "color": 4
+      }
+    },
+    {
+      "id": "red-0002",
+      "name": "Webhook Redator",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "red-0003",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "licitacoes/agente-redator",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "red-0004",
+      "name": "Extrair Corpo Redator",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nreturn [{ json: { resumo_id: body.resumo_id || null, perfil_id: body.perfil_id || null, usuario_id: body.usuario_id || null } }];"
+      }
+    },
+    {
+      "id": "red-0005",
+      "name": "Buscar Resumo",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        440,
+        0
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, perfil_id, pncp_id, objeto_resumo, tipo_disputa, valor_estimado, prazo_proposta, prazo_entrega, documentos_exigidos FROM licitacoes_resumos WHERE id = $1;",
+        "options": {
+          "queryReplacement": "={{ [ $json.resumo_id ] }}"
+        }
+      }
+    },
+    {
+      "id": "red-0006",
+      "name": "Buscar Usuario",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        660,
+        0
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT u.id AS usuario_id, u.whatsapp_numero\nFROM licitacoes_usuarios u\nWHERE u.id = $1\n   OR u.id = (SELECT usuario_id FROM licitacoes_perfis_busca WHERE id = $2)\nLIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ [ $('Extrair Corpo Redator').first().json.usuario_id, $('Extrair Corpo Redator').first().json.perfil_id ] }}"
+        }
+      }
+    },
+    {
+      "id": "red-0007",
+      "name": "Buscar Dados Empresa",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        880,
+        0
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT razao_social, cnpj, endereco, responsavel_legal FROM licitacoes_dados_empresa WHERE usuario_id = $1;",
+        "options": {
+          "queryReplacement": "={{ [ $json.usuario_id ] }}"
+        }
+      }
+    },
+    {
+      "id": "red-0008",
+      "name": "Montar Contexto Proposta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Buscar Dados Empresa pode devolver 0 linhas (empresa ainda nao cadastrada -- e o\n// caso hoje pro Jonas e pra UpVia) -- trata com placeholders claros, nunca inventa dado.\nconst empresa = $input.first().json || {};\nconst resumo = $('Buscar Resumo').first().json;\nconst usuario = $('Buscar Usuario').first().json;\nreturn [{ json: {\n  resumo_id: resumo.id,\n  razao_social: empresa.razao_social || '[RAZAO SOCIAL A PREENCHER]',\n  cnpj: empresa.cnpj || '[CNPJ A PREENCHER]',\n  endereco: empresa.endereco || '[ENDERECO A PREENCHER]',\n  responsavel_legal: empresa.responsavel_legal || '[RESPONSAVEL LEGAL A PREENCHER]',\n  objeto_resumo: resumo.objeto_resumo,\n  tipo_disputa: resumo.tipo_disputa,\n  prazo_entrega: resumo.prazo_entrega,\n  documentos_exigidos: resumo.documentos_exigidos,\n  whatsapp_numero: usuario.whatsapp_numero\n} }];"
+      }
+    },
+    {
+      "id": "red-0009",
+      "name": "Redigir Rascunho Proposta",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.6,
+      "position": [
+        1320,
+        0
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "resource": "text",
+        "operation": "message",
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list"
+        },
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "Voce e especialista em licitacoes publicas brasileiras (Lei 14.133/2021). Redija um\nRASCUNHO de proposta comercial pra participar dessa licitacao, em portugues do Brasil,\nformal e objetivo.\n\nA proposta deve conter, nessa ordem:\n1. Dados da empresa proponente (razao social, CNPJ, endereco, responsavel legal)\n2. Descricao do objeto ofertado (baseado no resumo da licitacao)\n3. Prazo de entrega/execucao proposto\n4. Prazo de validade da proposta: 60 dias, salvo se os documentos indicarem prazo\n   diferente (nesse caso, use o prazo indicado)\n5. Declaracoes padrao: ciencia e concordancia com os termos do edital, inexistencia de\n   fatos impeditivos para contratar com a administracao publica, cumprimento das normas\n   de saude e seguranca do trabalho\n\nREGRA ABSOLUTA E INEGOCIAVEL: o valor da proposta NUNCA e decidido por voce. Em todo\nlugar que o valor apareceria, escreva literalmente o texto \"[VALOR A DEFINIR PELO USUARIO]\"\n-- nunca um numero, nunca uma estimativa, nunca um calculo.\n\nResponda so com o texto da proposta, pronto pra revisao humana, sem comentarios extras."
+            },
+            {
+              "role": "user",
+              "content": "={{ 'Empresa: ' + $json.razao_social + ' | CNPJ: ' + $json.cnpj + ' | Endereco: ' + $json.endereco + ' | Responsavel: ' + $json.responsavel_legal + '\\n\\nObjeto da licitacao: ' + $json.objeto_resumo + '\\nModalidade: ' + $json.tipo_disputa + '\\nPrazo de entrega esperado: ' + ($json.prazo_entrega || 'nao especificado no edital') + '\\nDocumentos de habilitacao exigidos (contexto, nao repetir na proposta): ' + ($json.documentos_exigidos || 'nao especificado') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "sjemA3sd4BGEaIHJ",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "id": "red-000a",
+      "name": "Extrair Texto Proposta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const aiOutput = $input.first().json;\nconst texto = (aiOutput.message && aiOutput.message.content) || '';\nconst ctx = $('Montar Contexto Proposta').first().json;\nreturn [{ json: { ...ctx, conteudo_proposta: texto } }];"
+      }
+    },
+    {
+      "id": "red-000b",
+      "name": "Salvar Proposta",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1760,
+        0
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO licitacoes_propostas (resumo_id, perfil_id, conteudo_proposta, status)\nVALUES ($1, $2, $3, 'rascunho')\nRETURNING id;",
+        "options": {
+          "queryReplacement": "={{ [ $json.resumo_id, $('Extrair Corpo Redator').first().json.perfil_id, $json.conteudo_proposta ] }}"
+        }
+      }
+    },
+    {
+      "id": "red-000c",
+      "name": "Montar Mensagem WhatsApp Proposta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1980,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const ctx = $('Extrair Texto Proposta').first().json;\nconst texto = '📝 RASCUNHO DE PROPOSTA -- revise antes de enviar. A IA nunca decide o valor; preencha onde estiver marcado [VALOR A DEFINIR PELO USUARIO].\\n\\n' + ctx.conteudo_proposta;\nreturn [{ json: { numero: (ctx.whatsapp_numero || '').replace(/\\D/g, ''), texto } }];"
+      }
+    },
+    {
+      "id": "red-000d",
+      "name": "Enviar Proposta WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2200,
+        0
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "https://evo.upviaagentes.com/message/sendText/Upvia_adm",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: $json.numero, text: $json.texto }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "red-000e",
+      "name": "Responder OK Redator",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2420,
+        0
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true } }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Redator": {
+      "main": [
+        [
+          {
+            "node": "Extrair Corpo Redator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Corpo Redator": {
+      "main": [
+        [
+          {
+            "node": "Buscar Resumo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Resumo": {
+      "main": [
+        [
+          {
+            "node": "Buscar Usuario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Usuario": {
+      "main": [
+        [
+          {
+            "node": "Buscar Dados Empresa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Dados Empresa": {
+      "main": [
+        [
+          {
+            "node": "Montar Contexto Proposta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Contexto Proposta": {
+      "main": [
+        [
+          {
+            "node": "Redigir Rascunho Proposta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redigir Rascunho Proposta": {
+      "main": [
+        [
+          {
+            "node": "Extrair Texto Proposta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Texto Proposta": {
+      "main": [
+        [
+          {
+            "node": "Salvar Proposta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Salvar Proposta": {
+      "main": [
+        [
+          {
+            "node": "Montar Mensagem WhatsApp Proposta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Mensagem WhatsApp Proposta": {
+      "main": [
+        [
+          {
+            "node": "Enviar Proposta WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Proposta WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Responder OK Redator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
