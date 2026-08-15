@@ -276,7 +276,7 @@
         400
       ],
       "parameters": {
-        "jsCode": "function normalizar(s) {\n  return String(s || '').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '');\n}\n\nconst combinados = $input.all();\nconst resultados = [];\n\nfor (const item of combinados) {\n  const consulta = item.json;\n  const registros = consulta.data || [];\n  const palavrasNorm = (consulta.palavras || []).map(normalizar).filter(Boolean);\n  const ufsPerfil = consulta.uf || [];\n  const municipiosNorm = (consulta.municipio || []).map(normalizar).filter(Boolean);\n\n  for (const r of registros) {\n    const objetoNorm = normalizar(r.objetoCompra);\n    const bateuPalavra = palavrasNorm.some(p => objetoNorm.includes(p));\n    if (!bateuPalavra) continue;\n\n    const valor = r.valorTotalEstimado != null ? Number(r.valorTotalEstimado) : null;\n    if (consulta.valor_min != null && (valor == null || valor < consulta.valor_min)) continue;\n    if (consulta.valor_max != null && (valor == null || valor > consulta.valor_max)) continue;\n\n    const uf = r.unidadeOrgao ? r.unidadeOrgao.ufSigla : null;\n    if (ufsPerfil.length && !ufsPerfil.includes(uf)) continue;\n\n    const municipio = r.unidadeOrgao ? r.unidadeOrgao.municipioNome : null;\n    if (municipiosNorm.length && !municipiosNorm.includes(normalizar(municipio))) continue;\n\n    const cnpj = (r.orgaoEntidade && r.orgaoEntidade.cnpj) || (r.orgaoSubRogado && r.orgaoSubRogado.cnpj) || '';\n    const link = 'https://pncp.gov.br/app/editais/' + cnpj + '/' + r.anoCompra + '/' + r.sequencialCompra;\n\n    resultados.push({ json: {\n      perfil_id: consulta.perfil_id,\n      nome_perfil: consulta.nome_perfil,\n      whatsapp_numero: consulta.whatsapp_numero,\n      pncp_id: r.numeroControlePNCP,\n      objeto: r.objetoCompra,\n      orgao: (r.orgaoEntidade && r.orgaoEntidade.razaoSocial) || '',\n      valor,\n      uf,\n      municipio,\n      modalidade_nome: r.modalidadeNome,\n      link\n    } });\n  }\n}\nreturn resultados;"
+        "jsCode": "function normalizar(s) {\n  return String(s || '').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '');\n}\n\nconst combinados = $input.all();\nconst resultados = [];\n\nfor (const item of combinados) {\n  const consulta = item.json;\n  const registros = consulta.data || [];\n  const palavrasNorm = (consulta.palavras || []).map(normalizar).filter(Boolean);\n  const ufsPerfil = consulta.uf || [];\n  const municipiosNorm = (consulta.municipio || []).map(normalizar).filter(Boolean);\n\n  for (const r of registros) {\n    const objetoNorm = normalizar(r.objetoCompra);\n    const bateuPalavra = palavrasNorm.some(p => objetoNorm.includes(p));\n    if (!bateuPalavra) continue;\n\n    const valor = r.valorTotalEstimado != null ? Number(r.valorTotalEstimado) : null;\n    if (consulta.valor_min != null && (valor == null || valor < consulta.valor_min)) continue;\n    if (consulta.valor_max != null && (valor == null || valor > consulta.valor_max)) continue;\n\n    const uf = r.unidadeOrgao ? r.unidadeOrgao.ufSigla : null;\n    if (ufsPerfil.length && !ufsPerfil.includes(uf)) continue;\n\n    const municipio = r.unidadeOrgao ? r.unidadeOrgao.municipioNome : null;\n    if (municipiosNorm.length && !municipiosNorm.includes(normalizar(municipio))) continue;\n\n    const cnpj = (r.orgaoEntidade && r.orgaoEntidade.cnpj) || (r.orgaoSubRogado && r.orgaoSubRogado.cnpj) || '';\n    const link = 'https://pncp.gov.br/app/editais/' + cnpj + '/' + r.anoCompra + '/' + r.sequencialCompra;\n\n    resultados.push({\n      perfil_id: consulta.perfil_id,\n      nome_perfil: consulta.nome_perfil,\n      whatsapp_numero: consulta.whatsapp_numero,\n      pncp_id: r.numeroControlePNCP,\n      objeto: r.objetoCompra,\n      orgao: (r.orgaoEntidade && r.orgaoEntidade.razaoSocial) || '',\n      valor,\n      uf,\n      municipio,\n      modalidade_nome: r.modalidadeNome,\n      link\n    });\n  }\n}\n// envelope (1 item sempre) -- ver nota abaixo sobre o gotcha de 0 itens matando o loop\nreturn [{ json: { resultados } }];"
       }
     },
     {
@@ -310,7 +310,7 @@
           "conditions": [
             {
               "id": "pncp-000m",
-              "leftValue": "={{ $input.all().length }}",
+              "leftValue": "={{ $json.resultados.length }}",
               "rightValue": 0,
               "operator": {
                 "type": "number",
@@ -325,11 +325,24 @@
     },
     {
       "id": "pncp-000n",
+      "name": "Expandir Resultados Filtrados",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        160
+      ],
+      "parameters": {
+        "jsCode": "return $input.first().json.resultados.map(json => ({ json }));"
+      }
+    },
+    {
+      "id": "pncp-000o",
       "name": "Verificar Duplicados",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
       "position": [
-        1540,
+        1760,
         160
       ],
       "alwaysOutputData": true,
@@ -349,25 +362,25 @@
       }
     },
     {
-      "id": "pncp-000o",
+      "id": "pncp-000p",
       "name": "Filtrar Duplicados",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1760,
+        1980,
         160
       ],
       "parameters": {
-        "jsCode": "const candidatos = $('Extrair e Filtrar Editais').all().map(i => i.json);\nconst jaEnviados = new Set($input.all().map(i => i.json && i.json.pncp_id).filter(Boolean));\nreturn candidatos.filter(c => !jaEnviados.has(c.pncp_id)).map(json => ({ json }));"
+        "jsCode": "const candidatos = $('Expandir Resultados Filtrados').all().map(i => i.json);\nconst jaEnviados = new Set($input.all().map(i => i.json && i.json.pncp_id).filter(Boolean));\nconst novos = candidatos.filter(c => !jaEnviados.has(c.pncp_id));\nreturn [{ json: { novos } }];"
       }
     },
     {
-      "id": "pncp-000p",
+      "id": "pncp-000q",
       "name": "Tem Novos Para Enviar?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        1980,
+        2200,
         160
       ],
       "parameters": {
@@ -380,8 +393,8 @@
           },
           "conditions": [
             {
-              "id": "pncp-000q",
-              "leftValue": "={{ $input.all().length }}",
+              "id": "pncp-000r",
+              "leftValue": "={{ $json.novos.length }}",
               "rightValue": 0,
               "operator": {
                 "type": "number",
@@ -395,7 +408,20 @@
       }
     },
     {
-      "id": "pncp-000r",
+      "id": "pncp-000s",
+      "name": "Expandir Novos Para Enviar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2200,
+        350
+      ],
+      "parameters": {
+        "jsCode": "return $input.first().json.novos.map(json => ({ json }));"
+      }
+    },
+    {
+      "id": "pncp-000t",
       "name": "Montar Mensagem Edital",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -408,7 +434,7 @@
       }
     },
     {
-      "id": "pncp-000s",
+      "id": "pncp-000u",
       "name": "Enviar Edital WhatsApp",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -437,7 +463,7 @@
       }
     },
     {
-      "id": "pncp-000t",
+      "id": "pncp-000v",
       "name": "Registrar Envio",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
@@ -671,7 +697,7 @@
       "main": [
         [
           {
-            "node": "Verificar Duplicados",
+            "node": "Expandir Resultados Filtrados",
             "type": "main",
             "index": 0
           }
@@ -679,6 +705,17 @@
         [
           {
             "node": "Fim Iteracao Perfil",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Expandir Resultados Filtrados": {
+      "main": [
+        [
+          {
+            "node": "Verificar Duplicados",
             "type": "main",
             "index": 0
           }
@@ -711,7 +748,7 @@
       "main": [
         [
           {
-            "node": "Montar Mensagem Edital",
+            "node": "Expandir Novos Para Enviar",
             "type": "main",
             "index": 0
           }
@@ -719,6 +756,17 @@
         [
           {
             "node": "Fim Iteracao Perfil",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Expandir Novos Para Enviar": {
+      "main": [
+        [
+          {
+            "node": "Montar Mensagem Edital",
             "type": "main",
             "index": 0
           }
