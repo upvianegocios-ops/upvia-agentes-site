@@ -1999,7 +1999,8 @@
       "alwaysOutputData": true,
       "onError": "continueRegularOutput",
       "parameters": {
-        "resource": "chat",
+        "resource": "text",
+        "operation": "message",
         "modelId": {
           "__rl": true,
           "value": "gpt-4.1-mini",
