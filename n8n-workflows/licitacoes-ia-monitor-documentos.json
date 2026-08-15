@@ -1,0 +1,146 @@
+{
+  "name": "Licitacoes IA - Monitor Documentos Habilitacao (cron diario)",
+  "nodes": [
+    {
+      "id": "doc-0001",
+      "name": "Nota Monitor Documentos",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -260
+      ],
+      "parameters": {
+        "content": "## Monitor de Validade de Documentos de Habilitacao (Passo 11)\nCron diario (08h): verifica licitacoes_documentos_habilitacao com data_validade\nvencida ou vencendo em ate 10 dias, avisa o usuario correspondente via WhatsApp.\n\nIMPORTANTE: NAO usa alwaysOutputData na consulta principal -- 0 documentos\nvencendo em um dia normal e o caso comum, e um item-fantasma do\nalwaysOutputData geraria uma mensagem WhatsApp vazia/quebrada nesse caso (mesmo\nerro ja identificado e evitado no Aviso Pregao). Alerta repete todo dia\nenquanto o documento nao for atualizado -- lembrete recorrente proposital.",
+        "width": 900,
+        "height": 200,
+        "color": 4
+      }
+    },
+    {
+      "id": "doc-0002",
+      "name": "Schedule Monitor Documentos",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "doc-0003",
+      "name": "Buscar Documentos Vencendo",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        220,
+        0
+      ],
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT d.id, d.tipo_documento, d.data_validade, u.whatsapp_numero\nFROM licitacoes_documentos_habilitacao d\nJOIN licitacoes_usuarios u ON u.id = d.usuario_id\nWHERE d.data_validade <= CURRENT_DATE + INTERVAL '10 days'\n  AND u.ativo = true;",
+        "options": {
+          "queryReplacement": "={{ [] }}"
+        }
+      }
+    },
+    {
+      "id": "doc-0004",
+      "name": "Montar Mensagem Documento",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const hoje = new Date();\nhoje.setHours(0, 0, 0, 0);\nreturn $input.all().map(({ json: doc }) => {\n  const validade = new Date(doc.data_validade);\n  const diffDias = Math.round((validade - hoje) / (1000 * 60 * 60 * 24));\n  const dataFormatada = validade.toLocaleDateString('pt-BR', { timeZone: 'UTC' });\n  let texto;\n  if (diffDias < 0) {\n    texto = '🚨 Seu documento \"' + doc.tipo_documento + '\" esta VENCIDO desde ' + dataFormatada + '. Providencie a renovacao o quanto antes.';\n  } else if (diffDias === 0) {\n    texto = '🚨 Seu documento \"' + doc.tipo_documento + '\" vence HOJE (' + dataFormatada + '). Providencie a renovacao com urgencia.';\n  } else {\n    texto = '⚠️ Seu documento \"' + doc.tipo_documento + '\" vence em ' + diffDias + ' dia(s) (' + dataFormatada + '). Nao esqueca de renovar.';\n  }\n  return { json: { numero: (doc.whatsapp_numero || '').replace(/\\D/g, ''), texto } };\n});"
+      }
+    },
+    {
+      "id": "doc-0005",
+      "name": "Enviar Alerta Documento WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        0
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://evo.upviaagentes.com/message/sendText/Upvia_adm' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: $json.numero, text: $json.texto }) }}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Monitor Documentos": {
+      "main": [
+        [
+          {
+            "node": "Buscar Documentos Vencendo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Documentos Vencendo": {
+      "main": [
+        [
+          {
+            "node": "Montar Mensagem Documento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Mensagem Documento": {
+      "main": [
+        [
+          {
+            "node": "Enviar Alerta Documento WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

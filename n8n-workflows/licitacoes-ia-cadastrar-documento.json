@@ -1,0 +1,400 @@
+{
+  "name": "Licitacoes IA - Cadastrar Documento Habilitacao",
+  "nodes": [
+    {
+      "id": "cad-0001",
+      "name": "Nota Cadastrar Documento",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -260
+      ],
+      "parameters": {
+        "content": "## Cadastrar Documento de Habilitacao (Passo 11 -- tool)\nSub-workflow reutilizavel via webhook: POST /webhook/licitacoes/cadastrar-documento\nBody: { tipo_documento, data_validade, usuario_id }\n\nChamado sob demanda pelo Orquestrador Central (tool_cadastrar_documento).\nusuario_id sempre injetado como expressao fixa (nunca preenchido pela IA).\nUPSERT: se o usuario ja tem um documento com esse tipo cadastrado, atualiza a\ndata de validade em vez de duplicar.",
+        "width": 900,
+        "height": 200,
+        "color": 4
+      }
+    },
+    {
+      "id": "cad-0002",
+      "name": "Webhook Cadastrar Documento",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "cad-0003",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "licitacoes/cadastrar-documento",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "cad-0004",
+      "name": "Extrair Corpo Cadastrar Documento",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nconst tipo_documento = String(body.tipo_documento || '').trim();\nconst dataValidade = body.data_validade ? new Date(body.data_validade) : null;\nconst dataValida = dataValidade && !isNaN(dataValidade.getTime());\nreturn [{ json: {\n  usuario_id: body.usuario_id || null,\n  tipo_documento,\n  data_validade_bruta: String(body.data_validade || ''),\n  data_validade: dataValida ? dataValidade.toISOString().slice(0, 10) : null,\n  entrada_valida: !!(tipo_documento.length > 0 && dataValida)\n} }];"
+      }
+    },
+    {
+      "id": "cad-0005",
+      "name": "Entrada Valida?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cad-0006",
+              "leftValue": "={{ $json.entrada_valida }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "cad-0007",
+      "name": "Salvar Documento Habilitacao",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        660,
+        -140
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO licitacoes_documentos_habilitacao (usuario_id, tipo_documento, data_validade)\nVALUES ($1, $2, $3)\nON CONFLICT (usuario_id, tipo_documento)\nDO UPDATE SET data_validade = EXCLUDED.data_validade, atualizado_em = NOW()\nRETURNING id;",
+        "options": {
+          "queryReplacement": "={{ [ $json.usuario_id, $json.tipo_documento, $json.data_validade ] }}"
+        }
+      }
+    },
+    {
+      "id": "cad-0008",
+      "name": "Buscar Usuario Cadastrar Documento",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        880,
+        -140
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT whatsapp_numero FROM licitacoes_usuarios WHERE id = $1;",
+        "options": {
+          "queryReplacement": "={{ [ $('Extrair Corpo Cadastrar Documento').first().json.usuario_id ] }}"
+        }
+      }
+    },
+    {
+      "id": "cad-0009",
+      "name": "Montar Mensagem Confirmacao Documento",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        -140
+      ],
+      "parameters": {
+        "jsCode": "const ctx = $('Extrair Corpo Cadastrar Documento').first().json;\nconst usuario = $input.first().json || {};\nif (!usuario.whatsapp_numero) return [];\nconst dataFormatada = new Date(ctx.data_validade + 'T00:00:00').toLocaleDateString('pt-BR');\nconst texto = '✅ Documento \"' + ctx.tipo_documento + '\" cadastrado, validade ate ' + dataFormatada + '. Vou te avisar quando estiver perto de vencer.';\nreturn [{ json: { numero: usuario.whatsapp_numero.replace(/\\D/g, ''), texto } }];"
+      }
+    },
+    {
+      "id": "cad-000a",
+      "name": "Enviar Confirmacao Documento WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        -140
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://evo.upviaagentes.com/message/sendText/Upvia_adm' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: $json.numero, text: $json.texto }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "cad-000b",
+      "name": "Responder OK Cadastrar Documento",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1540,
+        -140
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true } }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    },
+    {
+      "id": "cad-000c",
+      "name": "Buscar Usuario Entrada Invalida",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        660,
+        200
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT whatsapp_numero FROM licitacoes_usuarios WHERE id = $1;",
+        "options": {
+          "queryReplacement": "={{ [ $('Extrair Corpo Cadastrar Documento').first().json.usuario_id ] }}"
+        }
+      }
+    },
+    {
+      "id": "cad-000d",
+      "name": "Montar Mensagem Entrada Invalida",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        200
+      ],
+      "parameters": {
+        "jsCode": "const ctx = $('Extrair Corpo Cadastrar Documento').first().json;\nconst usuario = $input.first().json || {};\nif (!usuario.whatsapp_numero) return [];\nconst texto = 'Nao consegui cadastrar esse documento -- preciso do tipo do documento e de uma data de validade valida. Voce mandou: tipo=\"' + ctx.tipo_documento + '\", data=\"' + ctx.data_validade_bruta + '\".';\nreturn [{ json: { numero: usuario.whatsapp_numero.replace(/\\D/g, ''), texto } }];"
+      }
+    },
+    {
+      "id": "cad-000e",
+      "name": "Enviar Entrada Invalida WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        200
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://evo.upviaagentes.com/message/sendText/Upvia_adm' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: $json.numero, text: $json.texto }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "cad-000f",
+      "name": "Responder Entrada Invalida",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1320,
+        200
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, salvo: false } }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Cadastrar Documento": {
+      "main": [
+        [
+          {
+            "node": "Extrair Corpo Cadastrar Documento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Corpo Cadastrar Documento": {
+      "main": [
+        [
+          {
+            "node": "Entrada Valida?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Entrada Valida?": {
+      "main": [
+        [
+          {
+            "node": "Salvar Documento Habilitacao",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Buscar Usuario Entrada Invalida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Salvar Documento Habilitacao": {
+      "main": [
+        [
+          {
+            "node": "Buscar Usuario Cadastrar Documento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Usuario Cadastrar Documento": {
+      "main": [
+        [
+          {
+            "node": "Montar Mensagem Confirmacao Documento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Mensagem Confirmacao Documento": {
+      "main": [
+        [
+          {
+            "node": "Enviar Confirmacao Documento WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Confirmacao Documento WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Responder OK Cadastrar Documento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Usuario Entrada Invalida": {
+      "main": [
+        [
+          {
+            "node": "Montar Mensagem Entrada Invalida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Mensagem Entrada Invalida": {
+      "main": [
+        [
+          {
+            "node": "Enviar Entrada Invalida WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Entrada Invalida WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Responder Entrada Invalida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
