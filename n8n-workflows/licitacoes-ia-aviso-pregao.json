@@ -46,7 +46,7 @@
         220,
         0
       ],
-      "alwaysOutputData": true,
+      "alwaysOutputData": false,
       "onError": "continueRegularOutput",
       "credentials": {
         "postgres": {
@@ -72,7 +72,7 @@
         0
       ],
       "parameters": {
-        "jsCode": "const fmtHora = (iso) => new Date(iso).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' });\nreturn $input.all().map(({ json: item }) => {\n  const texto = 'Comeca em breve: sessao de disputa do pregao que voce salvou.\\n\\n' +\n    item.objeto.slice(0, 250) + (item.objeto.length > 250 ? '...' : '') + '\\n\\n' +\n    'Orgao: ' + item.orgao + '\\n' +\n    'Abertura da sessao: ' + fmtHora(item.data_abertura_proposta) + '\\n' +\n    '\\nEdital: ' + item.link;\n  return { json: { ...item, numero: item.whatsapp_numero.replace(/\\D/g, ''), texto } };\n});"
+        "jsCode": "const fmtHora = (iso) => new Date(iso).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' });\n// defesa extra: ignora qualquer item sem os campos minimos (nunca deveria\n// acontecer sem alwaysOutputData, mas nao custa nada garantir)\nreturn $input.all()\n  .filter(({ json: item }) => item && item.id && item.objeto)\n  .map(({ json: item }) => {\n    const texto = 'Comeca em breve: sessao de disputa do pregao que voce salvou.\\n\\n' +\n      item.objeto.slice(0, 250) + (item.objeto.length > 250 ? '...' : '') + '\\n\\n' +\n      'Orgao: ' + item.orgao + '\\n' +\n      'Abertura da sessao: ' + fmtHora(item.data_abertura_proposta) + '\\n' +\n      '\\nEdital: ' + item.link;\n    return { json: { ...item, numero: item.whatsapp_numero.replace(/\\D/g, ''), texto } };\n  });"
       }
     },
     {
