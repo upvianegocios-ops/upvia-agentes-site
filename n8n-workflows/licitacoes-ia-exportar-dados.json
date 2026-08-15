@@ -1,0 +1,873 @@
+{
+  "name": "Licitacoes IA - Exportar Dados",
+  "nodes": [
+    {
+      "id": "exp-0001",
+      "name": "Nota Exportar Dados",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -340
+      ],
+      "parameters": {
+        "content": "## Exportar Dados (Passo 9)\nSub-workflow reutilizavel via webhook: POST /webhook/licitacoes/exportar-dados\nBody: { tipo_dado, data_inicio?, data_fim?, usuario_id }\n\nChamado sob demanda pelo Orquestrador Central (tool_exportar_dados). usuario_id\nSEMPRE injetado como expressao fixa pelo Orquestrador (nunca preenchido pela IA) --\nnunca mistura dados entre usuarios. tipo_dado: \"licitacoes\" (resumos), \"propostas\"\nou \"fornecedores\". Gera XLSX e manda por WhatsApp via Evolution API sendMedia\n(aceita base64 direto no campo \"media\", confirmado na documentacao oficial).",
+        "width": 900,
+        "height": 240,
+        "color": 4
+      }
+    },
+    {
+      "id": "exp-0002",
+      "name": "Webhook Exportar",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "exp-0003",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "licitacoes/exportar-dados",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "exp-0004",
+      "name": "Extrair Corpo Exportar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nconst TIPOS_VALIDOS = ['licitacoes', 'propostas', 'fornecedores'];\nconst tipoBruto = String(body.tipo_dado || '').trim().toLowerCase();\nconst tipo_dado = TIPOS_VALIDOS.includes(tipoBruto) ? tipoBruto : 'invalido';\nfunction paraDataOuNull(v) {\n  if (v == null || String(v).trim() === '') return null;\n  const d = new Date(v);\n  return isNaN(d.getTime()) ? null : d.toISOString();\n}\nreturn [{ json: {\n  tipo_dado,\n  tipo_dado_bruto: tipoBruto,\n  usuario_id: body.usuario_id || null,\n  data_inicio: paraDataOuNull(body.data_inicio),\n  data_fim: paraDataOuNull(body.data_fim)\n} }];"
+      }
+    },
+    {
+      "id": "exp-0005",
+      "name": "Tipo Invalido?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "exp-0006",
+              "leftValue": "={{ $json.tipo_dado }}",
+              "rightValue": "invalido",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "exp-0007",
+      "name": "Montar Mensagem Tipo Invalido",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        260
+      ],
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nconst texto = 'Nao reconheci o tipo de dado \"' + item.tipo_dado_bruto + '\". Os tipos disponiveis sao: licitacoes, propostas ou fornecedores.';\nreturn [{ json: { ...item, texto } }];"
+      }
+    },
+    {
+      "id": "exp-0008",
+      "name": "Tipo Licitacoes?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "exp-0009",
+              "leftValue": "={{ $json.tipo_dado }}",
+              "rightValue": "licitacoes",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "exp-000a",
+      "name": "Buscar Licitacoes Export",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        880,
+        -160
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT objeto_resumo, tipo_disputa, valor_estimado, prazo_proposta, prazo_entrega, documentos_exigidos, resultado, criado_em\nFROM licitacoes_resumos\nWHERE usuario_id = $1\n  AND ($2::timestamptz IS NULL OR criado_em >= $2)\n  AND ($3::timestamptz IS NULL OR criado_em <= $3)\nORDER BY criado_em DESC;",
+        "options": {
+          "queryReplacement": "={{ [ $json.usuario_id, $json.data_inicio, $json.data_fim ] }}"
+        }
+      }
+    },
+    {
+      "id": "exp-000b",
+      "name": "Marcar Linhas Licitacoes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        -160
+      ],
+      "parameters": {
+        "jsCode": "const linhas = $input.all().map(i => i.json).filter(r => r && Object.keys(r).length > 0);\nreturn [{ json: { tipo_dado: 'licitacoes', linhas } }];"
+      }
+    },
+    {
+      "id": "exp-000c",
+      "name": "Tipo Propostas?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "exp-000d",
+              "leftValue": "={{ $json.tipo_dado }}",
+              "rightValue": "propostas",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "exp-000e",
+      "name": "Buscar Propostas Export",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1100,
+        0
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT r.objeto_resumo AS objeto, p.valor_ofertado, p.status, p.criado_em\nFROM licitacoes_propostas p\nLEFT JOIN licitacoes_resumos r ON r.id = p.resumo_id\nWHERE p.usuario_id = $1\n  AND ($2::timestamptz IS NULL OR p.criado_em >= $2)\n  AND ($3::timestamptz IS NULL OR p.criado_em <= $3)\nORDER BY p.criado_em DESC;",
+        "options": {
+          "queryReplacement": "={{ [ $json.usuario_id, $json.data_inicio, $json.data_fim ] }}"
+        }
+      }
+    },
+    {
+      "id": "exp-000f",
+      "name": "Marcar Linhas Propostas",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const linhas = $input.all().map(i => i.json).filter(r => r && Object.keys(r).length > 0);\nreturn [{ json: { tipo_dado: 'propostas', linhas } }];"
+      }
+    },
+    {
+      "id": "exp-000g",
+      "name": "Buscar Fornecedores Export",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1100,
+        160
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT nome_fornecedor, site, contato, criado_em\nFROM licitacoes_fornecedores_candidatos\nWHERE usuario_id = $1\n  AND ($2::timestamptz IS NULL OR criado_em >= $2)\n  AND ($3::timestamptz IS NULL OR criado_em <= $3)\nORDER BY criado_em DESC;",
+        "options": {
+          "queryReplacement": "={{ [ $json.usuario_id, $json.data_inicio, $json.data_fim ] }}"
+        }
+      }
+    },
+    {
+      "id": "exp-000h",
+      "name": "Marcar Linhas Fornecedores",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        160
+      ],
+      "parameters": {
+        "jsCode": "const linhas = $input.all().map(i => i.json).filter(r => r && Object.keys(r).length > 0);\nreturn [{ json: { tipo_dado: 'fornecedores', linhas } }];"
+      }
+    },
+    {
+      "id": "exp-000i",
+      "name": "Fim Buscar Dados Export",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1540,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "exp-000j",
+      "name": "Buscar Usuario Exportar",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1760,
+        0
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT whatsapp_numero FROM licitacoes_usuarios WHERE id = $1;",
+        "options": {
+          "queryReplacement": "={{ [ $('Extrair Corpo Exportar').first().json.usuario_id ] }}"
+        }
+      }
+    },
+    {
+      "id": "exp-000k",
+      "name": "Tem Linhas?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1980,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "exp-000l",
+              "leftValue": "={{ $json.linhas.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "exp-000m",
+      "name": "Montar Mensagem Sem Dados",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2200,
+        200
+      ],
+      "parameters": {
+        "jsCode": "const dados = $('Fim Buscar Dados Export').first().json;\nconst usuario = $input.first().json || {};\nif (!usuario.whatsapp_numero) return [];\nconst texto = 'Nao encontrei dados de \"' + dados.tipo_dado + '\" pra exportar nesse periodo.';\nreturn [{ json: { numero: usuario.whatsapp_numero.replace(/\\D/g, ''), texto } }];"
+      }
+    },
+    {
+      "id": "exp-000n",
+      "name": "Enviar Sem Dados WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2420,
+        200
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://evo.upviaagentes.com/message/sendText/Upvia_adm' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: $json.numero, text: $json.texto }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "exp-000o",
+      "name": "Responder Sem Dados",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2640,
+        200
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, encontrado: false } }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    },
+    {
+      "id": "exp-000p",
+      "name": "Expandir Linhas Export",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2200,
+        -160
+      ],
+      "parameters": {
+        "jsCode": "const dados = $('Fim Buscar Dados Export').first().json;\nreturn dados.linhas.map(json => ({ json }));"
+      }
+    },
+    {
+      "id": "exp-000q",
+      "name": "Converter para XLSX",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        2420,
+        -160
+      ],
+      "parameters": {
+        "operation": "xlsx",
+        "options": {}
+      }
+    },
+    {
+      "id": "exp-000r",
+      "name": "Montar Payload Export WhatsApp",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        -160
+      ],
+      "parameters": {
+        "jsCode": "// BUG REAL DE PRODUCAO (testado ao vivo): este N8N usa modo de armazenamento\n// binario \"filesystem\" (confirmado pela presenca de um campo \"id\" no binary),\n// nao \"memory\" -- nesse modo, \"item.binary.data.data\" NAO e o base64 real, e sim\n// uma referencia interna curta (ex: \"filesystem-v2\", 13 chars, exatamente o\n// tamanho visto no bug real). O jeito correto e agnostico ao modo de\n// armazenamento e usar this.helpers.getBinaryDataBuffer(indice, propriedade).\nconst buffer = await this.helpers.getBinaryDataBuffer(0, 'data');\nconst base64 = buffer.toString('base64');\nconst usuario = $('Buscar Usuario Exportar').first().json || {};\nconst tipo = $('Fim Buscar Dados Export').first().json.tipo_dado;\nconst dataHoje = new Date().toISOString().slice(0, 10);\nreturn [{ json: {\n  numero: (usuario.whatsapp_numero || '').replace(/\\D/g, ''),\n  base64,\n  fileName: 'licitacoes_' + tipo + '_' + dataHoje + '.xlsx'\n} }];"
+      }
+    },
+    {
+      "id": "exp-000s",
+      "name": "Enviar Export WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2860,
+        -160
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://evo.upviaagentes.com/message/sendMedia/Upvia_adm' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: $json.numero, mediatype: 'document', media: $json.base64, fileName: $json.fileName, mimetype: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "exp-000t",
+      "name": "Responder OK Exportar",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        3080,
+        -160
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, encontrado: true } }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    },
+    {
+      "id": "exp-000u",
+      "name": "Buscar Usuario Tipo Invalido",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        880,
+        260
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT whatsapp_numero FROM licitacoes_usuarios WHERE id = $1;",
+        "options": {
+          "queryReplacement": "={{ [ $('Extrair Corpo Exportar').first().json.usuario_id ] }}"
+        }
+      }
+    },
+    {
+      "id": "exp-000v",
+      "name": "Montar Mensagem Final Tipo Invalido",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        260
+      ],
+      "parameters": {
+        "jsCode": "const contexto = $('Montar Mensagem Tipo Invalido').first().json;\nconst usuario = $input.first().json || {};\nif (!usuario.whatsapp_numero) return [];\nreturn [{ json: { numero: usuario.whatsapp_numero.replace(/\\D/g, ''), texto: contexto.texto } }];"
+      }
+    },
+    {
+      "id": "exp-000w",
+      "name": "Enviar Tipo Invalido WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        260
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://evo.upviaagentes.com/message/sendText/Upvia_adm' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: $json.numero, text: $json.texto }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "exp-000x",
+      "name": "Responder Tipo Invalido",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1540,
+        260
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, tipo_valido: false } }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Exportar": {
+      "main": [
+        [
+          {
+            "node": "Extrair Corpo Exportar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Corpo Exportar": {
+      "main": [
+        [
+          {
+            "node": "Tipo Invalido?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tipo Invalido?": {
+      "main": [
+        [
+          {
+            "node": "Montar Mensagem Tipo Invalido",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Tipo Licitacoes?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tipo Licitacoes?": {
+      "main": [
+        [
+          {
+            "node": "Buscar Licitacoes Export",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Tipo Propostas?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Licitacoes Export": {
+      "main": [
+        [
+          {
+            "node": "Marcar Linhas Licitacoes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tipo Propostas?": {
+      "main": [
+        [
+          {
+            "node": "Buscar Propostas Export",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Buscar Fornecedores Export",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Propostas Export": {
+      "main": [
+        [
+          {
+            "node": "Marcar Linhas Propostas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Fornecedores Export": {
+      "main": [
+        [
+          {
+            "node": "Marcar Linhas Fornecedores",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Marcar Linhas Licitacoes": {
+      "main": [
+        [
+          {
+            "node": "Fim Buscar Dados Export",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Marcar Linhas Propostas": {
+      "main": [
+        [
+          {
+            "node": "Fim Buscar Dados Export",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Marcar Linhas Fornecedores": {
+      "main": [
+        [
+          {
+            "node": "Fim Buscar Dados Export",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fim Buscar Dados Export": {
+      "main": [
+        [
+          {
+            "node": "Buscar Usuario Exportar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Usuario Exportar": {
+      "main": [
+        [
+          {
+            "node": "Tem Linhas?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tem Linhas?": {
+      "main": [
+        [
+          {
+            "node": "Expandir Linhas Export",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Montar Mensagem Sem Dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Mensagem Sem Dados": {
+      "main": [
+        [
+          {
+            "node": "Enviar Sem Dados WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Sem Dados WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Responder Sem Dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Expandir Linhas Export": {
+      "main": [
+        [
+          {
+            "node": "Converter para XLSX",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Converter para XLSX": {
+      "main": [
+        [
+          {
+            "node": "Montar Payload Export WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Payload Export WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Enviar Export WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Export WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Responder OK Exportar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Mensagem Tipo Invalido": {
+      "main": [
+        [
+          {
+            "node": "Buscar Usuario Tipo Invalido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Usuario Tipo Invalido": {
+      "main": [
+        [
+          {
+            "node": "Montar Mensagem Final Tipo Invalido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Mensagem Final Tipo Invalido": {
+      "main": [
+        [
+          {
+            "node": "Enviar Tipo Invalido WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Tipo Invalido WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Responder Tipo Invalido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
