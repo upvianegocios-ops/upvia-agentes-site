@@ -101,61 +101,186 @@
     },
     {
       "id": "pncp-0007",
-      "name": "Buscar Editais PNCP",
+      "name": "Loop Consultas",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        880,
+        160
+      ],
+      "parameters": {
+        "options": {}
+      }
+    },
+    {
+      "id": "pncp-0008",
+      "name": "Fim Busca Consultas",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        -160
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "pncp-0009",
+      "name": "Buscar Pagina 1",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        880,
+        1100,
         160
       ],
       "alwaysOutputData": true,
       "onError": "continueRegularOutput",
       "parameters": {
         "method": "GET",
-        "url": "https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao",
-        "sendQuery": true,
-        "queryParameters": {
-          "parameters": [
+        "url": "={{ 'https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao?dataInicial=' + $json.dataInicial + '&dataFinal=' + $json.dataFinal + '&codigoModalidadeContratacao=' + $json.modalidade_codigo + '&pagina=1&tamanhoPagina=50' }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "pncp-000a",
+      "name": "Calcular Paginacao",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        160
+      ],
+      "parameters": {
+        "jsCode": "const consulta = $('Loop Consultas').first().json;\nconst resp = $input.first().json;\nconst registrosPagina1 = (resp && resp.data) || [];\nconst totalPaginas = (resp && resp.totalPaginas) || 1;\nconst paginasFaltando = [];\nfor (let p = 2; p <= Math.min(totalPaginas, 150); p++) paginasFaltando.push(p);\nreturn [{ json: { consulta, registrosPagina1, paginasFaltando, totalPaginas } }];"
+      }
+    },
+    {
+      "id": "pncp-000b",
+      "name": "Tem Mais Paginas?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        160
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
             {
-              "name": "dataInicial",
-              "value": "={{ $json.dataInicial }}"
-            },
-            {
-              "name": "dataFinal",
-              "value": "={{ $json.dataFinal }}"
-            },
-            {
-              "name": "codigoModalidadeContratacao",
-              "value": "={{ $json.modalidade_codigo }}"
-            },
-            {
-              "name": "pagina",
-              "value": "1"
-            },
-            {
-              "name": "tamanhoPagina",
-              "value": "50"
+              "id": "pncp-000c",
+              "leftValue": "={{ $json.paginasFaltando.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "notEquals"
+              }
             }
-          ]
+          ],
+          "combinator": "and"
         },
         "options": {}
       }
     },
     {
-      "id": "pncp-0008",
+      "id": "pncp-000d",
+      "name": "Combinar Sem Extras",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        260
+      ],
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nreturn [{ json: { ...item.consulta, data: item.registrosPagina1 } }];"
+      }
+    },
+    {
+      "id": "pncp-000e",
+      "name": "Expandir Paginas Faltando",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        60
+      ],
+      "parameters": {
+        "jsCode": "return $input.first().json.paginasFaltando.map(pagina => ({ json: { pagina } }));"
+      }
+    },
+    {
+      "id": "pncp-000f",
+      "name": "Loop Paginas Restantes",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1980,
+        60
+      ],
+      "parameters": {
+        "options": {}
+      }
+    },
+    {
+      "id": "pncp-000g",
+      "name": "Buscar Pagina N",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2200,
+        60
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao?dataInicial=' + $('Calcular Paginacao').first().json.consulta.dataInicial + '&dataFinal=' + $('Calcular Paginacao').first().json.consulta.dataFinal + '&codigoModalidadeContratacao=' + $('Calcular Paginacao').first().json.consulta.modalidade_codigo + '&pagina=' + $json.pagina + '&tamanhoPagina=50' }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "pncp-000h",
+      "name": "Combinar Com Extras",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2200,
+        260
+      ],
+      "parameters": {
+        "jsCode": "const base = $('Calcular Paginacao').first().json;\nconst extras = $input.all().map(i => (i.json && i.json.data) || []).flat();\nreturn [{ json: { ...base.consulta, data: base.registrosPagina1.concat(extras) } }];"
+      }
+    },
+    {
+      "id": "pncp-000i",
+      "name": "Fim Iteracao Consulta",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2420,
+        160
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "pncp-000j",
       "name": "Extrair e Filtrar Editais",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         1100,
-        160
+        400
       ],
       "parameters": {
-        "jsCode": "function normalizar(s) {\n  return String(s || '').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '');\n}\n\nconst consultas = $('Montar Consultas Modalidade').all();\nconst respostas = $input.all();\nconst resultados = [];\n\nfor (let i = 0; i < respostas.length; i++) {\n  const consulta = consultas[i] ? consultas[i].json : null;\n  if (!consulta) continue;\n  const registros = (respostas[i].json && respostas[i].json.data) || [];\n  const palavrasNorm = (consulta.palavras || []).map(normalizar).filter(Boolean);\n  const ufsPerfil = consulta.uf || [];\n  const municipiosNorm = (consulta.municipio || []).map(normalizar).filter(Boolean);\n\n  for (const r of registros) {\n    const objetoNorm = normalizar(r.objetoCompra);\n    const bateuPalavra = palavrasNorm.some(p => objetoNorm.includes(p));\n    if (!bateuPalavra) continue;\n\n    const valor = r.valorTotalEstimado != null ? Number(r.valorTotalEstimado) : null;\n    if (consulta.valor_min != null && (valor == null || valor < consulta.valor_min)) continue;\n    if (consulta.valor_max != null && (valor == null || valor > consulta.valor_max)) continue;\n\n    const uf = r.unidadeOrgao ? r.unidadeOrgao.ufSigla : null;\n    if (ufsPerfil.length && !ufsPerfil.includes(uf)) continue;\n\n    const municipio = r.unidadeOrgao ? r.unidadeOrgao.municipioNome : null;\n    if (municipiosNorm.length && !municipiosNorm.includes(normalizar(municipio))) continue;\n\n    const cnpj = (r.orgaoEntidade && r.orgaoEntidade.cnpj) || (r.orgaoSubRogado && r.orgaoSubRogado.cnpj) || '';\n    const link = 'https://pncp.gov.br/app/editais/' + cnpj + '/' + r.anoCompra + '/' + r.sequencialCompra;\n\n    resultados.push({ json: {\n      perfil_id: consulta.perfil_id,\n      nome_perfil: consulta.nome_perfil,\n      whatsapp_numero: consulta.whatsapp_numero,\n      pncp_id: r.numeroControlePNCP,\n      objeto: r.objetoCompra,\n      orgao: (r.orgaoEntidade && r.orgaoEntidade.razaoSocial) || '',\n      valor,\n      uf,\n      municipio,\n      modalidade_nome: r.modalidadeNome,\n      link\n    } });\n  }\n}\nreturn resultados;"
+        "jsCode": "function normalizar(s) {\n  return String(s || '').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '');\n}\n\nconst combinados = $input.all();\nconst resultados = [];\n\nfor (const item of combinados) {\n  const consulta = item.json;\n  const registros = consulta.data || [];\n  const palavrasNorm = (consulta.palavras || []).map(normalizar).filter(Boolean);\n  const ufsPerfil = consulta.uf || [];\n  const municipiosNorm = (consulta.municipio || []).map(normalizar).filter(Boolean);\n\n  for (const r of registros) {\n    const objetoNorm = normalizar(r.objetoCompra);\n    const bateuPalavra = palavrasNorm.some(p => objetoNorm.includes(p));\n    if (!bateuPalavra) continue;\n\n    const valor = r.valorTotalEstimado != null ? Number(r.valorTotalEstimado) : null;\n    if (consulta.valor_min != null && (valor == null || valor < consulta.valor_min)) continue;\n    if (consulta.valor_max != null && (valor == null || valor > consulta.valor_max)) continue;\n\n    const uf = r.unidadeOrgao ? r.unidadeOrgao.ufSigla : null;\n    if (ufsPerfil.length && !ufsPerfil.includes(uf)) continue;\n\n    const municipio = r.unidadeOrgao ? r.unidadeOrgao.municipioNome : null;\n    if (municipiosNorm.length && !municipiosNorm.includes(normalizar(municipio))) continue;\n\n    const cnpj = (r.orgaoEntidade && r.orgaoEntidade.cnpj) || (r.orgaoSubRogado && r.orgaoSubRogado.cnpj) || '';\n    const link = 'https://pncp.gov.br/app/editais/' + cnpj + '/' + r.anoCompra + '/' + r.sequencialCompra;\n\n    resultados.push({ json: {\n      perfil_id: consulta.perfil_id,\n      nome_perfil: consulta.nome_perfil,\n      whatsapp_numero: consulta.whatsapp_numero,\n      pncp_id: r.numeroControlePNCP,\n      objeto: r.objetoCompra,\n      orgao: (r.orgaoEntidade && r.orgaoEntidade.razaoSocial) || '',\n      valor,\n      uf,\n      municipio,\n      modalidade_nome: r.modalidadeNome,\n      link\n    } });\n  }\n}\nreturn resultados;"
       }
     },
     {
-      "id": "pncp-0009",
+      "id": "pncp-000k",
       "name": "Fim Iteracao Perfil",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
@@ -166,7 +291,7 @@
       "parameters": {}
     },
     {
-      "id": "pncp-000a",
+      "id": "pncp-000l",
       "name": "Tem Resultados Filtrados?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
@@ -184,7 +309,7 @@
           },
           "conditions": [
             {
-              "id": "pncp-000b",
+              "id": "pncp-000m",
               "leftValue": "={{ $input.all().length }}",
               "rightValue": 0,
               "operator": {
@@ -199,7 +324,7 @@
       }
     },
     {
-      "id": "pncp-000c",
+      "id": "pncp-000n",
       "name": "Verificar Duplicados",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
@@ -224,7 +349,7 @@
       }
     },
     {
-      "id": "pncp-000d",
+      "id": "pncp-000o",
       "name": "Filtrar Duplicados",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -237,7 +362,7 @@
       }
     },
     {
-      "id": "pncp-000e",
+      "id": "pncp-000p",
       "name": "Tem Novos Para Enviar?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
@@ -255,7 +380,7 @@
           },
           "conditions": [
             {
-              "id": "pncp-000f",
+              "id": "pncp-000q",
               "leftValue": "={{ $input.all().length }}",
               "rightValue": 0,
               "operator": {
@@ -270,7 +395,7 @@
       }
     },
     {
-      "id": "pncp-000g",
+      "id": "pncp-000r",
       "name": "Montar Mensagem Edital",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -283,7 +408,7 @@
       }
     },
     {
-      "id": "pncp-000h",
+      "id": "pncp-000s",
       "name": "Enviar Edital WhatsApp",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -312,7 +437,7 @@
       }
     },
     {
-      "id": "pncp-000i",
+      "id": "pncp-000t",
       "name": "Registrar Envio",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
@@ -382,14 +507,145 @@
       "main": [
         [
           {
-            "node": "Buscar Editais PNCP",
+            "node": "Loop Consultas",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Buscar Editais PNCP": {
+    "Loop Consultas": {
+      "main": [
+        [
+          {
+            "node": "Fim Busca Consultas",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Buscar Pagina 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Pagina 1": {
+      "main": [
+        [
+          {
+            "node": "Calcular Paginacao",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calcular Paginacao": {
+      "main": [
+        [
+          {
+            "node": "Tem Mais Paginas?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tem Mais Paginas?": {
+      "main": [
+        [
+          {
+            "node": "Expandir Paginas Faltando",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Combinar Sem Extras",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Expandir Paginas Faltando": {
+      "main": [
+        [
+          {
+            "node": "Loop Paginas Restantes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Paginas Restantes": {
+      "main": [
+        [
+          {
+            "node": "Combinar Com Extras",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Buscar Pagina N",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Pagina N": {
+      "main": [
+        [
+          {
+            "node": "Loop Paginas Restantes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combinar Sem Extras": {
+      "main": [
+        [
+          {
+            "node": "Fim Iteracao Consulta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combinar Com Extras": {
+      "main": [
+        [
+          {
+            "node": "Fim Iteracao Consulta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fim Iteracao Consulta": {
+      "main": [
+        [
+          {
+            "node": "Loop Consultas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fim Busca Consultas": {
       "main": [
         [
           {
