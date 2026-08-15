@@ -68,12 +68,12 @@
           "timeout": 60000
         },
         "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "openAiApi",
-        "credentials": {
-          "openAiApi": {
-            "id": "sjemA3sd4BGEaIHJ",
-            "name": "OpenAI account"
-          }
+        "nodeCredentialType": "openAiApi"
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "sjemA3sd4BGEaIHJ",
+          "name": "OpenAI account"
         }
       }
     },
