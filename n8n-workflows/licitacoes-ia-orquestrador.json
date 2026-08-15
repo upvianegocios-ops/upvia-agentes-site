@@ -1,0 +1,535 @@
+{
+  "name": "Licitacoes IA - Agente Orquestrador Central",
+  "nodes": [
+    {
+      "id": "orq-0001",
+      "name": "Nota Orquestrador",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -380
+      ],
+      "parameters": {
+        "content": "## Agente Orquestrador Central - \"Escritorio de Licitacao IA\"\nWebhook recebe mensagens do WhatsApp da instancia Upvia_adm (a mesma que ja envia as\nnotificacoes do Licitacoes IA). O usuario conversa livremente (\"me resume essa\nlicitacao [link]\", \"monta uma proposta pra essa aqui\", \"acha fornecedor de material\nde construcao\") e o agente decide qual(is) ferramenta(s) acionar.\n\n4 tools, cada uma um HTTP Request Tool apontando pro webhook do sub-workflow ja\nconstruido e testado (Resumidor, Redator, Fornecedores, Busca Livre) -- mesma logica\nusada automaticamente pelo cron de busca, so que sob demanda aqui.\n\nREGRA FIXA (reforcada no prompt do sistema): NENHUMA ferramenta envia ou submete nada\nautomaticamente em plataforma nenhuma. Geracao de proposta e sempre rascunho pra\nrevisao humana. Busca de fornecedor e so descoberta.",
+        "width": 1000,
+        "height": 280,
+        "color": 4
+      }
+    },
+    {
+      "id": "orq-0002",
+      "name": "Webhook Orquestrador",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "orq-0003",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "licitacoes/orquestrador",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "orq-0004",
+      "name": "Extrair Mensagem Recebida",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nconst data = body.data || body;\nconst instancia = body.instance || (data && data.instanceId) || '';\nconst key = (data && data.key) || {};\nconst fromMe = !!key.fromMe;\nconst remoteJid = key.remoteJid || '';\nconst numero = remoteJid.replace('@s.whatsapp.net', '').replace(/\\D/g, '');\nconst msg = (data && data.message) || {};\nconst texto = msg.conversation || (msg.extendedTextMessage && msg.extendedTextMessage.text) || '';\nconst valido = !fromMe && !!texto && !!numero;\nreturn [{ json: { valido, numero, texto, instancia } }];"
+      }
+    },
+    {
+      "id": "orq-0005",
+      "name": "E Mensagem Valida?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "orq-0006",
+              "leftValue": "={{ $json.valido }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "orq-0007",
+      "name": "Responder Ignorado",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        160
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, ignorado: true } }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    },
+    {
+      "id": "orq-0008",
+      "name": "Resolver Usuario Orquestrador",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        660,
+        -100
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id AS usuario_id, nome FROM licitacoes_usuarios WHERE whatsapp_numero = $1;",
+        "options": {
+          "queryReplacement": "={{ [ $json.numero ] }}"
+        }
+      }
+    },
+    {
+      "id": "orq-0009",
+      "name": "Agente Orquestrador",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        880,
+        -100
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Extrair Mensagem Recebida').first().json.texto }}",
+        "options": {
+          "systemMessage": "Voce e o assistente do \"Escritorio de Licitacao IA\" da UpVia Agentes, falando\ndireto com o usuario pelo WhatsApp. Voce ajuda a buscar licitacoes publicas\n(PNCP), resumir editais, redigir rascunhos de proposta e encontrar fornecedores.\n\nVoce tem 4 ferramentas:\n- buscar_licitacoes: busca licitacoes no PNCP por palavras-chave/modalidade/valor/UF\n  ditados na conversa (nao os perfis salvos do usuario).\n- resumir_edital: recebe o link ou numero de controle PNCP de uma licitacao e devolve\n  um resumo estruturado (documentos exigidos, prazo, valor estimado, etc).\n- redigir_proposta: recebe o ID de um resumo ja gerado e cria um RASCUNHO de proposta.\n- buscar_fornecedores: recebe um tipo de produto e procura fornecedores brasileiros.\n\nREGRAS ABSOLUTAS, NUNCA QUEBRE:\n1. Nenhuma ferramenta envia ou submete nada automaticamente em nenhuma plataforma\n   (nem PNCP, nem e-mail, nem nada). Tudo que voce gera e pra revisao humana.\n2. Voce NUNCA decide ou sugere um valor de proposta -- isso e sempre \"[VALOR A\n   DEFINIR PELO USUARIO]\", decidido exclusivamente pelo usuario.\n3. redigir_proposta so pode ser usado depois que resumir_edital ja rodou pra essa\n   licitacao (voce precisa do resumo_id que ele devolve).\n4. Seja direto e pratico nas respostas, tom de colega de trabalho, portugues do Brasil.\n   Depois de acionar uma ferramenta, avise o usuario do que fez -- as ferramentas\n   tambem mandam mensagens proprias por WhatsApp (ex: o rascunho da proposta chega\n   como mensagem separada), entao nao repita o conteudo inteiro, so confirme."
+        }
+      }
+    },
+    {
+      "id": "orq-000a",
+      "name": "Modelo GPT-4.1",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        860,
+        160
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "sjemA3sd4BGEaIHJ",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "id": "orq-000b",
+      "name": "Memoria Conversa",
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.1,
+      "position": [
+        1000,
+        160
+      ],
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Extrair Mensagem Recebida').first().json.numero }}",
+        "contextWindowLength": 12
+      },
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      }
+    },
+    {
+      "id": "orq-000c",
+      "name": "Tool Buscar Licitacoes",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1180,
+        -380
+      ],
+      "parameters": {
+        "toolDescription": "Busca licitacoes publicas no PNCP por criterios livres ditados na conversa (nao usa os perfis salvos do usuario). Use quando o usuario pedir pra procurar/buscar licitacoes com palavras-chave, modalidade, valor ou UF especificos.",
+        "method": "POST",
+        "url": "https://n8n.upviaagentes.com/webhook/licitacoes/busca-livre",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"palavras_chave_csv\": \"{palavras}\", \"uf_csv\": \"{ufs}\", \"modalidades_csv\": \"{modalidades}\", \"valor_min\": \"{valor_min}\", \"valor_max\": \"{valor_max}\" } }}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "{palavras}",
+              "description": "Palavras-chave da busca, separadas por virgula (ex: \"uniforme escolar, camiseta\"). Obrigatorio."
+            },
+            {
+              "name": "{ufs}",
+              "description": "Siglas de UF separadas por virgula (ex: \"SC,RS\"), ou string vazia se nao especificado."
+            },
+            {
+              "name": "{modalidades}",
+              "description": "Modalidades separadas por virgula, valores possiveis: pregao_eletronico, dispensa. String vazia = ambas."
+            },
+            {
+              "name": "{valor_min}",
+              "description": "Valor minimo em reais, so numero, ou string vazia se nao especificado."
+            },
+            {
+              "name": "{valor_max}",
+              "description": "Valor maximo em reais, so numero, ou string vazia se nao especificado."
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "orq-000d",
+      "name": "Tool Resumir Edital",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1180,
+        -180
+      ],
+      "parameters": {
+        "toolDescription": "Baixa e resume uma licitacao especifica do PNCP (documentos exigidos, prazo, valor estimado). Recebe o link do edital que o usuario mandou. Devolve um resumo_id que deve ser usado depois em redigir_proposta se o usuario quiser uma proposta.",
+        "method": "POST",
+        "url": "https://n8n.upviaagentes.com/webhook/licitacoes/agente-resumidor",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"link\": \"{link}\", \"objeto\": \"{objeto_se_souber}\", \"orgao\": \"\", \"valor\": null, \"modalidade_nome\": \"\", \"tipo_perfil\": \"produto\" } }}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "{link}",
+              "description": "O link do edital no PNCP (formato https://pncp.gov.br/app/editais/...) que o usuario mandou na conversa. Obrigatorio."
+            },
+            {
+              "name": "{objeto_se_souber}",
+              "description": "Uma breve descricao do que esta sendo comprado, se o usuario ja mencionou; senao string vazia."
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "orq-000e",
+      "name": "Tool Redigir Proposta",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1180,
+        20
+      ],
+      "parameters": {
+        "toolDescription": "Gera um RASCUNHO de proposta comercial pra uma licitacao ja resumida (nunca decide o valor). Precisa do resumo_id que resumir_edital devolveu antes.",
+        "method": "POST",
+        "url": "https://n8n.upviaagentes.com/webhook/licitacoes/agente-redator",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"resumo_id\": \"{resumo_id}\", \"usuario_id\": $('Resolver Usuario Orquestrador').first().json.usuario_id } }}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "{resumo_id}",
+              "description": "O resumo_id devolvido por uma chamada anterior de resumir_edital nesta mesma conversa. Obrigatorio."
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "orq-000f",
+      "name": "Tool Buscar Fornecedores",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1180,
+        220
+      ],
+      "parameters": {
+        "toolDescription": "Procura fornecedores/distribuidores/atacadistas brasileiros reais pra um tipo de produto. So descoberta, nao contata ninguem automaticamente.",
+        "method": "POST",
+        "url": "https://n8n.upviaagentes.com/webhook/licitacoes/agente-fornecedores",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"tipo_produto\": \"{tipo_produto}\", \"usuario_id\": $('Resolver Usuario Orquestrador').first().json.usuario_id } }}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "{tipo_produto}",
+              "description": "O tipo de produto que o usuario quer encontrar fornecedor (ex: \"tenis esportivo\", \"material de construcao\"). Obrigatorio."
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "orq-000g",
+      "name": "Montar Resposta WhatsApp Orquestrador",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1400,
+        -100
+      ],
+      "parameters": {
+        "jsCode": "const agentOutput = $input.first().json;\nconst texto = agentOutput.output || agentOutput.text || 'Desculpa, nao consegui processar isso agora.';\nconst numero = $('Extrair Mensagem Recebida').first().json.numero;\nreturn [{ json: { numero, texto } }];"
+      }
+    },
+    {
+      "id": "orq-000h",
+      "name": "Enviar Resposta Orquestrador WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1620,
+        -100
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "https://evo.upviaagentes.com/message/sendText/Upvia_adm",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: $json.numero, text: $json.texto }) }}",
+        "options": {
+          "timeout": 30000
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "orq-000i",
+      "name": "Responder OK Orquestrador",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1840,
+        -100
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true } }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Orquestrador": {
+      "main": [
+        [
+          {
+            "node": "Extrair Mensagem Recebida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Mensagem Recebida": {
+      "main": [
+        [
+          {
+            "node": "E Mensagem Valida?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "E Mensagem Valida?": {
+      "0": [
+        [
+          {
+            "node": "Resolver Usuario Orquestrador",
+            "type": 0,
+            "index": 0
+          }
+        ]
+      ],
+      "1": [
+        [
+          {
+            "node": "Responder Ignorado",
+            "type": 1,
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolver Usuario Orquestrador": {
+      "main": [
+        [
+          {
+            "node": "Agente Orquestrador",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Modelo GPT-4.1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente Orquestrador",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memoria Conversa": {
+      "ai_memory": [
+        [
+          {
+            "node": "Agente Orquestrador",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tool Buscar Licitacoes": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Orquestrador",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tool Resumir Edital": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Orquestrador",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tool Redigir Proposta": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Orquestrador",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tool Buscar Fornecedores": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Orquestrador",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente Orquestrador": {
+      "main": [
+        [
+          {
+            "node": "Montar Resposta WhatsApp Orquestrador",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Resposta WhatsApp Orquestrador": {
+      "main": [
+        [
+          {
+            "node": "Enviar Resposta Orquestrador WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Resposta Orquestrador WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Responder OK Orquestrador",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
