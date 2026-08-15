@@ -204,23 +204,23 @@
           "values": [
             {
               "name": "{palavras}",
-              "description": "Palavras-chave da busca, separadas por virgula (ex: \"uniforme escolar, camiseta\"). Obrigatorio."
+              "description": "Palavras-chave da busca, separadas por virgula (ex: \"uniforme escolar, camiseta\"). SEMPRE envie este campo, mesmo que como string vazia -- nunca omita."
             },
             {
               "name": "{ufs}",
-              "description": "Siglas de UF separadas por virgula (ex: \"SC,RS\"), ou string vazia se nao especificado."
+              "description": "Siglas de UF separadas por virgula (ex: \"SC,RS\"). SEMPRE envie este campo -- se nao especificado, envie exatamente uma string vazia \"\", nunca omita o campo."
             },
             {
               "name": "{modalidades}",
-              "description": "Modalidades separadas por virgula, valores possiveis: pregao_eletronico, dispensa. String vazia = ambas."
+              "description": "Modalidades separadas por virgula, valores possiveis: pregao_eletronico, dispensa. SEMPRE envie este campo -- se quiser ambas, envie exatamente uma string vazia \"\", nunca omita o campo."
             },
             {
               "name": "{valor_min}",
-              "description": "Valor minimo em reais, so numero, ou string vazia se nao especificado."
+              "description": "Valor minimo em reais, so numero. SEMPRE envie este campo -- se nao especificado, envie exatamente uma string vazia \"\", nunca omita o campo."
             },
             {
               "name": "{valor_max}",
-              "description": "Valor maximo em reais, so numero, ou string vazia se nao especificado."
+              "description": "Valor maximo em reais, so numero. SEMPRE envie este campo -- se nao especificado, envie exatamente uma string vazia \"\", nunca omita o campo."
             }
           ]
         },
@@ -242,16 +242,12 @@
         "url": "https://n8n.upviaagentes.com/webhook/licitacoes/agente-resumidor",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ `{ \"link\": \"{link}\", \"objeto\": \"{objeto_se_souber}\", \"orgao\": \"\", \"valor\": null, \"modalidade_nome\": \"\", \"tipo_perfil\": \"produto\", \"usuario_id\": \"${$('Resolver Usuario Orquestrador').first().json.usuario_id}\" }` }}",
+        "jsonBody": "={{ `{ \"link\": \"{link}\", \"objeto\": \"\", \"orgao\": \"\", \"valor\": null, \"modalidade_nome\": \"\", \"tipo_perfil\": \"produto\", \"usuario_id\": \"${$('Resolver Usuario Orquestrador').first().json.usuario_id}\" }` }}",
         "placeholderDefinitions": {
           "values": [
             {
               "name": "{link}",
               "description": "O link do edital no PNCP (formato https://pncp.gov.br/app/editais/...) que o usuario mandou na conversa. Obrigatorio."
-            },
-            {
-              "name": "{objeto_se_souber}",
-              "description": "Uma breve descricao do que esta sendo comprado, se o usuario ja mencionou; senao string vazia."
             }
           ]
         },
