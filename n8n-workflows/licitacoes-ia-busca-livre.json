@@ -1,0 +1,429 @@
+{
+  "name": "Licitacoes IA - Busca Livre (tool Orquestrador)",
+  "nodes": [
+    {
+      "id": "bl-0001",
+      "name": "Nota Busca Livre",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -320
+      ],
+      "parameters": {
+        "content": "## Busca Livre no PNCP (so pro Orquestrador Central)\nSub-workflow via webhook: POST /webhook/licitacoes/busca-livre\nBody: { palavras_chave: string[], modalidades?: string[], valor_min?, valor_max?, uf?: string[] }\n\nBusca pontual, fora de qualquer perfil salvo -- nao grava nada no banco, so devolve os\nachados. Usada pelo tool_buscar_licitacoes do Agente Orquestrador Central, pra buscas\nlivres feitas na conversa (\"acha licitacao de uniforme escolar em SC\").\n\nReaproveita a mesma tecnica de paginacao ja validada no cron de busca (Busca PNCP),\ncom teto menor (60 paginas) por ser uma consulta pontual/interativa.",
+        "width": 900,
+        "height": 240,
+        "color": 4
+      }
+    },
+    {
+      "id": "bl-0002",
+      "name": "Webhook Busca Livre",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "bl-0003",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "licitacoes/busca-livre",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "bl-0004",
+      "name": "Extrair Corpo Busca Livre",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nconst MODALIDADES = { pregao_eletronico: 6, dispensa: 8 };\nconst modalidadesPedidas = Array.isArray(body.modalidades) && body.modalidades.length ? body.modalidades : ['pregao_eletronico', 'dispensa'];\n\nconst hoje = new Date();\nconst ontem = new Date(hoje.getTime() - 24 * 60 * 60 * 1000);\nconst fmt = (d) => d.toISOString().slice(0, 10).replace(/-/g, '');\n\nconst palavras = Array.isArray(body.palavras_chave) ? body.palavras_chave.map(String).filter(Boolean) : [];\nconst uf = Array.isArray(body.uf) ? body.uf.map(String) : [];\nconst valor_min = body.valor_min != null ? Number(body.valor_min) : null;\nconst valor_max = body.valor_max != null ? Number(body.valor_max) : null;\n\nconst out = [];\nfor (const m of modalidadesPedidas) {\n  const codigo = MODALIDADES[m];\n  if (!codigo) continue;\n  out.push({ json: { palavras, uf, valor_min, valor_max, modalidade_codigo: codigo, dataInicial: fmt(ontem), dataFinal: fmt(hoje) } });\n}\nreturn out;"
+      }
+    },
+    {
+      "id": "bl-0005",
+      "name": "Loop Consultas Livre",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "options": {}
+      }
+    },
+    {
+      "id": "bl-0006",
+      "name": "Fim Busca Consultas Livre",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        660,
+        -200
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "bl-0007",
+      "name": "Buscar Pagina 1 Livre",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        160
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao?dataInicial=' + $json.dataInicial + '&dataFinal=' + $json.dataFinal + '&codigoModalidadeContratacao=' + $json.modalidade_codigo + '&pagina=1&tamanhoPagina=50' }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "bl-0008",
+      "name": "Calcular Paginacao Livre",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        160
+      ],
+      "parameters": {
+        "jsCode": "const consulta = $('Loop Consultas Livre').first().json;\nconst resp = $input.first().json;\nconst registrosPagina1 = (resp && resp.data) || [];\nconst totalPaginas = (resp && resp.totalPaginas) || 1;\nconst paginasFaltando = [];\nfor (let p = 2; p <= Math.min(totalPaginas, 60); p++) paginasFaltando.push(p);\nreturn [{ json: { consulta, registrosPagina1, paginasFaltando } }];"
+      }
+    },
+    {
+      "id": "bl-0009",
+      "name": "Tem Mais Paginas Livre?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        160
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "bl-000a",
+              "leftValue": "={{ $json.paginasFaltando.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "bl-000b",
+      "name": "Combinar Sem Extras Livre",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        260
+      ],
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nreturn [{ json: { ...item.consulta, data: item.registrosPagina1 } }];"
+      }
+    },
+    {
+      "id": "bl-000c",
+      "name": "Expandir Paginas Faltando Livre",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        60
+      ],
+      "parameters": {
+        "jsCode": "return $input.first().json.paginasFaltando.map(pagina => ({ json: { pagina } }));"
+      }
+    },
+    {
+      "id": "bl-000d",
+      "name": "Loop Paginas Livre",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1540,
+        60
+      ],
+      "parameters": {
+        "options": {}
+      }
+    },
+    {
+      "id": "bl-000e",
+      "name": "Buscar Pagina N Livre",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        60
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao?dataInicial=' + $('Calcular Paginacao Livre').first().json.consulta.dataInicial + '&dataFinal=' + $('Calcular Paginacao Livre').first().json.consulta.dataFinal + '&codigoModalidadeContratacao=' + $('Calcular Paginacao Livre').first().json.consulta.modalidade_codigo + '&pagina=' + $json.pagina + '&tamanhoPagina=50' }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "bl-000f",
+      "name": "Combinar Com Extras Livre",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        260
+      ],
+      "parameters": {
+        "jsCode": "const base = $('Calcular Paginacao Livre').first().json;\nconst extras = $input.all().map(i => (i.json && i.json.data) || []).flat();\nreturn [{ json: { ...base.consulta, data: base.registrosPagina1.concat(extras) } }];"
+      }
+    },
+    {
+      "id": "bl-000g",
+      "name": "Fim Iteracao Consulta Livre",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1980,
+        160
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "bl-000h",
+      "name": "Filtrar Resultados Livre",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        400
+      ],
+      "parameters": {
+        "jsCode": "function normalizar(s) {\n  return String(s || '').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '');\n}\nconst combinados = $input.all();\nconst resultados = [];\nfor (const item of combinados) {\n  const consulta = item.json;\n  const registros = consulta.data || [];\n  const palavrasNorm = (consulta.palavras || []).map(normalizar).filter(Boolean);\n  const ufsPedido = consulta.uf || [];\n  for (const r of registros) {\n    const objetoNorm = normalizar(r.objetoCompra);\n    if (palavrasNorm.length && !palavrasNorm.some(p => objetoNorm.includes(p))) continue;\n    const valor = r.valorTotalEstimado != null ? Number(r.valorTotalEstimado) : null;\n    if (consulta.valor_min != null && (valor == null || valor < consulta.valor_min)) continue;\n    if (consulta.valor_max != null && (valor == null || valor > consulta.valor_max)) continue;\n    const uf = r.unidadeOrgao ? r.unidadeOrgao.ufSigla : null;\n    if (ufsPedido.length && !ufsPedido.includes(uf)) continue;\n    const cnpj = (r.orgaoEntidade && r.orgaoEntidade.cnpj) || (r.orgaoSubRogado && r.orgaoSubRogado.cnpj) || '';\n    resultados.push({\n      pncp_id: r.numeroControlePNCP,\n      objeto: r.objetoCompra,\n      orgao: (r.orgaoEntidade && r.orgaoEntidade.razaoSocial) || '',\n      valor, uf,\n      municipio: r.unidadeOrgao ? r.unidadeOrgao.municipioNome : null,\n      modalidade_nome: r.modalidadeNome,\n      link: 'https://pncp.gov.br/app/editais/' + cnpj + '/' + r.anoCompra + '/' + r.sequencialCompra\n    });\n  }\n}\n// teto de resultados devolvidos pro agente (evita resposta gigante numa conversa)\nreturn [{ json: { total_encontrado: resultados.length, resultados: resultados.slice(0, 20) } }];"
+      }
+    },
+    {
+      "id": "bl-000i",
+      "name": "Responder Busca Livre",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        400
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Busca Livre": {
+      "main": [
+        [
+          {
+            "node": "Extrair Corpo Busca Livre",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Corpo Busca Livre": {
+      "main": [
+        [
+          {
+            "node": "Loop Consultas Livre",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Consultas Livre": {
+      "main": [
+        [
+          {
+            "node": "Fim Busca Consultas Livre",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Buscar Pagina 1 Livre",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Pagina 1 Livre": {
+      "main": [
+        [
+          {
+            "node": "Calcular Paginacao Livre",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calcular Paginacao Livre": {
+      "main": [
+        [
+          {
+            "node": "Tem Mais Paginas Livre?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tem Mais Paginas Livre?": {
+      "main": [
+        [
+          {
+            "node": "Expandir Paginas Faltando Livre",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Combinar Sem Extras Livre",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Expandir Paginas Faltando Livre": {
+      "main": [
+        [
+          {
+            "node": "Loop Paginas Livre",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Paginas Livre": {
+      "main": [
+        [
+          {
+            "node": "Combinar Com Extras Livre",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Buscar Pagina N Livre",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Pagina N Livre": {
+      "main": [
+        [
+          {
+            "node": "Loop Paginas Livre",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combinar Sem Extras Livre": {
+      "main": [
+        [
+          {
+            "node": "Fim Iteracao Consulta Livre",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combinar Com Extras Livre": {
+      "main": [
+        [
+          {
+            "node": "Fim Iteracao Consulta Livre",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fim Iteracao Consulta Livre": {
+      "main": [
+        [
+          {
+            "node": "Loop Consultas Livre",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fim Busca Consultas Livre": {
+      "main": [
+        [
+          {
+            "node": "Filtrar Resultados Livre",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar Resultados Livre": {
+      "main": [
+        [
+          {
+            "node": "Responder Busca Livre",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
