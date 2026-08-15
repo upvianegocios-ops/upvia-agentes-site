@@ -316,11 +316,11 @@
           "conditions": [
             {
               "id": "res-000l",
-              "leftValue": "={{ $input.all().length }}",
-              "rightValue": 0,
+              "leftValue": "={{ !!$json.id }}",
+              "rightValue": true,
               "operator": {
-                "type": "number",
-                "operation": "notEquals"
+                "type": "boolean",
+                "operation": "equals"
               }
             }
           ],
@@ -331,7 +331,7 @@
     },
     {
       "id": "res-000m",
-      "name": "Responder Duplicado",
+      "name": "Responder Duplicado Ou Erro",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
@@ -340,7 +340,7 @@
       ],
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ { ok: true, duplicado: true } }}",
+        "responseBody": "={{ { ok: !$json.error, duplicado: !$json.error, erro: $json.error ? $json.message : undefined } }}",
         "options": {
           "responseCode": 200
         }
@@ -701,7 +701,7 @@
         ],
         [
           {
-            "node": "Responder Duplicado",
+            "node": "Responder Duplicado Ou Erro",
             "type": "main",
             "index": 0
           }
