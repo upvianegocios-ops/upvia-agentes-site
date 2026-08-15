@@ -162,6 +162,7 @@
         1540,
         60
       ],
+      "onError": "continueRegularOutput",
       "parameters": {
         "operation": "pdf",
         "options": {}
