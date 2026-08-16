@@ -12,6 +12,10 @@ dist/
 build/
 .env
 .env.*
+# Exceção: arquivos de exemplo/template não têm segredo nenhum e precisam
+# ser versionados (ex: ludile/docker/supabase/.env.example, ludile/.env.example)
+!.env.example
+!**/.env.example
 
 # Node (caso migre para Next.js futuramente)
 node_modules/
@@ -34,3 +38,4 @@ n8n-workflows/meta-adlibrary-token.txt
 
 # Backups brutos de workflows (podem conter segredos hardcoded de outros nodes)
 n8n-workflows/backups/
+backups/
