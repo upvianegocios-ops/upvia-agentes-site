@@ -117,7 +117,7 @@
           "conditions": [
             {
               "id": "cnf-0008",
-              "leftValue": "={{ !!$('Extrair Corpo Confirmar Resultado').first().json.resultado && $('Buscar Resumo Confirmar').first().json.fase_atual === 'aguardando_resultado' }}",
+              "leftValue": "={{ !!$('Extrair Corpo Confirmar Resultado').first().json.resultado && ['aguardando_resultado','proposta_readequada'].includes($('Buscar Resumo Confirmar').first().json.fase_atual) }}",
               "rightValue": true,
               "operator": {
                 "type": "boolean",
@@ -303,7 +303,7 @@
         220
       ],
       "parameters": {
-        "jsCode": "const ctx = $('Extrair Corpo Confirmar Resultado').first().json;\nconst resumo = $('Buscar Resumo Confirmar').first().json;\nconst usuario = $('Buscar Usuario Confirmar').first().json || {};\nif (!usuario.whatsapp_numero) return [];\nlet texto;\nif (!ctx.resultado) {\n  texto = 'Nao entendi se voce venceu ou perdeu essa licitacao -- me diz claramente \"ganhei\" ou \"perdi\".';\n} else {\n  texto = 'Nao consigo confirmar esse resultado agora: a licitacao esta na fase \"' + resumo.fase_atual + '\", e so aceito confirmacao de vitoria/derrota depois que uma proposta ja foi gerada (fase \"aguardando_resultado\").';\n}\nreturn [{ json: { numero: usuario.whatsapp_numero.replace(/\\D/g, ''), texto } }];"
+        "jsCode": "const ctx = $('Extrair Corpo Confirmar Resultado').first().json;\nconst resumo = $('Buscar Resumo Confirmar').first().json;\nconst usuario = $('Buscar Usuario Confirmar').first().json || {};\nif (!usuario.whatsapp_numero) return [];\nlet texto;\nif (!ctx.resultado) {\n  texto = 'Nao entendi se voce venceu ou perdeu essa licitacao -- me diz claramente \"ganhei\" ou \"perdi\".';\n} else {\n  texto = 'Nao consigo confirmar esse resultado agora: a licitacao esta na fase \"' + resumo.fase_atual + '\", e so aceito confirmacao de vitoria/derrota depois que uma proposta ja foi gerada (fase \"aguardando_resultado\" ou \"proposta_readequada\").';\n}\nreturn [{ json: { numero: usuario.whatsapp_numero.replace(/\\D/g, ''), texto } }];"
       }
     },
     {
@@ -346,7 +346,7 @@
       ],
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ { ok: true, registrado: false } }}",
+        "responseBody": "={{ { ok: true, registrado: false, motivo: $('Montar Mensagem Confirmacao Invalida').first().json.texto } }}",
         "options": {
           "responseCode": 200
         }

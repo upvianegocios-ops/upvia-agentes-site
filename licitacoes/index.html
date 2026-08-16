@@ -193,6 +193,11 @@ input::placeholder{color:var(--text-muted);opacity:.55}
 .esc-objeto{font-size:14px;font-weight:600;line-height:1.5;flex:1}
 .esc-meta{font-size:12px;color:var(--text-muted);line-height:1.9;margin-top:6px}
 .esc-pncp{font-size:11px;color:var(--text-muted);opacity:.7;margin-top:8px}
+.esc-star{background:none;border:none;font-size:18px;line-height:1;cursor:pointer;padding:2px;
+  color:var(--text-muted);transition:transform .15s}
+.esc-star:hover{transform:scale(1.15)}
+.esc-star.on{color:var(--warning)}
+.esc-star:disabled{opacity:.5;cursor:default}
 .badge{display:inline-block;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;
   text-transform:uppercase;letter-spacing:.3px;white-space:nowrap;flex-shrink:0}
 .badge-muted{background:var(--violet-glow);color:var(--violet-light);border:1px solid var(--border-violet)}
@@ -205,6 +210,39 @@ input::placeholder{color:var(--text-muted);opacity:.55}
 .atencao-box .atencao-titulo{font-size:11px;font-weight:800;color:var(--warning);text-transform:uppercase;
   letter-spacing:.5px;margin-bottom:6px}
 .rascunho-tag{font-size:11px;color:var(--text-muted);font-style:italic;margin-top:10px}
+
+/* Botoes de acao nos cards (Passo 19) */
+.esc-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.esc-btn{background:none;border:1px solid var(--border-violet);color:var(--violet-light);border-radius:20px;
+  padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s}
+.esc-btn:hover{background:var(--violet-glow)}
+.esc-btn.venci{border-color:var(--success);color:var(--success)}
+.esc-btn.venci:hover{background:var(--success-glow)}
+.esc-btn.perdi{border-color:var(--danger);color:var(--danger)}
+.esc-btn.perdi:hover{background:var(--danger-glow)}
+.esc-btn-add{width:100%;padding:13px;border-radius:var(--radius-sm);border:1px dashed var(--border-violet);
+  background:none;color:var(--violet-light);font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;
+  cursor:pointer;margin-bottom:16px;transition:all .2s}
+.esc-btn-add:hover{background:var(--violet-glow)}
+
+/* Modal de confirmacao (Passo 19) */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:flex-end;
+  justify-content:center;z-index:60;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-overlay.show{opacity:1;pointer-events:auto}
+.modal-box{width:100%;max-width:520px;background:var(--bg-card);border:1px solid var(--border);
+  border-top-left-radius:var(--radius);border-top-right-radius:var(--radius);padding:24px 24px 28px;
+  box-shadow:0 -20px 60px rgba(0,0,0,.5);transform:translateY(20px);transition:transform .25s;
+  max-height:85vh;overflow-y:auto}
+.modal-overlay.show .modal-box{transform:translateY(0)}
+@media(min-width:560px){
+  .modal-overlay{align-items:center}
+  .modal-box{border-radius:var(--radius)}
+}
+.modal-box h2{font-size:19px;font-weight:800;margin-bottom:8px}
+.modal-box p{font-size:13px;color:var(--text-muted);line-height:1.6;margin-bottom:16px}
+.modal-actions{display:flex;gap:10px;margin-top:18px}
+.modal-actions .btn{flex:1}
+.modal-actions .btn-secondary{flex:1;margin-top:0}
 
 @media(max-width:420px){.card-head,.card-body{padding-left:18px;padding-right:18px}.row2{grid-template-columns:1fr}}
 </style>
@@ -310,10 +348,20 @@ input::placeholder{color:var(--text-muted);opacity:.55}
       <button class="subtab" data-sub="contratos" onclick="mudarSubAba('contratos')">Contratos</button>
       <button class="subtab" data-sub="documentos" onclick="mudarSubAba('documentos')">Documentos</button>
     </div>
-    <div class="subview active" id="subview-licitacoes"><div id="licitacoes-container"></div></div>
+    <div class="subview active" id="subview-licitacoes">
+      <div class="subtabs" id="filtro-licitacoes">
+        <button class="subtab" data-filtro="favoritas" onclick="mudarFiltroLicitacoes('favoritas')">⭐ Favoritas</button>
+        <button class="subtab sel" data-filtro="andamento" onclick="mudarFiltroLicitacoes('andamento')">Em andamento</button>
+        <button class="subtab" data-filtro="historico" onclick="mudarFiltroLicitacoes('historico')">Histórico</button>
+      </div>
+      <div id="licitacoes-container"></div>
+    </div>
     <div class="subview" id="subview-propostas"><div id="propostas-container"></div></div>
     <div class="subview" id="subview-contratos"><div id="contratos-container"></div></div>
-    <div class="subview" id="subview-documentos"><div id="documentos-container"></div></div>
+    <div class="subview" id="subview-documentos">
+      <button class="esc-btn-add" onclick="abrirCadastrarDocumento()">+ Cadastrar documento</button>
+      <div id="documentos-container"></div>
+    </div>
   </div>
 
   <!-- FORM NOVO/EDITAR PERFIL -->
@@ -398,6 +446,10 @@ input::placeholder{color:var(--text-muted);opacity:.55}
 
 <div class="toast" id="toast"></div>
 
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this) fecharModal()">
+  <div class="modal-box" id="modal-box"></div>
+</div>
+
 <script>
 // ─── Config ─────────────────────────────────────────────────────────
 // TODO: confirmar a URL final dos webhooks depois que o Passo 4 (N8N) estiver ativo.
@@ -416,6 +468,7 @@ let perfisCache = [];
 let editaisCache = [];
 let editaisCarregados = false;
 let escritorioSubAba = 'licitacoes';
+let licitacoesFiltro = 'andamento';
 let licitacoesCache = [];
 let propostasCache = [];
 let contratosCache = [];
@@ -816,6 +869,15 @@ function mudarSubAba(qual) {
   carregarSubAba(qual);
 }
 
+// ─── Modal de confirmacao generico (Passo 19) ─────────────────────────
+function abrirModal(html) {
+  document.getElementById('modal-box').innerHTML = html;
+  document.getElementById('modal-overlay').classList.add('show');
+}
+function fecharModal() {
+  document.getElementById('modal-overlay').classList.remove('show');
+}
+
 function carregarSubAba(qual) {
   if (escritorioCarregado[qual]) return;
   const loaders = {
@@ -861,6 +923,23 @@ async function carregarLicitacoes() {
   }
 }
 
+// ─── Filtro de Licitações por interesse/status (Passo 20) ──────────
+// Baseado em "resultado" (pendente/vencida/perdida) em vez de enumerar fase_atual
+// -- resultado e o marcador permanente de desfecho (fase_atual continua avancando
+// depois, ex: pra "contrato_gerado", mas resultado fica fixo em "vencida"), entao
+// cobre corretamente TODAS as fases sem deixar nenhuma licitação invisível (ex:
+// recem-analisada, ou com contrato ja gerado) nas 3 sub-abas.
+function mudarFiltroLicitacoes(qual) {
+  licitacoesFiltro = qual;
+  document.querySelectorAll('#filtro-licitacoes .subtab').forEach(btn => btn.classList.toggle('sel', btn.dataset.filtro === qual));
+  renderLicitacoes();
+}
+function filtrarLicitacoes() {
+  if (licitacoesFiltro === 'favoritas') return licitacoesCache.filter(r => r.favorito);
+  if (licitacoesFiltro === 'historico') return licitacoesCache.filter(r => r.resultado && r.resultado !== 'pendente');
+  return licitacoesCache.filter(r => !r.resultado || r.resultado === 'pendente');
+}
+
 function renderLicitacoes() {
   const cont = document.getElementById('licitacoes-container');
   if (!licitacoesCache.length) {
@@ -871,11 +950,24 @@ function renderLicitacoes() {
       </div>`;
     return;
   }
-  cont.innerHTML = `<div class="escritorio-list">${licitacoesCache.map(r => `
+  const lista = filtrarLicitacoes();
+  if (!lista.length) {
+    const msgs = {
+      favoritas: 'Nenhuma licitação favoritada ainda. Toque na estrela de um card, ou peça pra IA favoritar pelo WhatsApp.',
+      andamento: 'Nenhuma licitação em andamento no momento.',
+      historico: 'Nenhuma licitação com resultado confirmado ainda.'
+    };
+    cont.innerHTML = `<div class="empty-state"><div class="ic">📭</div><p>${msgs[licitacoesFiltro]}</p></div>`;
+    return;
+  }
+  cont.innerHTML = `<div class="escritorio-list">${lista.map(r => `
     <div class="esc-card">
       <div class="esc-top">
         <div class="esc-objeto">${escapeHtml((r.objeto_resumo || '').slice(0, 200))}${(r.objeto_resumo || '').length > 200 ? '…' : ''}</div>
-        ${faseBadge(r.fase_atual)}
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+          <button class="esc-star ${r.favorito ? 'on' : ''}" onclick="favoritarSubmit('${r.id}', this)" title="${r.favorito ? 'Remover dos favoritos' : 'Favoritar'}">${r.favorito ? '⭐' : '☆'}</button>
+          ${faseBadge(r.fase_atual)}
+        </div>
       </div>
       <div class="esc-meta">
         💰 ${formatarValorEdital(r.valor_estimado)} · 📋 ${escapeHtml(r.tipo_disputa || '—')}<br>
@@ -883,8 +975,107 @@ function renderLicitacoes() {
       </div>
       ${r.pontos_atencao ? `<div class="atencao-box"><div class="atencao-titulo">⚠️ Pontos de atenção</div>${escapeHtml(r.pontos_atencao)}</div>` : ''}
       <div class="esc-pncp">PNCP ${escapeHtml(r.pncp_id || '—')} · recebida em ${formatarDataHora(r.criado_em)}</div>
+      <div class="esc-actions">
+        ${['aguardando_resultado', 'proposta_readequada'].includes(r.fase_atual) ? `
+          <button class="esc-btn venci" onclick="abrirConfirmarResultado('${r.id}', 'vencida')">🎉 Venci</button>
+          <button class="esc-btn perdi" onclick="abrirConfirmarResultado('${r.id}', 'perdida')">Perdi</button>
+        ` : ''}
+        <button class="esc-btn" onclick="abrirBuscarFornecedores('${r.id}')">Buscar fornecedores</button>
+      </div>
     </div>
   `).join('')}</div>`;
+}
+
+// ─── Favoritar/desfavoritar (Passo 20) ─────────────────────────────
+async function favoritarSubmit(resumoId, btnEl) {
+  btnEl.disabled = true;
+  try {
+    const data = await apiCall('licitacoes-favoritar', { resumo_id: resumoId });
+    const item = licitacoesCache.find(r => r.id === resumoId);
+    if (item) item.favorito = data.favorito;
+    toast(data.favorito ? 'Favoritada!' : 'Removida dos favoritos.', true);
+    renderLicitacoes();
+  } catch (e) {
+    toast(e.message);
+    btnEl.disabled = false;
+  }
+}
+
+// ─── Confirmar resultado (Passo 19) ────────────────────────────────
+function abrirConfirmarResultado(resumoId, resultado) {
+  const venceu = resultado === 'vencida';
+  abrirModal(`
+    <h2>${venceu ? '🎉 Confirmar vitória' : 'Confirmar derrota'}</h2>
+    <p>Tem certeza que quer confirmar que ${venceu ? 'você <strong>venceu</strong>' : 'você <strong>perdeu</strong>'} essa licitação? Essa informação vai ser registrada e, se for vitória, um rascunho de contrato é gerado automaticamente.</p>
+    ${venceu ? `
+      <div class="fg">
+        <label for="in-valor-final-modal">Valor final (opcional)</label>
+        <input type="number" id="in-valor-final-modal" placeholder="0,00" min="0">
+      </div>
+    ` : ''}
+    <div class="err-box show" id="err-modal" style="display:none"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary btn" onclick="fecharModal()">Cancelar</button>
+      <button class="btn" id="btn-confirmar-modal" onclick="confirmarResultadoSubmit('${resumoId}', '${resultado}')">
+        <span>Confirmar</span>
+        <div class="spin" id="spin-modal"></div>
+      </button>
+    </div>
+  `);
+}
+
+async function confirmarResultadoSubmit(resumoId, resultado) {
+  const valorInput = document.getElementById('in-valor-final-modal');
+  const valor_final = valorInput && valorInput.value ? Number(valorInput.value) : null;
+  const errBox = document.getElementById('err-modal');
+  setLoading('btn-confirmar-modal', 'spin-modal', true);
+  try {
+    const data = await apiCall('licitacoes-confirmar-resultado', { resumo_id: resumoId, resultado, valor_final });
+    fecharModal();
+    if (data.registrado === false) {
+      toast(data.motivo || 'Não foi possível confirmar o resultado agora.');
+    } else {
+      toast('Resultado registrado!', true);
+      escritorioCarregado.licitacoes = false;
+      carregarLicitacoes();
+    }
+  } catch (e) {
+    errBox.textContent = e.message;
+    errBox.style.display = 'block';
+  } finally {
+    setLoading('btn-confirmar-modal', 'spin-modal', false);
+  }
+}
+
+// ─── Buscar fornecedores sob demanda (Passo 19) ────────────────────
+function abrirBuscarFornecedores(resumoId) {
+  abrirModal(`
+    <h2>Buscar fornecedores</h2>
+    <p>Buscar fornecedores/distribuidores pra essa licitação agora? A IA pesquisa na web — pode levar alguns segundos, e você recebe o resultado aqui e por WhatsApp.</p>
+    <div class="err-box show" id="err-modal" style="display:none"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary btn" onclick="fecharModal()">Cancelar</button>
+      <button class="btn" id="btn-confirmar-modal" onclick="buscarFornecedoresSubmit('${resumoId}')">
+        <span>Buscar</span>
+        <div class="spin" id="spin-modal"></div>
+      </button>
+    </div>
+  `);
+}
+
+async function buscarFornecedoresSubmit(resumoId) {
+  const errBox = document.getElementById('err-modal');
+  setLoading('btn-confirmar-modal', 'spin-modal', true);
+  try {
+    await apiCall('fornecedores-buscar', { resumo_id: resumoId });
+    fecharModal();
+    toast('Busca concluída! Confira o resultado no WhatsApp.', true);
+  } catch (e) {
+    errBox.textContent = e.message;
+    errBox.style.display = 'block';
+  } finally {
+    setLoading('btn-confirmar-modal', 'spin-modal', false);
+  }
 }
 
 async function carregarPropostas() {
@@ -922,8 +1113,93 @@ function renderPropostas() {
       </div>
       <div class="esc-pncp">PNCP ${escapeHtml(p.pncp_id || '—')} · gerada em ${formatarDataHora(p.criado_em)}</div>
       <div class="rascunho-tag">Rascunho — revise e envie pelo WhatsApp antes de protocolar.</div>
+      <div class="esc-actions">
+        ${p.fase_atual === 'aguardando_resultado' ? `<button class="esc-btn" onclick="abrirReadequarProposta('${p.resumo_id}', '${escapeHtml(p.objeto_resumo || '').replace(/'/g, "\\'")}')">Solicitar readequação</button>` : ''}
+        ${p.status === 'rascunho' ? `<button class="esc-btn" onclick="abrirRevisarProposta('${p.id}')">Marcar como revisada</button>` : ''}
+      </div>
     </div>
   `).join('')}</div>`;
+}
+
+// ─── Readequar proposta (Passo 19) ─────────────────────────────────
+function abrirReadequarProposta(resumoId, objeto) {
+  abrirModal(`
+    <h2>Solicitar readequação</h2>
+    <p>Reescreve a proposta de "${objeto}" usando o valor do lance vencedor. Informe o valor exato — a IA nunca decide esse número sozinha.</p>
+    <div class="fg">
+      <label for="in-valor-lance-modal">Valor do lance vencedor</label>
+      <input type="number" id="in-valor-lance-modal" placeholder="0,00" min="0">
+    </div>
+    <div class="err-box show" id="err-modal" style="display:none"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary btn" onclick="fecharModal()">Cancelar</button>
+      <button class="btn" id="btn-confirmar-modal" onclick="readequarPropostaSubmit('${resumoId}')">
+        <span>Readequar</span>
+        <div class="spin" id="spin-modal"></div>
+      </button>
+    </div>
+  `);
+}
+
+async function readequarPropostaSubmit(resumoId) {
+  const errBox = document.getElementById('err-modal');
+  const valorInput = document.getElementById('in-valor-lance-modal');
+  const valor_lance_vencedor = valorInput.value ? Number(valorInput.value) : null;
+  if (!valor_lance_vencedor || valor_lance_vencedor <= 0) {
+    errBox.textContent = 'Informe o valor do lance vencedor.';
+    errBox.style.display = 'block';
+    return;
+  }
+  setLoading('btn-confirmar-modal', 'spin-modal', true);
+  try {
+    const data = await apiCall('propostas-solicitar-readequacao', { resumo_id: resumoId, valor_lance_vencedor });
+    fecharModal();
+    if (data.readequado === false) {
+      toast(data.motivo || 'Não foi possível readequar a proposta agora.');
+    } else {
+      toast('Proposta readequada! Confira o rascunho no WhatsApp.', true);
+      escritorioCarregado.propostas = false;
+      carregarPropostas();
+    }
+  } catch (e) {
+    errBox.textContent = e.message;
+    errBox.style.display = 'block';
+  } finally {
+    setLoading('btn-confirmar-modal', 'spin-modal', false);
+  }
+}
+
+// ─── Marcar proposta como revisada (Passo 19) ──────────────────────
+function abrirRevisarProposta(propostaId) {
+  abrirModal(`
+    <h2>Marcar como revisada</h2>
+    <p>Confirma que já revisou o rascunho dessa proposta? Isso não envia nada, só marca que você já conferiu.</p>
+    <div class="err-box show" id="err-modal" style="display:none"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary btn" onclick="fecharModal()">Cancelar</button>
+      <button class="btn" id="btn-confirmar-modal" onclick="revisarPropostaSubmit('${propostaId}')">
+        <span>Confirmar</span>
+        <div class="spin" id="spin-modal"></div>
+      </button>
+    </div>
+  `);
+}
+
+async function revisarPropostaSubmit(propostaId) {
+  const errBox = document.getElementById('err-modal');
+  setLoading('btn-confirmar-modal', 'spin-modal', true);
+  try {
+    await apiCall('propostas-revisar', { proposta_id: propostaId });
+    fecharModal();
+    toast('Proposta marcada como revisada!', true);
+    escritorioCarregado.propostas = false;
+    carregarPropostas();
+  } catch (e) {
+    errBox.textContent = e.message;
+    errBox.style.display = 'block';
+  } finally {
+    setLoading('btn-confirmar-modal', 'spin-modal', false);
+  }
 }
 
 async function carregarContratos() {
@@ -1006,6 +1282,51 @@ function renderDocumentos() {
       <div class="esc-meta">Atualizado em ${formatarDataHora(d.atualizado_em)}</div>
     </div>`;
   }).join('')}</div>`;
+}
+
+// ─── Cadastrar documento de habilitação (Passo 19) ─────────────────
+function abrirCadastrarDocumento() {
+  abrirModal(`
+    <h2>Cadastrar documento</h2>
+    <p>Registre a validade de um documento de habilitação — a gente avisa quando estiver perto de vencer.</p>
+    <div class="fg">
+      <label for="in-tipo-documento-modal">Tipo de documento</label>
+      <input type="text" id="in-tipo-documento-modal" placeholder="Ex: CND Federal, FGTS, CNDT">
+    </div>
+    <div class="fg">
+      <label for="in-data-validade-modal">Data de validade</label>
+      <input type="text" id="in-data-validade-modal" placeholder="AAAA-MM-DD" inputmode="numeric" maxlength="10">
+    </div>
+    <div class="err-box show" id="err-modal" style="display:none"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary btn" onclick="fecharModal()">Cancelar</button>
+      <button class="btn" id="btn-confirmar-modal" onclick="cadastrarDocumentoSubmit()">
+        <span>Cadastrar</span>
+        <div class="spin" id="spin-modal"></div>
+      </button>
+    </div>
+  `);
+}
+
+async function cadastrarDocumentoSubmit() {
+  const errBox = document.getElementById('err-modal');
+  const tipo_documento = document.getElementById('in-tipo-documento-modal').value.trim();
+  const data_validade = document.getElementById('in-data-validade-modal').value.trim();
+  if (!tipo_documento) { errBox.textContent = 'Informe o tipo de documento.'; errBox.style.display = 'block'; return; }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(data_validade)) { errBox.textContent = 'Data no formato AAAA-MM-DD.'; errBox.style.display = 'block'; return; }
+  setLoading('btn-confirmar-modal', 'spin-modal', true);
+  try {
+    await apiCall('documentos-cadastrar', { tipo_documento, data_validade });
+    fecharModal();
+    toast('Documento cadastrado!', true);
+    escritorioCarregado.documentos = false;
+    carregarDocumentos();
+  } catch (e) {
+    errBox.textContent = e.message;
+    errBox.style.display = 'block';
+  } finally {
+    setLoading('btn-confirmar-modal', 'spin-modal', false);
+  }
 }
 
 async function carregarEditais() {

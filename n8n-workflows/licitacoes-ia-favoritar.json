@@ -1,0 +1,316 @@
+{
+  "name": "Licitacoes IA - Favoritar",
+  "nodes": [
+    {
+      "id": "fav-0001",
+      "name": "Nota Favoritar",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -280
+      ],
+      "parameters": {
+        "content": "## Favoritar/Desfavoritar Licitacao (Passo 20)\nSub-workflow reutilizavel via webhook: POST /webhook/licitacoes/favoritar\nBody: { resumo_id, usuario_id }\n\nAlterna (toggle) o campo favorito -- reaproveitado pela rota da API (site) e por\ntool_favoritar (WhatsApp), unica fonte de verdade. A propria query ja filtra por\nusuario_id (WHERE id = $1 AND usuario_id = $2), entao 0 linhas = licitacao nao\nencontrada OU nao pertence a esse usuario -- os dois casos tratados como 404 sem\ndistincao, pra nao revelar se o resumo_id existe pra outro usuario.\n\nSem trava de fase_atual: favoritar e so organizacao pessoal, nunca uma transicao\nde estado da licitacao.",
+        "width": 900,
+        "height": 220,
+        "color": 4
+      }
+    },
+    {
+      "id": "fav-0002",
+      "name": "Webhook Favoritar",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "fav-0003",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "licitacoes/favoritar",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "fav-0004",
+      "name": "Extrair Corpo Favoritar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nreturn [{ json: { resumo_id: body.resumo_id || null, usuario_id: body.usuario_id || null } }];"
+      }
+    },
+    {
+      "id": "fav-0005",
+      "name": "Alternar Favorito",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        440,
+        0
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE licitacoes_resumos SET favorito = NOT favorito\nWHERE id = $1 AND usuario_id = $2\nRETURNING id, objeto_resumo, favorito;",
+        "options": {
+          "queryReplacement": "={{ [ $json.resumo_id, $json.usuario_id ] }}"
+        }
+      }
+    },
+    {
+      "id": "fav-0006",
+      "name": "Licitacao Encontrada Favoritar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "fav-0007",
+              "leftValue": "={{ $input.all().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "fav-0008",
+      "name": "Responder Nao Encontrada Favoritar",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        200
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { erro: 'Licitacao nao encontrada.' } }}",
+        "options": {
+          "responseCode": 404
+        }
+      }
+    },
+    {
+      "id": "fav-0009",
+      "name": "Buscar Usuario Favoritar",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        880,
+        -160
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT whatsapp_numero FROM licitacoes_usuarios WHERE id = $1;",
+        "options": {
+          "queryReplacement": "={{ [ $('Extrair Corpo Favoritar').first().json.usuario_id ] }}"
+        }
+      }
+    },
+    {
+      "id": "fav-000a",
+      "name": "Montar Mensagem Favoritar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        -160
+      ],
+      "parameters": {
+        "jsCode": "const resultado = $('Alternar Favorito').first().json;\nconst usuario = $input.first().json || {};\nif (!usuario.whatsapp_numero) return [];\nconst texto = resultado.favorito\n  ? '⭐ Favoritada: \"' + (resultado.objeto_resumo || resultado.id) + '\"'\n  : 'Removida dos favoritos: \"' + (resultado.objeto_resumo || resultado.id) + '\"';\nreturn [{ json: { numero: usuario.whatsapp_numero.replace(/\\D/g, ''), texto } }];"
+      }
+    },
+    {
+      "id": "fav-000b",
+      "name": "Enviar Favoritar WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        -160
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "https://evo.upviaagentes.com/message/sendText/Upvia_adm",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: $json.numero, text: $json.texto }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "fav-000c",
+      "name": "Fim Aviso Favoritar",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1540,
+        -160
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "fav-000d",
+      "name": "Responder OK Favoritar",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1100,
+        40
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, favorito: $('Alternar Favorito').first().json.favorito } }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Favoritar": {
+      "main": [
+        [
+          {
+            "node": "Extrair Corpo Favoritar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Corpo Favoritar": {
+      "main": [
+        [
+          {
+            "node": "Alternar Favorito",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alternar Favorito": {
+      "main": [
+        [
+          {
+            "node": "Licitacao Encontrada Favoritar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Licitacao Encontrada Favoritar?": {
+      "main": [
+        [
+          {
+            "node": "Buscar Usuario Favoritar",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Responder OK Favoritar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder Nao Encontrada Favoritar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Usuario Favoritar": {
+      "main": [
+        [
+          {
+            "node": "Montar Mensagem Favoritar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Mensagem Favoritar": {
+      "main": [
+        [
+          {
+            "node": "Enviar Favoritar WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Favoritar WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Fim Aviso Favoritar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

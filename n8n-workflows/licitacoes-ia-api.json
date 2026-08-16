@@ -2240,7 +2240,7 @@
       },
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT id, pncp_id, objeto_resumo, tipo_disputa, valor_estimado, prazo_proposta, prazo_entrega,\n       documentos_exigidos, pontos_atencao, resultado, fase_atual, criado_em\nFROM licitacoes_resumos\nWHERE usuario_id = $1\nORDER BY criado_em DESC\nLIMIT 100;",
+        "query": "SELECT id, pncp_id, objeto_resumo, tipo_disputa, valor_estimado, prazo_proposta, prazo_entrega,\n       documentos_exigidos, pontos_atencao, resultado, fase_atual, favorito, criado_em\nFROM licitacoes_resumos\nWHERE usuario_id = $1\nORDER BY criado_em DESC\nLIMIT 100;",
         "options": {
           "queryReplacement": "={{ [ $('Checar Sessao ResumosListar').first().json.usuario_id ] }}"
         }
@@ -2888,6 +2888,1440 @@
       "position": [
         1760,
         4500
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    },
+    {
+      "id": "lic-004l",
+      "name": "Nota Propostas Readequacao",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        4640
+      ],
+      "parameters": {
+        "content": "## Solicitar Readequacao de Proposta (Passo 19)\nRota: POST /webhook/licitacoes/propostas-solicitar-readequacao\nBody: { token, resumo_id, valor_lance_vencedor }\n\nProxy pro mesmo sub-workflow que tool_readequar_proposta chama (licitacoes/readequar-proposta) -- mesma trava de fase_atual, mesma regra de nunca decidir o valor.",
+        "width": 900,
+        "height": 200,
+        "color": 4
+      }
+    },
+    {
+      "id": "lic-004m",
+      "name": "Webhook Propostas Readequacao",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        4900
+      ],
+      "webhookId": "lic-004n",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "licitacoes/propostas-solicitar-readequacao",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "lic-004o",
+      "name": "Extrair Corpo Propostas Readequacao",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        4900
+      ],
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nreturn [{ json: { token: String(body.token || ''), resumo_id: body.resumo_id || null, valor_lance_vencedor: body.valor_lance_vencedor } }];"
+      }
+    },
+    {
+      "id": "lic-004p",
+      "name": "Buscar Sessao PropostasReadequacao",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        440,
+        4900
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT s.usuario_id AS usuario_id, s.expira_em AS expira_em FROM licitacoes_sessoes s WHERE s.token = $1 ORDER BY s.created_at DESC LIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ [ $('Extrair Corpo Propostas Readequacao').first().json.token ] }}"
+        }
+      }
+    },
+    {
+      "id": "lic-004q",
+      "name": "Checar Sessao PropostasReadequacao",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        4900
+      ],
+      "parameters": {
+        "jsCode": "const rows = $input.all();\nconst row = rows.length ? rows[0].json : null;\nconst valido = !!(row && new Date(row.expira_em).getTime() > Date.now());\nreturn [{ json: { valido, usuario_id: row ? row.usuario_id : null } }];"
+      }
+    },
+    {
+      "id": "lic-004r",
+      "name": "Sessao Valida PropostasReadequacao?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        880,
+        4900
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "lic-004s",
+              "leftValue": "={{ $json.valido }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "lic-004t",
+      "name": "Responder 401 PropostasReadequacao",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1100,
+        5060
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { erro: 'Sessao expirada. Entre novamente.' } }}",
+        "options": {
+          "responseCode": 401
+        }
+      }
+    },
+    {
+      "id": "lic-004u",
+      "name": "Verificar Dono Resumo Readequacao",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1320,
+        4900
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id FROM licitacoes_resumos WHERE id = $1 AND usuario_id = $2;",
+        "options": {
+          "queryReplacement": "={{ [ $('Extrair Corpo Propostas Readequacao').first().json.resumo_id, $('Checar Sessao PropostasReadequacao').first().json.usuario_id ] }}"
+        }
+      }
+    },
+    {
+      "id": "lic-004v",
+      "name": "Resumo Pertence Ao Usuario Readequacao?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        4900
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "lic-004w",
+              "leftValue": "={{ $input.all().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "lic-004x",
+      "name": "Responder Erro Nao Encontrado Readequacao",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1760,
+        5080
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { erro: 'Licitacao nao encontrada.' } }}",
+        "options": {
+          "responseCode": 404
+        }
+      }
+    },
+    {
+      "id": "lic-004y",
+      "name": "Chamar Readequar Proposta",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        4900
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n.upviaagentes.com/webhook/licitacoes/readequar-proposta",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": []
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ resumo_id: $('Extrair Corpo Propostas Readequacao').first().json.resumo_id, valor_lance_vencedor: $('Extrair Corpo Propostas Readequacao').first().json.valor_lance_vencedor, usuario_id: $('Checar Sessao PropostasReadequacao').first().json.usuario_id }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "lic-004z",
+      "name": "Responder Readequacao",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1980,
+        4900
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    },
+    {
+      "id": "lic-0050",
+      "name": "Nota Propostas Revisar",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        5040
+      ],
+      "parameters": {
+        "content": "## Marcar Proposta Como Revisada (Passo 19)\nRota: POST /webhook/licitacoes/propostas-revisar\nBody: { token, proposta_id }\n\nSo existe no site -- nao ha tool equivalente no WhatsApp. So marca status='revisada' quando a proposta ainda esta em 'rascunho' (nunca reverte de 'enviada').",
+        "width": 900,
+        "height": 180,
+        "color": 4
+      }
+    },
+    {
+      "id": "lic-0051",
+      "name": "Webhook Propostas Revisar",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        5300
+      ],
+      "webhookId": "lic-0052",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "licitacoes/propostas-revisar",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "lic-0053",
+      "name": "Extrair Corpo Propostas Revisar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        5300
+      ],
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nreturn [{ json: { token: String(body.token || ''), proposta_id: body.proposta_id || null } }];"
+      }
+    },
+    {
+      "id": "lic-0054",
+      "name": "Buscar Sessao PropostasRevisar",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        440,
+        5300
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT s.usuario_id AS usuario_id, s.expira_em AS expira_em FROM licitacoes_sessoes s WHERE s.token = $1 ORDER BY s.created_at DESC LIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ [ $('Extrair Corpo Propostas Revisar').first().json.token ] }}"
+        }
+      }
+    },
+    {
+      "id": "lic-0055",
+      "name": "Checar Sessao PropostasRevisar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        5300
+      ],
+      "parameters": {
+        "jsCode": "const rows = $input.all();\nconst row = rows.length ? rows[0].json : null;\nconst valido = !!(row && new Date(row.expira_em).getTime() > Date.now());\nreturn [{ json: { valido, usuario_id: row ? row.usuario_id : null } }];"
+      }
+    },
+    {
+      "id": "lic-0056",
+      "name": "Sessao Valida PropostasRevisar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        880,
+        5300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "lic-0057",
+              "leftValue": "={{ $json.valido }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "lic-0058",
+      "name": "Responder 401 PropostasRevisar",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1100,
+        5460
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { erro: 'Sessao expirada. Entre novamente.' } }}",
+        "options": {
+          "responseCode": 401
+        }
+      }
+    },
+    {
+      "id": "lic-0059",
+      "name": "Marcar Proposta Revisada",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1320,
+        5300
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE licitacoes_propostas SET status = 'revisada'\nWHERE id = $1 AND usuario_id = $2 AND status = 'rascunho'\nRETURNING id;",
+        "options": {
+          "queryReplacement": "={{ [ $('Extrair Corpo Propostas Revisar').first().json.proposta_id, $('Checar Sessao PropostasRevisar').first().json.usuario_id ] }}"
+        }
+      }
+    },
+    {
+      "id": "lic-005a",
+      "name": "Proposta Revisada?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        5300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "lic-005b",
+              "leftValue": "={{ $input.all().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "lic-005c",
+      "name": "Responder OK Revisar",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1760,
+        5300
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true } }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    },
+    {
+      "id": "lic-005d",
+      "name": "Responder Erro Revisar",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1760,
+        5480
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { erro: 'Proposta nao encontrada ou ja revisada/enviada.' } }}",
+        "options": {
+          "responseCode": 404
+        }
+      }
+    },
+    {
+      "id": "lic-005e",
+      "name": "Nota Licitacoes Confirmar Resultado",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        5440
+      ],
+      "parameters": {
+        "content": "## Confirmar Resultado da Licitacao (Passo 19)\nRota: POST /webhook/licitacoes/licitacoes-confirmar-resultado\nBody: { token, resumo_id, resultado, valor_final }\n\nProxy pro mesmo sub-workflow que tool_confirmar_resultado chama (licitacoes/confirmar-resultado) -- mesmo texto que hoje seria mandado por WhatsApp, so que digitado no site.",
+        "width": 900,
+        "height": 200,
+        "color": 4
+      }
+    },
+    {
+      "id": "lic-005f",
+      "name": "Webhook Licitacoes Confirmar Resultado",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        5700
+      ],
+      "webhookId": "lic-005g",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "licitacoes/licitacoes-confirmar-resultado",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "lic-005h",
+      "name": "Extrair Corpo Confirmar Resultado Site",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        5700
+      ],
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nreturn [{ json: { token: String(body.token || ''), resumo_id: body.resumo_id || null, resultado: body.resultado || null, valor_final: body.valor_final } }];"
+      }
+    },
+    {
+      "id": "lic-005i",
+      "name": "Buscar Sessao ConfirmarResultadoSite",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        440,
+        5700
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT s.usuario_id AS usuario_id, s.expira_em AS expira_em FROM licitacoes_sessoes s WHERE s.token = $1 ORDER BY s.created_at DESC LIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ [ $('Extrair Corpo Confirmar Resultado Site').first().json.token ] }}"
+        }
+      }
+    },
+    {
+      "id": "lic-005j",
+      "name": "Checar Sessao ConfirmarResultadoSite",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        5700
+      ],
+      "parameters": {
+        "jsCode": "const rows = $input.all();\nconst row = rows.length ? rows[0].json : null;\nconst valido = !!(row && new Date(row.expira_em).getTime() > Date.now());\nreturn [{ json: { valido, usuario_id: row ? row.usuario_id : null } }];"
+      }
+    },
+    {
+      "id": "lic-005k",
+      "name": "Sessao Valida ConfirmarResultadoSite?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        880,
+        5700
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "lic-005l",
+              "leftValue": "={{ $json.valido }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "lic-005m",
+      "name": "Responder 401 ConfirmarResultadoSite",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1100,
+        5860
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { erro: 'Sessao expirada. Entre novamente.' } }}",
+        "options": {
+          "responseCode": 401
+        }
+      }
+    },
+    {
+      "id": "lic-005n",
+      "name": "Verificar Dono Resumo Confirmar",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1320,
+        5700
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id FROM licitacoes_resumos WHERE id = $1 AND usuario_id = $2;",
+        "options": {
+          "queryReplacement": "={{ [ $('Extrair Corpo Confirmar Resultado Site').first().json.resumo_id, $('Checar Sessao ConfirmarResultadoSite').first().json.usuario_id ] }}"
+        }
+      }
+    },
+    {
+      "id": "lic-005o",
+      "name": "Resumo Pertence Ao Usuario Confirmar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        5700
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "lic-005p",
+              "leftValue": "={{ $input.all().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "lic-005q",
+      "name": "Responder Erro Nao Encontrado Confirmar",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1760,
+        5880
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { erro: 'Licitacao nao encontrada.' } }}",
+        "options": {
+          "responseCode": 404
+        }
+      }
+    },
+    {
+      "id": "lic-005r",
+      "name": "Chamar Confirmar Resultado",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        5700
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n.upviaagentes.com/webhook/licitacoes/confirmar-resultado",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": []
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ resumo_id: $('Extrair Corpo Confirmar Resultado Site').first().json.resumo_id, resultado: $('Extrair Corpo Confirmar Resultado Site').first().json.resultado, valor_final: $('Extrair Corpo Confirmar Resultado Site').first().json.valor_final, usuario_id: $('Checar Sessao ConfirmarResultadoSite').first().json.usuario_id }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "lic-005s",
+      "name": "Responder Confirmar Resultado Site",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1980,
+        5700
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    },
+    {
+      "id": "lic-005t",
+      "name": "Nota Documentos Cadastrar",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        5840
+      ],
+      "parameters": {
+        "content": "## Cadastrar/Atualizar Documento de Habilitacao (Passo 19)\nRota: POST /webhook/licitacoes/documentos-cadastrar\nBody: { token, tipo_documento, data_validade }\n\nProxy pro mesmo sub-workflow que tool_cadastrar_documento chama (licitacoes/cadastrar-documento). Sem checagem de dono de resumo -- documento e sempre do proprio usuario da sessao.",
+        "width": 900,
+        "height": 180,
+        "color": 4
+      }
+    },
+    {
+      "id": "lic-005u",
+      "name": "Webhook Documentos Cadastrar",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        6100
+      ],
+      "webhookId": "lic-005v",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "licitacoes/documentos-cadastrar",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "lic-005w",
+      "name": "Extrair Corpo Documentos Cadastrar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        6100
+      ],
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nreturn [{ json: { token: String(body.token || ''), tipo_documento: body.tipo_documento || null, data_validade: body.data_validade || null } }];"
+      }
+    },
+    {
+      "id": "lic-005x",
+      "name": "Buscar Sessao DocumentosCadastrar",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        440,
+        6100
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT s.usuario_id AS usuario_id, s.expira_em AS expira_em FROM licitacoes_sessoes s WHERE s.token = $1 ORDER BY s.created_at DESC LIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ [ $('Extrair Corpo Documentos Cadastrar').first().json.token ] }}"
+        }
+      }
+    },
+    {
+      "id": "lic-005y",
+      "name": "Checar Sessao DocumentosCadastrar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        6100
+      ],
+      "parameters": {
+        "jsCode": "const rows = $input.all();\nconst row = rows.length ? rows[0].json : null;\nconst valido = !!(row && new Date(row.expira_em).getTime() > Date.now());\nreturn [{ json: { valido, usuario_id: row ? row.usuario_id : null } }];"
+      }
+    },
+    {
+      "id": "lic-005z",
+      "name": "Sessao Valida DocumentosCadastrar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        880,
+        6100
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "lic-0060",
+              "leftValue": "={{ $json.valido }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "lic-0061",
+      "name": "Responder 401 DocumentosCadastrar",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1100,
+        6260
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { erro: 'Sessao expirada. Entre novamente.' } }}",
+        "options": {
+          "responseCode": 401
+        }
+      }
+    },
+    {
+      "id": "lic-0062",
+      "name": "Chamar Cadastrar Documento",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        6100
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n.upviaagentes.com/webhook/licitacoes/cadastrar-documento",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": []
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ tipo_documento: $('Extrair Corpo Documentos Cadastrar').first().json.tipo_documento, data_validade: $('Extrair Corpo Documentos Cadastrar').first().json.data_validade, usuario_id: $('Checar Sessao DocumentosCadastrar').first().json.usuario_id }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "lic-0063",
+      "name": "Responder Documentos Cadastrar",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1540,
+        6100
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    },
+    {
+      "id": "lic-0064",
+      "name": "Nota Fornecedores Buscar",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        6240
+      ],
+      "parameters": {
+        "content": "## Buscar Fornecedores sob Demanda (Passo 19)\nRota: POST /webhook/licitacoes/fornecedores-buscar\nBody: { token, resumo_id }\n\nProxy pro mesmo sub-workflow que tool_buscar_fornecedores chama (licitacoes/agente-fornecedores) -- tipo_produto e derivado do objeto_resumo da licitacao (o site nao pede pro usuario re-digitar a descricao).",
+        "width": 900,
+        "height": 200,
+        "color": 4
+      }
+    },
+    {
+      "id": "lic-0065",
+      "name": "Webhook Fornecedores Buscar",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        6500
+      ],
+      "webhookId": "lic-0066",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "licitacoes/fornecedores-buscar",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "lic-0067",
+      "name": "Extrair Corpo Fornecedores Buscar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        6500
+      ],
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nreturn [{ json: { token: String(body.token || ''), resumo_id: body.resumo_id || null } }];"
+      }
+    },
+    {
+      "id": "lic-0068",
+      "name": "Buscar Sessao FornecedoresBuscar",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        440,
+        6500
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT s.usuario_id AS usuario_id, s.expira_em AS expira_em FROM licitacoes_sessoes s WHERE s.token = $1 ORDER BY s.created_at DESC LIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ [ $('Extrair Corpo Fornecedores Buscar').first().json.token ] }}"
+        }
+      }
+    },
+    {
+      "id": "lic-0069",
+      "name": "Checar Sessao FornecedoresBuscar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        6500
+      ],
+      "parameters": {
+        "jsCode": "const rows = $input.all();\nconst row = rows.length ? rows[0].json : null;\nconst valido = !!(row && new Date(row.expira_em).getTime() > Date.now());\nreturn [{ json: { valido, usuario_id: row ? row.usuario_id : null } }];"
+      }
+    },
+    {
+      "id": "lic-006a",
+      "name": "Sessao Valida FornecedoresBuscar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        880,
+        6500
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "lic-006b",
+              "leftValue": "={{ $json.valido }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "lic-006c",
+      "name": "Responder 401 FornecedoresBuscar",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1100,
+        6660
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { erro: 'Sessao expirada. Entre novamente.' } }}",
+        "options": {
+          "responseCode": 401
+        }
+      }
+    },
+    {
+      "id": "lic-006d",
+      "name": "Buscar Objeto Resumo Fornecedores",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1320,
+        6500
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT objeto_resumo FROM licitacoes_resumos WHERE id = $1 AND usuario_id = $2;",
+        "options": {
+          "queryReplacement": "={{ [ $('Extrair Corpo Fornecedores Buscar').first().json.resumo_id, $('Checar Sessao FornecedoresBuscar').first().json.usuario_id ] }}"
+        }
+      }
+    },
+    {
+      "id": "lic-006e",
+      "name": "Resumo Pertence Ao Usuario Fornecedores?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        6500
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "lic-006f",
+              "leftValue": "={{ $input.all().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "lic-006g",
+      "name": "Responder Erro Nao Encontrado Fornecedores",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1760,
+        6680
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { erro: 'Licitacao nao encontrada.' } }}",
+        "options": {
+          "responseCode": 404
+        }
+      }
+    },
+    {
+      "id": "lic-006h",
+      "name": "Chamar Buscar Fornecedores",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        6500
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n.upviaagentes.com/webhook/licitacoes/agente-fornecedores",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": []
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ resumo_id: $('Extrair Corpo Fornecedores Buscar').first().json.resumo_id, tipo_produto: $json.objeto_resumo, usuario_id: $('Checar Sessao FornecedoresBuscar').first().json.usuario_id }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "lic-006i",
+      "name": "Responder Fornecedores Buscar",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1980,
+        6500
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    },
+    {
+      "id": "lic-006j",
+      "name": "Nota Licitacoes Favoritar",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        6640
+      ],
+      "parameters": {
+        "content": "## Favoritar/Desfavoritar Licitacao (Passo 20)\nRota: POST /webhook/licitacoes/licitacoes-favoritar\nBody: { token, resumo_id }\n\nProxy pro mesmo sub-workflow que tool_favoritar chama (licitacoes/favoritar) -- toggle, a propria query do sub-workflow ja filtra por usuario_id.",
+        "width": 900,
+        "height": 180,
+        "color": 4
+      }
+    },
+    {
+      "id": "lic-006k",
+      "name": "Webhook Licitacoes Favoritar",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        6900
+      ],
+      "webhookId": "lic-006l",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "licitacoes/licitacoes-favoritar",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "lic-006m",
+      "name": "Extrair Corpo Favoritar Site",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        6900
+      ],
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nreturn [{ json: { token: String(body.token || ''), resumo_id: body.resumo_id || null } }];"
+      }
+    },
+    {
+      "id": "lic-006n",
+      "name": "Buscar Sessao FavoritarSite",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        440,
+        6900
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT s.usuario_id AS usuario_id, s.expira_em AS expira_em FROM licitacoes_sessoes s WHERE s.token = $1 ORDER BY s.created_at DESC LIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ [ $('Extrair Corpo Favoritar Site').first().json.token ] }}"
+        }
+      }
+    },
+    {
+      "id": "lic-006o",
+      "name": "Checar Sessao FavoritarSite",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        6900
+      ],
+      "parameters": {
+        "jsCode": "const rows = $input.all();\nconst row = rows.length ? rows[0].json : null;\nconst valido = !!(row && new Date(row.expira_em).getTime() > Date.now());\nreturn [{ json: { valido, usuario_id: row ? row.usuario_id : null } }];"
+      }
+    },
+    {
+      "id": "lic-006p",
+      "name": "Sessao Valida FavoritarSite?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        880,
+        6900
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "lic-006q",
+              "leftValue": "={{ $json.valido }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "lic-006r",
+      "name": "Responder 401 FavoritarSite",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1100,
+        7060
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { erro: 'Sessao expirada. Entre novamente.' } }}",
+        "options": {
+          "responseCode": 401
+        }
+      }
+    },
+    {
+      "id": "lic-006s",
+      "name": "Chamar Favoritar",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        6900
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n.upviaagentes.com/webhook/licitacoes/favoritar",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": []
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ resumo_id: $('Extrair Corpo Favoritar Site').first().json.resumo_id, usuario_id: $('Checar Sessao FavoritarSite').first().json.usuario_id }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "lic-006t",
+      "name": "Responder Favoritar Site",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1540,
+        6900
       ],
       "parameters": {
         "respondWith": "json",
@@ -4027,6 +5461,549 @@
         [
           {
             "node": "Responder Documentos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Propostas Readequacao": {
+      "main": [
+        [
+          {
+            "node": "Extrair Corpo Propostas Readequacao",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Sessao PropostasReadequacao": {
+      "main": [
+        [
+          {
+            "node": "Checar Sessao PropostasReadequacao",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Checar Sessao PropostasReadequacao": {
+      "main": [
+        [
+          {
+            "node": "Sessao Valida PropostasReadequacao?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sessao Valida PropostasReadequacao?": {
+      "main": [
+        [
+          {
+            "node": "Verificar Dono Resumo Readequacao",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder 401 PropostasReadequacao",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Corpo Propostas Readequacao": {
+      "main": [
+        [
+          {
+            "node": "Buscar Sessao PropostasReadequacao",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verificar Dono Resumo Readequacao": {
+      "main": [
+        [
+          {
+            "node": "Resumo Pertence Ao Usuario Readequacao?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resumo Pertence Ao Usuario Readequacao?": {
+      "main": [
+        [
+          {
+            "node": "Chamar Readequar Proposta",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder Erro Nao Encontrado Readequacao",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chamar Readequar Proposta": {
+      "main": [
+        [
+          {
+            "node": "Responder Readequacao",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Propostas Revisar": {
+      "main": [
+        [
+          {
+            "node": "Extrair Corpo Propostas Revisar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Sessao PropostasRevisar": {
+      "main": [
+        [
+          {
+            "node": "Checar Sessao PropostasRevisar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Checar Sessao PropostasRevisar": {
+      "main": [
+        [
+          {
+            "node": "Sessao Valida PropostasRevisar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sessao Valida PropostasRevisar?": {
+      "main": [
+        [
+          {
+            "node": "Marcar Proposta Revisada",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder 401 PropostasRevisar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Corpo Propostas Revisar": {
+      "main": [
+        [
+          {
+            "node": "Buscar Sessao PropostasRevisar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Marcar Proposta Revisada": {
+      "main": [
+        [
+          {
+            "node": "Proposta Revisada?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Proposta Revisada?": {
+      "main": [
+        [
+          {
+            "node": "Responder OK Revisar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder Erro Revisar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Licitacoes Confirmar Resultado": {
+      "main": [
+        [
+          {
+            "node": "Extrair Corpo Confirmar Resultado Site",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Sessao ConfirmarResultadoSite": {
+      "main": [
+        [
+          {
+            "node": "Checar Sessao ConfirmarResultadoSite",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Checar Sessao ConfirmarResultadoSite": {
+      "main": [
+        [
+          {
+            "node": "Sessao Valida ConfirmarResultadoSite?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sessao Valida ConfirmarResultadoSite?": {
+      "main": [
+        [
+          {
+            "node": "Verificar Dono Resumo Confirmar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder 401 ConfirmarResultadoSite",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Corpo Confirmar Resultado Site": {
+      "main": [
+        [
+          {
+            "node": "Buscar Sessao ConfirmarResultadoSite",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verificar Dono Resumo Confirmar": {
+      "main": [
+        [
+          {
+            "node": "Resumo Pertence Ao Usuario Confirmar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resumo Pertence Ao Usuario Confirmar?": {
+      "main": [
+        [
+          {
+            "node": "Chamar Confirmar Resultado",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder Erro Nao Encontrado Confirmar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chamar Confirmar Resultado": {
+      "main": [
+        [
+          {
+            "node": "Responder Confirmar Resultado Site",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Documentos Cadastrar": {
+      "main": [
+        [
+          {
+            "node": "Extrair Corpo Documentos Cadastrar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Sessao DocumentosCadastrar": {
+      "main": [
+        [
+          {
+            "node": "Checar Sessao DocumentosCadastrar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Checar Sessao DocumentosCadastrar": {
+      "main": [
+        [
+          {
+            "node": "Sessao Valida DocumentosCadastrar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sessao Valida DocumentosCadastrar?": {
+      "main": [
+        [
+          {
+            "node": "Chamar Cadastrar Documento",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder 401 DocumentosCadastrar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Corpo Documentos Cadastrar": {
+      "main": [
+        [
+          {
+            "node": "Buscar Sessao DocumentosCadastrar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chamar Cadastrar Documento": {
+      "main": [
+        [
+          {
+            "node": "Responder Documentos Cadastrar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Fornecedores Buscar": {
+      "main": [
+        [
+          {
+            "node": "Extrair Corpo Fornecedores Buscar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Sessao FornecedoresBuscar": {
+      "main": [
+        [
+          {
+            "node": "Checar Sessao FornecedoresBuscar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Checar Sessao FornecedoresBuscar": {
+      "main": [
+        [
+          {
+            "node": "Sessao Valida FornecedoresBuscar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sessao Valida FornecedoresBuscar?": {
+      "main": [
+        [
+          {
+            "node": "Buscar Objeto Resumo Fornecedores",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder 401 FornecedoresBuscar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Corpo Fornecedores Buscar": {
+      "main": [
+        [
+          {
+            "node": "Buscar Sessao FornecedoresBuscar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Objeto Resumo Fornecedores": {
+      "main": [
+        [
+          {
+            "node": "Resumo Pertence Ao Usuario Fornecedores?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resumo Pertence Ao Usuario Fornecedores?": {
+      "main": [
+        [
+          {
+            "node": "Chamar Buscar Fornecedores",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder Erro Nao Encontrado Fornecedores",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chamar Buscar Fornecedores": {
+      "main": [
+        [
+          {
+            "node": "Responder Fornecedores Buscar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Licitacoes Favoritar": {
+      "main": [
+        [
+          {
+            "node": "Extrair Corpo Favoritar Site",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Sessao FavoritarSite": {
+      "main": [
+        [
+          {
+            "node": "Checar Sessao FavoritarSite",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Checar Sessao FavoritarSite": {
+      "main": [
+        [
+          {
+            "node": "Sessao Valida FavoritarSite?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sessao Valida FavoritarSite?": {
+      "main": [
+        [
+          {
+            "node": "Chamar Favoritar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder 401 FavoritarSite",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Corpo Favoritar Site": {
+      "main": [
+        [
+          {
+            "node": "Buscar Sessao FavoritarSite",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chamar Favoritar": {
+      "main": [
+        [
+          {
+            "node": "Responder Favoritar Site",
             "type": "main",
             "index": 0
           }

@@ -1,0 +1,571 @@
+{
+  "name": "Licitacoes IA - Readequar Proposta",
+  "nodes": [
+    {
+      "id": "rdq-0001",
+      "name": "Nota Readequar Proposta",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -320
+      ],
+      "parameters": {
+        "content": "## Readequar Proposta (Passo 19)\nSub-workflow reutilizavel via webhook: POST /webhook/licitacoes/readequar-proposta\nBody: { resumo_id, usuario_id, valor_lance_vencedor }\n\nChamado sob demanda pelo Orquestrador Central (tool_readequar_proposta) e pelo site\n(rota POST /propostas/{id}/solicitar-readequacao da API). Reescreve a proposta\nexistente ajustando o valor pro lance vencedor da disputa -- pratica comum em pregao\neletronico (a licitante e convidada a \"readequar\" o valor antes da homologacao).\n\nREGRA ABSOLUTA: valor_lance_vencedor e SEMPRE informado explicitamente pelo usuario\n(nunca estimado, calculado ou decidido pela IA). Sem fluxo de renegociacao ou\ncontraproposta -- so redige de novo com o numero que foi dado.\n\nSo aceita a partir de fase_atual='aguardando_resultado' (proposta original ja\nenviada, disputa em andamento). Ao concluir, fase_atual vira 'proposta_readequada'\n-- tool_confirmar_resultado tambem aceita esse estado, entao o usuario ainda\nconsegue confirmar vitoria/derrota normalmente depois.",
+        "width": 900,
+        "height": 260,
+        "color": 4
+      }
+    },
+    {
+      "id": "rdq-0002",
+      "name": "Webhook Readequar Proposta",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "rdq-0003",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "licitacoes/readequar-proposta",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "rdq-0004",
+      "name": "Extrair Corpo Readequar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nconst valorBruto = body.valor_lance_vencedor;\nconst valor = valorBruto != null && valorBruto !== '' ? Number(valorBruto) : null;\nreturn [{ json: {\n  resumo_id: body.resumo_id || null,\n  usuario_id: body.usuario_id || null,\n  valor_lance_vencedor: (valor != null && !isNaN(valor) && valor > 0) ? valor : null\n} }];"
+      }
+    },
+    {
+      "id": "rdq-0005",
+      "name": "Buscar Resumo Readequar",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        440,
+        0
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, objeto_resumo, tipo_disputa, prazo_entrega, documentos_exigidos, fase_atual FROM licitacoes_resumos WHERE id = $1;",
+        "options": {
+          "queryReplacement": "={{ [ $json.resumo_id ] }}"
+        }
+      }
+    },
+    {
+      "id": "rdq-0006",
+      "name": "Buscar Usuario Readequar",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        660,
+        0
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id AS usuario_id, whatsapp_numero FROM licitacoes_usuarios WHERE id = $1;",
+        "options": {
+          "queryReplacement": "={{ [ $('Extrair Corpo Readequar').first().json.usuario_id ] }}"
+        }
+      }
+    },
+    {
+      "id": "rdq-0007",
+      "name": "Readequacao Valida?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "rdq-0008",
+              "leftValue": "={{ !!$('Extrair Corpo Readequar').first().json.valor_lance_vencedor && $('Buscar Resumo Readequar').first().json.fase_atual === 'aguardando_resultado' }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "rdq-0009",
+      "name": "Buscar Dados Empresa Readequar",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1100,
+        -160
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT razao_social, cnpj, endereco, responsavel_legal FROM licitacoes_dados_empresa WHERE usuario_id = $1;",
+        "options": {
+          "queryReplacement": "={{ [ $('Buscar Usuario Readequar').first().json.usuario_id ] }}"
+        }
+      }
+    },
+    {
+      "id": "rdq-000a",
+      "name": "Montar Contexto Readequacao",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        -160
+      ],
+      "parameters": {
+        "jsCode": "const empresa = $input.first().json || {};\nconst resumo = $('Buscar Resumo Readequar').first().json;\nconst usuario = $('Buscar Usuario Readequar').first().json;\nconst ctx = $('Extrair Corpo Readequar').first().json;\nreturn [{ json: {\n  resumo_id: resumo.id,\n  usuario_id: usuario.usuario_id,\n  valor_lance_vencedor: ctx.valor_lance_vencedor,\n  razao_social: empresa.razao_social || '[RAZAO SOCIAL A PREENCHER]',\n  cnpj: empresa.cnpj || '[CNPJ A PREENCHER]',\n  endereco: empresa.endereco || '[ENDERECO A PREENCHER]',\n  responsavel_legal: empresa.responsavel_legal || '[RESPONSAVEL LEGAL A PREENCHER]',\n  objeto_resumo: resumo.objeto_resumo,\n  tipo_disputa: resumo.tipo_disputa,\n  prazo_entrega: resumo.prazo_entrega,\n  documentos_exigidos: resumo.documentos_exigidos,\n  whatsapp_numero: usuario.whatsapp_numero\n} }];"
+      }
+    },
+    {
+      "id": "rdq-000b",
+      "name": "Redigir Proposta Readequada",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.6,
+      "position": [
+        1540,
+        -160
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "resource": "text",
+        "operation": "message",
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list"
+        },
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "Voce e especialista em licitacoes publicas brasileiras (Lei 14.133/2021). O usuario ja\nenviou uma proposta pra essa licitacao e agora precisa READEQUAR o valor pra igualar o\nlance vencedor da disputa (pratica comum em pregao eletronico, antes da homologacao).\n\nRedija a proposta REESCRITA por completo, em portugues do Brasil, formal e objetiva,\ncom a mesma estrutura de uma proposta comercial:\n1. Dados da empresa proponente (razao social, CNPJ, endereco, responsavel legal)\n2. Descricao do objeto ofertado (baseado no resumo da licitacao)\n3. Valor da proposta -- USE EXATAMENTE o valor informado abaixo como \"lance vencedor\",\n   sem arredondar, recalcular ou alterar. Deixe explicito no texto que esse valor foi\n   readequado pra igualar o lance vencedor da disputa.\n4. Prazo de entrega/execucao proposto\n5. Prazo de validade da proposta: 60 dias, salvo se os documentos indicarem prazo\n   diferente\n6. Declaracoes padrao: ciencia e concordancia com os termos do edital, inexistencia de\n   fatos impeditivos para contratar com a administracao publica, cumprimento das normas\n   de saude e seguranca do trabalho\n\nREGRA ABSOLUTA E INEGOCIAVEL: voce NUNCA decide, calcula ou estima o valor da proposta.\nO valor final e sempre exatamente o numero fornecido como lance vencedor. Nao existe\nfluxo de renegociacao ou contraproposta aqui -- e so a proposta reescrita com o novo valor.\n\nResponda so com o texto da proposta readequada, pronto pra revisao humana, sem\ncomentarios extras."
+            },
+            {
+              "role": "user",
+              "content": "={{ 'Empresa: ' + $json.razao_social + ' | CNPJ: ' + $json.cnpj + ' | Endereco: ' + $json.endereco + ' | Responsavel: ' + $json.responsavel_legal + '\\n\\nObjeto da licitacao: ' + $json.objeto_resumo + '\\nModalidade: ' + $json.tipo_disputa + '\\nPrazo de entrega esperado: ' + ($json.prazo_entrega || 'nao especificado no edital') + '\\nDocumentos de habilitacao exigidos (contexto, nao repetir na proposta): ' + ($json.documentos_exigidos || 'nao especificado') + '\\n\\nValor do lance vencedor informado pelo usuario (usar exatamente esse numero): R$ ' + $json.valor_lance_vencedor.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "sjemA3sd4BGEaIHJ",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "id": "rdq-000c",
+      "name": "Extrair Texto Readequacao",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        -160
+      ],
+      "parameters": {
+        "jsCode": "const aiOutput = $input.first().json;\nconst texto = (aiOutput.message && aiOutput.message.content) || '';\nconst ctx = $('Montar Contexto Readequacao').first().json;\nreturn [{ json: { ...ctx, conteudo_proposta: texto } }];"
+      }
+    },
+    {
+      "id": "rdq-000d",
+      "name": "Salvar Proposta Readequada",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1980,
+        -160
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO licitacoes_propostas (resumo_id, usuario_id, conteudo_proposta, valor_ofertado, status)\nVALUES ($1, $2, $3, $4, 'rascunho')\nRETURNING id;",
+        "options": {
+          "queryReplacement": "={{ [ $json.resumo_id, $json.usuario_id, $json.conteudo_proposta, $json.valor_lance_vencedor ] }}"
+        }
+      }
+    },
+    {
+      "id": "rdq-000e",
+      "name": "Atualizar Fase Readequada",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        2200,
+        -160
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE licitacoes_resumos SET fase_atual = 'proposta_readequada' WHERE id = $1;",
+        "options": {
+          "queryReplacement": "={{ [ $('Extrair Texto Readequacao').first().json.resumo_id ] }}"
+        }
+      }
+    },
+    {
+      "id": "rdq-000f",
+      "name": "Montar Mensagem WhatsApp Readequacao",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2420,
+        -160
+      ],
+      "parameters": {
+        "jsCode": "const ctx = $('Extrair Texto Readequacao').first().json;\nconst texto = '📝 PROPOSTA READEQUADA -- revise antes de enviar. Valor ajustado pro lance vencedor informado: R$ ' +\n  ctx.valor_lance_vencedor.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) + '.\\n\\n' + ctx.conteudo_proposta;\nreturn [{ json: { numero: (ctx.whatsapp_numero || '').replace(/\\D/g, ''), texto } }];"
+      }
+    },
+    {
+      "id": "rdq-000g",
+      "name": "Enviar Readequacao WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2640,
+        -160
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "https://evo.upviaagentes.com/message/sendText/Upvia_adm",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: $json.numero, text: $json.texto }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "rdq-000h",
+      "name": "Responder OK Readequar",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2860,
+        -160
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, readequado: true, conteudo_proposta: $('Extrair Texto Readequacao').first().json.conteudo_proposta, valor_ofertado: $('Extrair Texto Readequacao').first().json.valor_lance_vencedor } }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    },
+    {
+      "id": "rdq-000i",
+      "name": "Montar Mensagem Readequacao Invalida",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        220
+      ],
+      "parameters": {
+        "jsCode": "const ctx = $('Extrair Corpo Readequar').first().json;\nconst resumo = $('Buscar Resumo Readequar').first().json;\nconst usuario = $('Buscar Usuario Readequar').first().json || {};\nif (!usuario.whatsapp_numero) return [];\nlet texto;\nif (!ctx.valor_lance_vencedor) {\n  texto = 'Pra readequar a proposta preciso que voce me diga o valor exato do lance vencedor (ex: \"o lance vencedor foi R$ 78.500\"). Nao decido esse valor sozinho.';\n} else {\n  const explicacoes = {\n    identificada: 'essa licitacao ainda nao foi analisada',\n    analisada: 'essa licitacao ainda nao tem proposta enviada -- so da pra readequar depois que a proposta original ja foi gerada',\n    vencida: 'essa licitacao ja foi marcada como vencida',\n    perdida: 'essa licitacao ja foi marcada como perdida',\n    proposta_readequada: 'essa licitacao ja esta readequada -- confirme o resultado antes de readequar de novo',\n    contrato_gerado: 'essa licitacao ja tem contrato gerado'\n  };\n  const motivo = explicacoes[resumo.fase_atual] || ('a licitacao esta na fase \"' + resumo.fase_atual + '\"');\n  texto = 'Nao consigo readequar a proposta agora: ' + motivo + '.';\n}\nreturn [{ json: { numero: usuario.whatsapp_numero.replace(/\\D/g, ''), texto } }];"
+      }
+    },
+    {
+      "id": "rdq-000j",
+      "name": "Enviar Readequacao Invalida WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        220
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "https://evo.upviaagentes.com/message/sendText/Upvia_adm",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: $json.numero, text: $json.texto }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "rdq-000k",
+      "name": "Responder Readequacao Invalida",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1540,
+        220
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, readequado: false, motivo: $('Montar Mensagem Readequacao Invalida').first().json.texto } }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Readequar Proposta": {
+      "main": [
+        [
+          {
+            "node": "Extrair Corpo Readequar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Corpo Readequar": {
+      "main": [
+        [
+          {
+            "node": "Buscar Resumo Readequar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Resumo Readequar": {
+      "main": [
+        [
+          {
+            "node": "Buscar Usuario Readequar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Usuario Readequar": {
+      "main": [
+        [
+          {
+            "node": "Readequacao Valida?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Readequacao Valida?": {
+      "main": [
+        [
+          {
+            "node": "Buscar Dados Empresa Readequar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Montar Mensagem Readequacao Invalida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Dados Empresa Readequar": {
+      "main": [
+        [
+          {
+            "node": "Montar Contexto Readequacao",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Contexto Readequacao": {
+      "main": [
+        [
+          {
+            "node": "Redigir Proposta Readequada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redigir Proposta Readequada": {
+      "main": [
+        [
+          {
+            "node": "Extrair Texto Readequacao",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Texto Readequacao": {
+      "main": [
+        [
+          {
+            "node": "Salvar Proposta Readequada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Salvar Proposta Readequada": {
+      "main": [
+        [
+          {
+            "node": "Atualizar Fase Readequada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualizar Fase Readequada": {
+      "main": [
+        [
+          {
+            "node": "Montar Mensagem WhatsApp Readequacao",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Mensagem WhatsApp Readequacao": {
+      "main": [
+        [
+          {
+            "node": "Enviar Readequacao WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Readequacao WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Responder OK Readequar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Mensagem Readequacao Invalida": {
+      "main": [
+        [
+          {
+            "node": "Enviar Readequacao Invalida WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Readequacao Invalida WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Responder Readequacao Invalida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
