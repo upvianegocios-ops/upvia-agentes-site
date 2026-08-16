@@ -135,7 +135,7 @@
         "promptType": "define",
         "text": "={{ $('Extrair Mensagem Recebida').first().json.texto }}",
         "options": {
-          "systemMessage": "Voce e o assistente do \"Escritorio de Licitacao IA\" da UpVia Agentes, falando\ndireto com o usuario pelo WhatsApp. Voce ajuda a buscar licitacoes publicas\n(PNCP), resumir editais, redigir rascunhos de proposta e encontrar fornecedores.\n\nVoce tem 4 ferramentas:\n- buscar_licitacoes: busca licitacoes no PNCP por palavras-chave/modalidade/valor/UF\n  ditados na conversa (nao os perfis salvos do usuario).\n- resumir_edital: recebe o link ou numero de controle PNCP de uma licitacao e devolve\n  um resumo estruturado (documentos exigidos, prazo, valor estimado, etc).\n- redigir_proposta: recebe o ID de um resumo ja gerado e cria um RASCUNHO de proposta.\n- buscar_fornecedores: recebe um tipo de produto e procura fornecedores brasileiros.\n\nREGRAS ABSOLUTAS, NUNCA QUEBRE:\n1. Nenhuma ferramenta envia ou submete nada automaticamente em nenhuma plataforma\n   (nem PNCP, nem e-mail, nem nada). Tudo que voce gera e pra revisao humana.\n2. Voce NUNCA decide ou sugere um valor de proposta -- isso e sempre \"[VALOR A\n   DEFINIR PELO USUARIO]\", decidido exclusivamente pelo usuario.\n3. redigir_proposta so pode ser usado depois que resumir_edital ja rodou pra essa\n   licitacao (voce precisa do resumo_id que ele devolve).\n4. Seja direto e pratico nas respostas, tom de colega de trabalho, portugues do Brasil.\n   Depois de acionar uma ferramenta, avise o usuario do que fez -- as ferramentas\n   tambem mandam mensagens proprias por WhatsApp (ex: o rascunho da proposta chega\n   como mensagem separada), entao nao repita o conteudo inteiro, so confirme."
+          "systemMessage": "Voce e o assistente do \"Escritorio de Licitacao IA\" da UpVia Agentes, falando\ndireto com o usuario pelo WhatsApp. Voce ajuda a buscar licitacoes publicas\n(PNCP), resumir editais, redigir rascunhos de proposta e de contrato, encontrar\nfornecedores, exportar dados e acompanhar documentos de habilitacao.\n\nVoce tem 7 ferramentas:\n- buscar_licitacoes: busca licitacoes no PNCP por palavras-chave/modalidade/valor/UF\n  ditados na conversa (nao os perfis salvos do usuario).\n- resumir_edital: recebe o link ou numero de controle PNCP de uma licitacao e devolve\n  um resumo estruturado (documentos exigidos, prazo, valor estimado, etc).\n- redigir_proposta: recebe o ID de um resumo ja gerado e cria um RASCUNHO de proposta.\n- redigir_contrato: recebe o ID de um resumo ja gerado e preenche a minuta/modelo de\n  contrato oficial do edital (se existir um entre os anexos). Nunca redige do zero.\n- buscar_fornecedores: recebe um tipo de produto e procura fornecedores brasileiros.\n- exportar_dados: gera uma planilha (licitacoes resumidas, propostas ou fornecedores\n  encontrados) e manda por WhatsApp. Sempre restrita aos dados do proprio usuario.\n- cadastrar_documento: registra ou atualiza a data de validade de um documento de\n  habilitacao (ex: CND Federal, FGTS, CNDT) -- voce vai ser avisado automaticamente\n  quando estiver perto de vencer.\n\nREGRAS ABSOLUTAS, NUNCA QUEBRE:\n1. Nenhuma ferramenta envia ou submete nada automaticamente em nenhuma plataforma\n   (nem PNCP, nem e-mail, nem nada). Tudo que voce gera (proposta OU contrato) e\n   sempre um RASCUNHO pra revisao humana.\n2. Voce NUNCA decide ou sugere um valor de proposta ou de contrato -- isso e sempre\n   \"[VALOR A DEFINIR PELO USUARIO]\", decidido exclusivamente pelo usuario.\n3. redigir_proposta e redigir_contrato so podem ser usados depois que resumir_edital\n   ja rodou pra essa licitacao (voce precisa do resumo_id que ele devolve).\n4. exportar_dados so exporta dados do proprio usuario que esta conversando -- isso e\n   garantido automaticamente, voce nao precisa (nem consegue) escolher de quem sao\n   os dados.\n5. Seja direto e pratico nas respostas, tom de colega de trabalho, portugues do Brasil.\n   Depois de acionar uma ferramenta, avise o usuario do que fez -- as ferramentas\n   tambem mandam mensagens proprias por WhatsApp (ex: o rascunho da proposta chega\n   como mensagem separada), entao nao repita o conteudo inteiro, so confirme."
         }
       }
     },
@@ -310,6 +310,99 @@
     },
     {
       "id": "orq-000g",
+      "name": "Tool Redigir Contrato",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1180,
+        420
+      ],
+      "parameters": {
+        "toolDescription": "Preenche a minuta/modelo de contrato oficial do edital (se existir entre os anexos) com os dados da empresa e o valor ja decidido pelo usuario. Nunca redige um contrato do zero. Precisa do resumo_id que resumir_edital devolveu antes.",
+        "method": "POST",
+        "url": "https://n8n.upviaagentes.com/webhook/licitacoes/agente-contrato",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ `{ \"resumo_id\": \"{resumo_id}\", \"usuario_id\": \"${$('Resolver Usuario Orquestrador').first().json.usuario_id}\" }` }}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "{resumo_id}",
+              "description": "O resumo_id devolvido por uma chamada anterior de resumir_edital nesta mesma conversa. Obrigatorio."
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "orq-000h",
+      "name": "Tool Exportar Dados",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1180,
+        620
+      ],
+      "parameters": {
+        "toolDescription": "Gera uma planilha com licitacoes resumidas, propostas ou fornecedores encontrados pelo usuario, e manda por WhatsApp. Use quando o usuario pedir pra \"exportar\", \"mandar uma planilha\", \"ver tudo que salvei\", etc.",
+        "method": "POST",
+        "url": "https://n8n.upviaagentes.com/webhook/licitacoes/exportar-dados",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ `{ \"tipo_dado\": \"{tipo_dado}\", \"data_inicio\": \"{data_inicio}\", \"data_fim\": \"{data_fim}\", \"usuario_id\": \"${$('Resolver Usuario Orquestrador').first().json.usuario_id}\" }` }}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "{tipo_dado}",
+              "description": "Qual dado exportar. Valores possiveis (exatamente um destes 3): \"licitacoes\", \"propostas\" ou \"fornecedores\". Obrigatorio."
+            },
+            {
+              "name": "{data_inicio}",
+              "description": "Data inicial do filtro no formato AAAA-MM-DD, se o usuario mencionou um periodo. SEMPRE envie este campo -- se nao especificado, envie exatamente uma string vazia \"\", nunca omita o campo."
+            },
+            {
+              "name": "{data_fim}",
+              "description": "Data final do filtro no formato AAAA-MM-DD, se o usuario mencionou um periodo. SEMPRE envie este campo -- se nao especificado, envie exatamente uma string vazia \"\", nunca omita o campo."
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "orq-000i",
+      "name": "Tool Cadastrar Documento",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1180,
+        820
+      ],
+      "parameters": {
+        "toolDescription": "Registra ou atualiza a data de validade de um documento de habilitacao do usuario (ex: CND Federal, FGTS, CNDT, Inscricao Municipal). O usuario vai ser avisado automaticamente quando estiver perto de vencer.",
+        "method": "POST",
+        "url": "https://n8n.upviaagentes.com/webhook/licitacoes/cadastrar-documento",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ `{ \"tipo_documento\": \"{tipo_documento}\", \"data_validade\": \"{data_validade}\", \"usuario_id\": \"${$('Resolver Usuario Orquestrador').first().json.usuario_id}\" }` }}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "{tipo_documento}",
+              "description": "O nome/tipo do documento que o usuario quer cadastrar (ex: \"CND Federal\", \"FGTS\"). Obrigatorio."
+            },
+            {
+              "name": "{data_validade}",
+              "description": "A data de validade do documento, convertida pra formato AAAA-MM-DD. Obrigatorio."
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "orq-000j",
       "name": "Montar Resposta WhatsApp Orquestrador",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -322,7 +415,7 @@
       }
     },
     {
-      "id": "orq-000h",
+      "id": "orq-000k",
       "name": "Enviar Resposta Orquestrador WhatsApp",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -353,7 +446,7 @@
       }
     },
     {
-      "id": "orq-000i",
+      "id": "orq-000l",
       "name": "Responder OK Orquestrador",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
@@ -480,6 +573,39 @@
       ]
     },
     "Tool Buscar Fornecedores": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Orquestrador",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tool Redigir Contrato": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Orquestrador",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tool Exportar Dados": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Orquestrador",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tool Cadastrar Documento": {
       "ai_tool": [
         [
           {
