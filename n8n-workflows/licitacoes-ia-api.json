@@ -2068,6 +2068,834 @@
           "responseCode": 200
         }
       }
+    },
+    {
+      "id": "lic-0039",
+      "name": "Nota Resumos Listar",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        3040
+      ],
+      "parameters": {
+        "content": "## Listar Licitacoes Resumidas pela IA (dashboard, so leitura)\nRota: POST /webhook/licitacoes/resumos-listar\nBody: { token }\nDevolve licitacoes_resumos do usuario -- fase_atual, resultado, pontos_atencao,\netc. Puramente informativo: nenhuma acao que muda fase existe aqui, isso e so\npelo WhatsApp (ver Agente Orquestrador Central).",
+        "width": 900,
+        "height": 180,
+        "color": 4
+      }
+    },
+    {
+      "id": "lic-003a",
+      "name": "Webhook Resumos Listar",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        3300
+      ],
+      "webhookId": "lic-003b",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "licitacoes/resumos-listar",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "lic-003c",
+      "name": "Extrair Corpo Resumos Listar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        3300
+      ],
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nreturn [{ json: { token: String(body.token || '') } }];"
+      }
+    },
+    {
+      "id": "lic-003d",
+      "name": "Buscar Sessao ResumosListar",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        440,
+        3300
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT s.usuario_id AS usuario_id, s.expira_em AS expira_em FROM licitacoes_sessoes s WHERE s.token = $1 ORDER BY s.created_at DESC LIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ [ $('Extrair Corpo Resumos Listar').first().json.token ] }}"
+        }
+      }
+    },
+    {
+      "id": "lic-003e",
+      "name": "Checar Sessao ResumosListar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        3300
+      ],
+      "parameters": {
+        "jsCode": "const rows = $input.all();\nconst row = rows.length ? rows[0].json : null;\nconst valido = !!(row && new Date(row.expira_em).getTime() > Date.now());\nreturn [{ json: { valido, usuario_id: row ? row.usuario_id : null } }];"
+      }
+    },
+    {
+      "id": "lic-003f",
+      "name": "Sessao Valida ResumosListar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        880,
+        3300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "lic-003g",
+              "leftValue": "={{ $json.valido }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "lic-003h",
+      "name": "Responder 401 ResumosListar",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1100,
+        3460
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { erro: 'Sessao expirada. Entre novamente.' } }}",
+        "options": {
+          "responseCode": 401
+        }
+      }
+    },
+    {
+      "id": "lic-003i",
+      "name": "Buscar Resumos Usuario",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1320,
+        3300
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, pncp_id, objeto_resumo, tipo_disputa, valor_estimado, prazo_proposta, prazo_entrega,\n       documentos_exigidos, pontos_atencao, resultado, fase_atual, criado_em\nFROM licitacoes_resumos\nWHERE usuario_id = $1\nORDER BY criado_em DESC\nLIMIT 100;",
+        "options": {
+          "queryReplacement": "={{ [ $('Checar Sessao ResumosListar').first().json.usuario_id ] }}"
+        }
+      }
+    },
+    {
+      "id": "lic-003j",
+      "name": "Formatar Resumos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        3300
+      ],
+      "parameters": {
+        "jsCode": "// alwaysOutputData na query gera 1 item-fantasma vazio quando 0 linhas batem\n// (usuario sem nenhum resumo ainda) -- filtra antes de devolver pro front.\nconst resumos = $input.all().map(i => i.json).filter(j => j && j.id);\nreturn [{ json: { resumos } }];"
+      }
+    },
+    {
+      "id": "lic-003k",
+      "name": "Responder Resumos",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1760,
+        3300
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    },
+    {
+      "id": "lic-003l",
+      "name": "Nota Propostas Listar",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        3440
+      ],
+      "parameters": {
+        "content": "## Listar Rascunhos de Proposta (dashboard, so leitura)\nRota: POST /webhook/licitacoes/propostas-listar\nBody: { token }\nSempre rascunho -- gerar/reenviar proposta so pelo WhatsApp.",
+        "width": 900,
+        "height": 160,
+        "color": 4
+      }
+    },
+    {
+      "id": "lic-003m",
+      "name": "Webhook Propostas Listar",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        3700
+      ],
+      "webhookId": "lic-003n",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "licitacoes/propostas-listar",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "lic-003o",
+      "name": "Extrair Corpo Propostas Listar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        3700
+      ],
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nreturn [{ json: { token: String(body.token || '') } }];"
+      }
+    },
+    {
+      "id": "lic-003p",
+      "name": "Buscar Sessao PropostasListar",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        440,
+        3700
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT s.usuario_id AS usuario_id, s.expira_em AS expira_em FROM licitacoes_sessoes s WHERE s.token = $1 ORDER BY s.created_at DESC LIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ [ $('Extrair Corpo Propostas Listar').first().json.token ] }}"
+        }
+      }
+    },
+    {
+      "id": "lic-003q",
+      "name": "Checar Sessao PropostasListar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        3700
+      ],
+      "parameters": {
+        "jsCode": "const rows = $input.all();\nconst row = rows.length ? rows[0].json : null;\nconst valido = !!(row && new Date(row.expira_em).getTime() > Date.now());\nreturn [{ json: { valido, usuario_id: row ? row.usuario_id : null } }];"
+      }
+    },
+    {
+      "id": "lic-003r",
+      "name": "Sessao Valida PropostasListar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        880,
+        3700
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "lic-003s",
+              "leftValue": "={{ $json.valido }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "lic-003t",
+      "name": "Responder 401 PropostasListar",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1100,
+        3860
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { erro: 'Sessao expirada. Entre novamente.' } }}",
+        "options": {
+          "responseCode": 401
+        }
+      }
+    },
+    {
+      "id": "lic-003u",
+      "name": "Buscar Propostas Usuario",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1320,
+        3700
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT p.id, p.resumo_id, p.conteudo_proposta, p.valor_ofertado, p.status, p.criado_em,\n       r.objeto_resumo, r.pncp_id, r.fase_atual\nFROM licitacoes_propostas p\nLEFT JOIN licitacoes_resumos r ON r.id = p.resumo_id\nWHERE p.usuario_id = $1\nORDER BY p.criado_em DESC\nLIMIT 100;",
+        "options": {
+          "queryReplacement": "={{ [ $('Checar Sessao PropostasListar').first().json.usuario_id ] }}"
+        }
+      }
+    },
+    {
+      "id": "lic-003v",
+      "name": "Formatar Propostas",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        3700
+      ],
+      "parameters": {
+        "jsCode": "const propostas = $input.all().map(i => i.json).filter(j => j && j.id);\nreturn [{ json: { propostas } }];"
+      }
+    },
+    {
+      "id": "lic-003w",
+      "name": "Responder Propostas",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1760,
+        3700
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    },
+    {
+      "id": "lic-003x",
+      "name": "Nota Contratos Listar",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        3840
+      ],
+      "parameters": {
+        "content": "## Listar Rascunhos de Contrato (dashboard, so leitura)\nRota: POST /webhook/licitacoes/contratos-listar\nBody: { token }\nSempre rascunho -- nunca documento final assinavel. Gerar so pelo WhatsApp,\ne so depois que a licitacao estiver confirmada como vencida.",
+        "width": 900,
+        "height": 180,
+        "color": 4
+      }
+    },
+    {
+      "id": "lic-003y",
+      "name": "Webhook Contratos Listar",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        4100
+      ],
+      "webhookId": "lic-003z",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "licitacoes/contratos-listar",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "lic-0040",
+      "name": "Extrair Corpo Contratos Listar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        4100
+      ],
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nreturn [{ json: { token: String(body.token || '') } }];"
+      }
+    },
+    {
+      "id": "lic-0041",
+      "name": "Buscar Sessao ContratosListar",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        440,
+        4100
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT s.usuario_id AS usuario_id, s.expira_em AS expira_em FROM licitacoes_sessoes s WHERE s.token = $1 ORDER BY s.created_at DESC LIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ [ $('Extrair Corpo Contratos Listar').first().json.token ] }}"
+        }
+      }
+    },
+    {
+      "id": "lic-0042",
+      "name": "Checar Sessao ContratosListar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        4100
+      ],
+      "parameters": {
+        "jsCode": "const rows = $input.all();\nconst row = rows.length ? rows[0].json : null;\nconst valido = !!(row && new Date(row.expira_em).getTime() > Date.now());\nreturn [{ json: { valido, usuario_id: row ? row.usuario_id : null } }];"
+      }
+    },
+    {
+      "id": "lic-0043",
+      "name": "Sessao Valida ContratosListar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        880,
+        4100
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "lic-0044",
+              "leftValue": "={{ $json.valido }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "lic-0045",
+      "name": "Responder 401 ContratosListar",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1100,
+        4260
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { erro: 'Sessao expirada. Entre novamente.' } }}",
+        "options": {
+          "responseCode": 401
+        }
+      }
+    },
+    {
+      "id": "lic-0046",
+      "name": "Buscar Contratos Usuario",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1320,
+        4100
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT c.id, c.resumo_id, c.conteudo_contrato, c.status, c.criado_em,\n       r.objeto_resumo, r.pncp_id\nFROM licitacoes_contratos c\nLEFT JOIN licitacoes_resumos r ON r.id = c.resumo_id\nWHERE c.usuario_id = $1\nORDER BY c.criado_em DESC\nLIMIT 100;",
+        "options": {
+          "queryReplacement": "={{ [ $('Checar Sessao ContratosListar').first().json.usuario_id ] }}"
+        }
+      }
+    },
+    {
+      "id": "lic-0047",
+      "name": "Formatar Contratos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        4100
+      ],
+      "parameters": {
+        "jsCode": "const contratos = $input.all().map(i => i.json).filter(j => j && j.id);\nreturn [{ json: { contratos } }];"
+      }
+    },
+    {
+      "id": "lic-0048",
+      "name": "Responder Contratos",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1760,
+        4100
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    },
+    {
+      "id": "lic-0049",
+      "name": "Nota Documentos Listar",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        4240
+      ],
+      "parameters": {
+        "content": "## Listar Documentos de Habilitacao (dashboard, so leitura)\nRota: POST /webhook/licitacoes/documentos-listar\nBody: { token }\nCadastrar/atualizar validade so pelo WhatsApp (tool_cadastrar_documento).",
+        "width": 900,
+        "height": 160,
+        "color": 4
+      }
+    },
+    {
+      "id": "lic-004a",
+      "name": "Webhook Documentos Listar",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        4500
+      ],
+      "webhookId": "lic-004b",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "licitacoes/documentos-listar",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "lic-004c",
+      "name": "Extrair Corpo Documentos Listar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        4500
+      ],
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nreturn [{ json: { token: String(body.token || '') } }];"
+      }
+    },
+    {
+      "id": "lic-004d",
+      "name": "Buscar Sessao DocumentosListar",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        440,
+        4500
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT s.usuario_id AS usuario_id, s.expira_em AS expira_em FROM licitacoes_sessoes s WHERE s.token = $1 ORDER BY s.created_at DESC LIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ [ $('Extrair Corpo Documentos Listar').first().json.token ] }}"
+        }
+      }
+    },
+    {
+      "id": "lic-004e",
+      "name": "Checar Sessao DocumentosListar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        4500
+      ],
+      "parameters": {
+        "jsCode": "const rows = $input.all();\nconst row = rows.length ? rows[0].json : null;\nconst valido = !!(row && new Date(row.expira_em).getTime() > Date.now());\nreturn [{ json: { valido, usuario_id: row ? row.usuario_id : null } }];"
+      }
+    },
+    {
+      "id": "lic-004f",
+      "name": "Sessao Valida DocumentosListar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        880,
+        4500
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "lic-004g",
+              "leftValue": "={{ $json.valido }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "lic-004h",
+      "name": "Responder 401 DocumentosListar",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1100,
+        4660
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { erro: 'Sessao expirada. Entre novamente.' } }}",
+        "options": {
+          "responseCode": 401
+        }
+      }
+    },
+    {
+      "id": "lic-004i",
+      "name": "Buscar Documentos Usuario",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1320,
+        4500
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, tipo_documento, data_validade, atualizado_em\nFROM licitacoes_documentos_habilitacao\nWHERE usuario_id = $1\nORDER BY data_validade ASC;",
+        "options": {
+          "queryReplacement": "={{ [ $('Checar Sessao DocumentosListar').first().json.usuario_id ] }}"
+        }
+      }
+    },
+    {
+      "id": "lic-004j",
+      "name": "Formatar Documentos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        4500
+      ],
+      "parameters": {
+        "jsCode": "const documentos = $input.all().map(i => i.json).filter(j => j && j.id);\nreturn [{ json: { documentos } }];"
+      }
+    },
+    {
+      "id": "lic-004k",
+      "name": "Responder Documentos",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1760,
+        4500
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
     }
   ],
   "connections": {
@@ -2863,6 +3691,342 @@
         [
           {
             "node": "Responder Com Resumo Novo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Resumos Listar": {
+      "main": [
+        [
+          {
+            "node": "Extrair Corpo Resumos Listar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Sessao ResumosListar": {
+      "main": [
+        [
+          {
+            "node": "Checar Sessao ResumosListar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Checar Sessao ResumosListar": {
+      "main": [
+        [
+          {
+            "node": "Sessao Valida ResumosListar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sessao Valida ResumosListar?": {
+      "main": [
+        [
+          {
+            "node": "Buscar Resumos Usuario",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder 401 ResumosListar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Corpo Resumos Listar": {
+      "main": [
+        [
+          {
+            "node": "Buscar Sessao ResumosListar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Resumos Usuario": {
+      "main": [
+        [
+          {
+            "node": "Formatar Resumos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatar Resumos": {
+      "main": [
+        [
+          {
+            "node": "Responder Resumos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Propostas Listar": {
+      "main": [
+        [
+          {
+            "node": "Extrair Corpo Propostas Listar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Sessao PropostasListar": {
+      "main": [
+        [
+          {
+            "node": "Checar Sessao PropostasListar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Checar Sessao PropostasListar": {
+      "main": [
+        [
+          {
+            "node": "Sessao Valida PropostasListar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sessao Valida PropostasListar?": {
+      "main": [
+        [
+          {
+            "node": "Buscar Propostas Usuario",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder 401 PropostasListar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Corpo Propostas Listar": {
+      "main": [
+        [
+          {
+            "node": "Buscar Sessao PropostasListar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Propostas Usuario": {
+      "main": [
+        [
+          {
+            "node": "Formatar Propostas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatar Propostas": {
+      "main": [
+        [
+          {
+            "node": "Responder Propostas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Contratos Listar": {
+      "main": [
+        [
+          {
+            "node": "Extrair Corpo Contratos Listar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Sessao ContratosListar": {
+      "main": [
+        [
+          {
+            "node": "Checar Sessao ContratosListar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Checar Sessao ContratosListar": {
+      "main": [
+        [
+          {
+            "node": "Sessao Valida ContratosListar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sessao Valida ContratosListar?": {
+      "main": [
+        [
+          {
+            "node": "Buscar Contratos Usuario",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder 401 ContratosListar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Corpo Contratos Listar": {
+      "main": [
+        [
+          {
+            "node": "Buscar Sessao ContratosListar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Contratos Usuario": {
+      "main": [
+        [
+          {
+            "node": "Formatar Contratos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatar Contratos": {
+      "main": [
+        [
+          {
+            "node": "Responder Contratos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Documentos Listar": {
+      "main": [
+        [
+          {
+            "node": "Extrair Corpo Documentos Listar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Sessao DocumentosListar": {
+      "main": [
+        [
+          {
+            "node": "Checar Sessao DocumentosListar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Checar Sessao DocumentosListar": {
+      "main": [
+        [
+          {
+            "node": "Sessao Valida DocumentosListar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sessao Valida DocumentosListar?": {
+      "main": [
+        [
+          {
+            "node": "Buscar Documentos Usuario",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder 401 DocumentosListar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Corpo Documentos Listar": {
+      "main": [
+        [
+          {
+            "node": "Buscar Sessao DocumentosListar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Documentos Usuario": {
+      "main": [
+        [
+          {
+            "node": "Formatar Documentos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatar Documentos": {
+      "main": [
+        [
+          {
+            "node": "Responder Documentos",
             "type": "main",
             "index": 0
           }

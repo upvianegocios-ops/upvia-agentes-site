@@ -23,8 +23,11 @@
   --border-cyan: rgba(0,210,255,0.35);
   --border-violet: rgba(108,92,231,0.3);
   --danger: #FF6B6B;
+  --danger-glow: rgba(255,107,107,0.12);
   --success: #00CF9D;
   --success-glow: rgba(0,207,157,0.12);
+  --warning: #FFB020;
+  --warning-glow: rgba(255,176,32,0.12);
   --radius: 16px;
   --radius-sm: 10px;
 }
@@ -176,6 +179,33 @@ input::placeholder{color:var(--text-muted);opacity:.55}
   letter-spacing:.5px;margin-bottom:8px}
 .resumo-loading{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-muted);padding:6px 0}
 
+/* Escritorio IA (dashboard, so leitura) */
+.subtabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:16px}
+.subtab{flex-shrink:0;padding:8px 14px;border-radius:20px;border:1px solid var(--border);
+  background:var(--bg-input);font-size:12px;font-weight:700;color:var(--text-muted);cursor:pointer;
+  font-family:'Outfit',sans-serif;transition:all .2s;white-space:nowrap}
+.subtab.sel{background:var(--violet-glow);border-color:var(--border-violet);color:var(--violet-light)}
+.subview{display:none}
+.subview.active{display:block}
+.escritorio-list{display:flex;flex-direction:column;gap:12px;padding-bottom:24px}
+.esc-card{background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px}
+.esc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:6px}
+.esc-objeto{font-size:14px;font-weight:600;line-height:1.5;flex:1}
+.esc-meta{font-size:12px;color:var(--text-muted);line-height:1.9;margin-top:6px}
+.esc-pncp{font-size:11px;color:var(--text-muted);opacity:.7;margin-top:8px}
+.badge{display:inline-block;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.3px;white-space:nowrap;flex-shrink:0}
+.badge-muted{background:var(--violet-glow);color:var(--violet-light);border:1px solid var(--border-violet)}
+.badge-info{background:var(--cyan-glow);color:var(--cyan);border:1px solid var(--border-cyan)}
+.badge-success{background:var(--success-glow);color:var(--success);border:1px solid var(--success)}
+.badge-danger{background:var(--danger-glow);color:var(--danger);border:1px solid var(--danger)}
+.badge-warning{background:var(--warning-glow);color:var(--warning);border:1px solid var(--warning)}
+.atencao-box{margin-top:12px;padding:12px 14px;background:var(--warning-glow);border:1px solid var(--warning);
+  border-radius:var(--radius-sm);font-size:12px;line-height:1.7;color:var(--text);white-space:pre-line}
+.atencao-box .atencao-titulo{font-size:11px;font-weight:800;color:var(--warning);text-transform:uppercase;
+  letter-spacing:.5px;margin-bottom:6px}
+.rascunho-tag{font-size:11px;color:var(--text-muted);font-style:italic;margin-top:10px}
+
 @media(max-width:420px){.card-head,.card-body{padding-left:18px;padding-right:18px}.row2{grid-template-columns:1fr}}
 </style>
 </head>
@@ -235,6 +265,7 @@ input::placeholder{color:var(--text-muted);opacity:.55}
     <div class="tabbar" id="tabbar-perfis">
       <button class="tab sel" data-aba="perfis" onclick="mudarAba('perfis')">Meus alertas</button>
       <button class="tab" data-aba="editais" onclick="mudarAba('editais')">Licitações recebidas</button>
+      <button class="tab" data-aba="escritorio" onclick="mudarAba('escritorio')">Escritório IA</button>
     </div>
     <div class="card-head" style="padding-left:0;padding-right:0">
       <h1>Meus alertas de licitação</h1>
@@ -253,12 +284,36 @@ input::placeholder{color:var(--text-muted);opacity:.55}
     <div class="tabbar" id="tabbar-editais">
       <button class="tab" data-aba="perfis" onclick="mudarAba('perfis')">Meus alertas</button>
       <button class="tab sel" data-aba="editais" onclick="mudarAba('editais')">Licitações recebidas</button>
+      <button class="tab" data-aba="escritorio" onclick="mudarAba('escritorio')">Escritório IA</button>
     </div>
     <div class="card-head" style="padding-left:0;padding-right:0">
       <h1>Licitações recebidas</h1>
       <p>Tudo que já mandamos pro seu WhatsApp. Salve as que mais te interessam pra ver um resumo do que precisa preparar — e, se for pregão, avisamos quando a sessão de disputa estiver perto de começar.</p>
     </div>
     <div id="editais-container" style="padding-bottom:40px"></div>
+  </div>
+
+  <!-- ESCRITORIO DE LICITACAO IA (dashboard, so leitura -- acoes sempre pelo WhatsApp) -->
+  <div class="view" id="view-escritorio">
+    <div class="tabbar" id="tabbar-escritorio">
+      <button class="tab" data-aba="perfis" onclick="mudarAba('perfis')">Meus alertas</button>
+      <button class="tab" data-aba="editais" onclick="mudarAba('editais')">Licitações recebidas</button>
+      <button class="tab sel" data-aba="escritorio" onclick="mudarAba('escritorio')">Escritório IA</button>
+    </div>
+    <div class="card-head" style="padding-left:0;padding-right:0">
+      <h1>Escritório de Licitação IA</h1>
+      <p>Acompanhamento do que a IA já fez por você — resumos, propostas e contratos em rascunho, e seus documentos de habilitação. Só leitura: pra confirmar vitória, gerar contrato ou cadastrar documento, fale com a IA pelo WhatsApp.</p>
+    </div>
+    <div class="subtabs" id="subtabs-escritorio">
+      <button class="subtab sel" data-sub="licitacoes" onclick="mudarSubAba('licitacoes')">Licitações</button>
+      <button class="subtab" data-sub="propostas" onclick="mudarSubAba('propostas')">Propostas</button>
+      <button class="subtab" data-sub="contratos" onclick="mudarSubAba('contratos')">Contratos</button>
+      <button class="subtab" data-sub="documentos" onclick="mudarSubAba('documentos')">Documentos</button>
+    </div>
+    <div class="subview active" id="subview-licitacoes"><div id="licitacoes-container"></div></div>
+    <div class="subview" id="subview-propostas"><div id="propostas-container"></div></div>
+    <div class="subview" id="subview-contratos"><div id="contratos-container"></div></div>
+    <div class="subview" id="subview-documentos"><div id="documentos-container"></div></div>
   </div>
 
   <!-- FORM NOVO/EDITAR PERFIL -->
@@ -360,6 +415,12 @@ let perfilEditandoId = null;
 let perfisCache = [];
 let editaisCache = [];
 let editaisCarregados = false;
+let escritorioSubAba = 'licitacoes';
+let licitacoesCache = [];
+let propostasCache = [];
+let contratosCache = [];
+let documentosCache = [];
+const escritorioCarregado = { licitacoes: false, propostas: false, contratos: false, documentos: false };
 
 // ─── Init ───────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
@@ -739,9 +800,212 @@ function mudarAba(qual) {
   if (qual === 'editais') {
     showView('view-editais');
     if (!editaisCarregados) carregarEditais();
+  } else if (qual === 'escritorio') {
+    showView('view-escritorio');
+    carregarSubAba(escritorioSubAba);
   } else {
     showView('view-perfis');
   }
+}
+
+// ─── Escritório de Licitação IA (dashboard, só leitura) ──────────────
+function mudarSubAba(qual) {
+  escritorioSubAba = qual;
+  document.querySelectorAll('#subtabs-escritorio .subtab').forEach(btn => btn.classList.toggle('sel', btn.dataset.sub === qual));
+  document.querySelectorAll('.subview').forEach(v => v.classList.toggle('active', v.id === `subview-${qual}`));
+  carregarSubAba(qual);
+}
+
+function carregarSubAba(qual) {
+  if (escritorioCarregado[qual]) return;
+  const loaders = {
+    licitacoes: carregarLicitacoes,
+    propostas: carregarPropostas,
+    contratos: carregarContratos,
+    documentos: carregarDocumentos
+  };
+  loaders[qual]();
+}
+
+function faseBadge(fase) {
+  const map = {
+    identificada: ['Identificada', 'badge-muted'],
+    analisada: ['Analisada', 'badge-muted'],
+    proposta_enviada: ['Proposta enviada', 'badge-info'],
+    aguardando_resultado: ['Aguardando resultado', 'badge-info'],
+    vencida: ['Vencida 🎉', 'badge-success'],
+    perdida: ['Perdida', 'badge-danger'],
+    proposta_readequada: ['Proposta readequada', 'badge-info'],
+    contrato_gerado: ['Contrato gerado', 'badge-success']
+  };
+  const [label, cls] = map[fase] || [fase || '—', 'badge-muted'];
+  return `<span class="badge ${cls}">${escapeHtml(label)}</span>`;
+}
+
+function formatarDataHora(iso) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+async function carregarLicitacoes() {
+  const cont = document.getElementById('licitacoes-container');
+  cont.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:30px 0">Carregando...</p>';
+  try {
+    const data = await apiCall('resumos-listar', {});
+    licitacoesCache = data.resumos || [];
+    escritorioCarregado.licitacoes = true;
+    renderLicitacoes();
+  } catch (e) {
+    toast(e.message);
+    cont.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:30px 0">Não foi possível carregar suas licitações.</p>';
+  }
+}
+
+function renderLicitacoes() {
+  const cont = document.getElementById('licitacoes-container');
+  if (!licitacoesCache.length) {
+    cont.innerHTML = `
+      <div class="empty-state">
+        <div class="ic">🗂️</div>
+        <p>Nenhuma licitação resumida pela IA ainda. Peça pra IA resumir um edital pelo WhatsApp e ele aparece aqui.</p>
+      </div>`;
+    return;
+  }
+  cont.innerHTML = `<div class="escritorio-list">${licitacoesCache.map(r => `
+    <div class="esc-card">
+      <div class="esc-top">
+        <div class="esc-objeto">${escapeHtml((r.objeto_resumo || '').slice(0, 200))}${(r.objeto_resumo || '').length > 200 ? '…' : ''}</div>
+        ${faseBadge(r.fase_atual)}
+      </div>
+      <div class="esc-meta">
+        💰 ${formatarValorEdital(r.valor_estimado)} · 📋 ${escapeHtml(r.tipo_disputa || '—')}<br>
+        🗓️ Proposta até ${formatarDataHora(r.prazo_proposta) || '—'}${r.prazo_entrega ? ' · Entrega até ' + formatarDataHora(r.prazo_entrega) : ''}
+      </div>
+      ${r.pontos_atencao ? `<div class="atencao-box"><div class="atencao-titulo">⚠️ Pontos de atenção</div>${escapeHtml(r.pontos_atencao)}</div>` : ''}
+      <div class="esc-pncp">PNCP ${escapeHtml(r.pncp_id || '—')} · recebida em ${formatarDataHora(r.criado_em)}</div>
+    </div>
+  `).join('')}</div>`;
+}
+
+async function carregarPropostas() {
+  const cont = document.getElementById('propostas-container');
+  cont.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:30px 0">Carregando...</p>';
+  try {
+    const data = await apiCall('propostas-listar', {});
+    propostasCache = data.propostas || [];
+    escritorioCarregado.propostas = true;
+    renderPropostas();
+  } catch (e) {
+    toast(e.message);
+    cont.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:30px 0">Não foi possível carregar suas propostas.</p>';
+  }
+}
+
+function renderPropostas() {
+  const cont = document.getElementById('propostas-container');
+  if (!propostasCache.length) {
+    cont.innerHTML = `
+      <div class="empty-state">
+        <div class="ic">📝</div>
+        <p>Nenhuma proposta gerada ainda. Peça pra IA redigir uma proposta pelo WhatsApp e o rascunho aparece aqui.</p>
+      </div>`;
+    return;
+  }
+  cont.innerHTML = `<div class="escritorio-list">${propostasCache.map(p => `
+    <div class="esc-card">
+      <div class="esc-top">
+        <div class="esc-objeto">${escapeHtml((p.objeto_resumo || '').slice(0, 200))}${(p.objeto_resumo || '').length > 200 ? '…' : ''}</div>
+        ${faseBadge(p.fase_atual)}
+      </div>
+      <div class="esc-meta">
+        💰 ${formatarValorEdital(p.valor_ofertado)} · 📌 ${escapeHtml(p.status || '—')}
+      </div>
+      <div class="esc-pncp">PNCP ${escapeHtml(p.pncp_id || '—')} · gerada em ${formatarDataHora(p.criado_em)}</div>
+      <div class="rascunho-tag">Rascunho — revise e envie pelo WhatsApp antes de protocolar.</div>
+    </div>
+  `).join('')}</div>`;
+}
+
+async function carregarContratos() {
+  const cont = document.getElementById('contratos-container');
+  cont.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:30px 0">Carregando...</p>';
+  try {
+    const data = await apiCall('contratos-listar', {});
+    contratosCache = data.contratos || [];
+    escritorioCarregado.contratos = true;
+    renderContratos();
+  } catch (e) {
+    toast(e.message);
+    cont.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:30px 0">Não foi possível carregar seus contratos.</p>';
+  }
+}
+
+function renderContratos() {
+  const cont = document.getElementById('contratos-container');
+  if (!contratosCache.length) {
+    cont.innerHTML = `
+      <div class="empty-state">
+        <div class="ic">📄</div>
+        <p>Nenhum contrato gerado ainda. Isso só acontece depois que uma licitação é confirmada como vencida — peça pra IA redigir o contrato pelo WhatsApp.</p>
+      </div>`;
+    return;
+  }
+  cont.innerHTML = `<div class="escritorio-list">${contratosCache.map(c => `
+    <div class="esc-card">
+      <div class="esc-top">
+        <div class="esc-objeto">${escapeHtml((c.objeto_resumo || '').slice(0, 200))}${(c.objeto_resumo || '').length > 200 ? '…' : ''}</div>
+        <span class="badge ${c.status === 'revisado' ? 'badge-success' : 'badge-warning'}">${escapeHtml(c.status || 'rascunho')}</span>
+      </div>
+      <div class="esc-pncp">PNCP ${escapeHtml(c.pncp_id || '—')} · gerado em ${formatarDataHora(c.criado_em)}</div>
+      <div class="rascunho-tag">Rascunho — nunca é documento final assinável. Revise pelo WhatsApp antes de qualquer assinatura.</div>
+    </div>
+  `).join('')}</div>`;
+}
+
+async function carregarDocumentos() {
+  const cont = document.getElementById('documentos-container');
+  cont.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:30px 0">Carregando...</p>';
+  try {
+    const data = await apiCall('documentos-listar', {});
+    documentosCache = data.documentos || [];
+    escritorioCarregado.documentos = true;
+    renderDocumentos();
+  } catch (e) {
+    toast(e.message);
+    cont.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:30px 0">Não foi possível carregar seus documentos.</p>';
+  }
+}
+
+function statusValidade(dataValidade) {
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const venc = new Date(dataValidade + 'T00:00:00');
+  const dias = Math.round((venc - hoje) / 86400000);
+  if (dias < 0) return { label: `Vencido há ${Math.abs(dias)} dia(s)`, cls: 'badge-danger' };
+  if (dias <= 10) return { label: `Vence em ${dias} dia(s)`, cls: 'badge-warning' };
+  return { label: `Válido até ${formatarDataHora(dataValidade)}`, cls: 'badge-muted' };
+}
+
+function renderDocumentos() {
+  const cont = document.getElementById('documentos-container');
+  if (!documentosCache.length) {
+    cont.innerHTML = `
+      <div class="empty-state">
+        <div class="ic">📋</div>
+        <p>Nenhum documento de habilitação cadastrado ainda. Peça pra IA cadastrar pelo WhatsApp (ex: "minha certidão negativa vence em 20/09") e a gente avisa quando estiver perto de vencer.</p>
+      </div>`;
+    return;
+  }
+  cont.innerHTML = `<div class="escritorio-list">${documentosCache.map(d => {
+    const s = statusValidade(d.data_validade);
+    return `
+    <div class="esc-card">
+      <div class="esc-top">
+        <div class="esc-objeto">${escapeHtml(d.tipo_documento)}</div>
+        <span class="badge ${s.cls}">${escapeHtml(s.label)}</span>
+      </div>
+      <div class="esc-meta">Atualizado em ${formatarDataHora(d.atualizado_em)}</div>
+    </div>`;
+  }).join('')}</div>`;
 }
 
 async function carregarEditais() {
