@@ -1,0 +1,3 @@
+# Piloto privado (seção 27) — nunca indexar antes da liberação oficial.
+User-agent: *
+Disallow: /

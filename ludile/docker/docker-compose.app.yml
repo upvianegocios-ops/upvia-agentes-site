@@ -1,0 +1,51 @@
+# Ludilê — app Next.js + Nginx isolados do UpVia Agentes (seções 1, 2 e 19).
+# Sobe em cima da rede criada por docker/supabase/docker-compose.yml
+# (rede externa "ludile_default"), então precisa dela já estar de pé.
+#
+# Uso:
+#   cd docker/supabase && docker compose up -d      # sobe o Supabase self-hosted primeiro
+#   cd ../.. && docker compose -f docker/docker-compose.app.yml up -d --build
+
+name: ludile-app
+
+services:
+  app:
+    container_name: ludile-app
+    build:
+      context: ..
+      dockerfile: docker/app/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      # O app fala com o gateway do Supabase pela rede interna do Docker,
+      # nunca por um IP/porta pública (seção 18).
+      NEXT_PUBLIC_SUPABASE_URL: http://envoy:8000
+    networks:
+      - ludile_default
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  nginx:
+    container_name: ludile-nginx
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "127.0.0.1:8080:80"
+      # Em produção, o Nginx do host (ou o Traefik do EasyPanel — ver DEPLOY.md)
+      # é quem fala com a internet; este container fica atrás dele.
+    volumes:
+      - ../nginx/ludile.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - ludile_default
+
+networks:
+  ludile_default:
+    external: true
+    name: ludile_default

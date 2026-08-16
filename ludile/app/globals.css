@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ludile-primary: #6c4fe0;
+  --ludile-secondary: #ffc93c;
+}
+
+/* Fonte legível por padrão; troca para OpenDyslexic quando ativada nas
+   configurações de acessibilidade da criança (seção 6). */
+body {
+  @apply bg-ludile-bg text-slate-800;
+  font-family: 'Atkinson Hyperlegible', system-ui, -apple-system, sans-serif;
+}
+
+body[data-font='dislexia'] {
+  font-family: 'OpenDyslexic', system-ui, sans-serif;
+}
+
+body[data-animation-speed='reduzida'] * {
+  transition-duration: 0.05s !important;
+  animation-duration: 0.05s !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

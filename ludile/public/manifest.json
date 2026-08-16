@@ -1,0 +1,14 @@
+{
+  "name": "Ludilê — a aventura da alfabetização",
+  "short_name": "Ludilê",
+  "description": "Aplicativo lúdico e acessível de alfabetização infantil.",
+  "start_url": "/mapa",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#FFF9F0",
+  "theme_color": "#6C4FE0",
+  "lang": "pt-BR",
+  "icons": [
+    { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
