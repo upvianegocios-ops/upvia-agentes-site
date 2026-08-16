@@ -1,0 +1,343 @@
+{
+  "name": "Licitacoes IA - Monitor Homologacao (cron 12h)",
+  "nodes": [
+    {
+      "id": "hom-0001",
+      "name": "Nota Monitor Homologacao",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -320
+      ],
+      "parameters": {
+        "content": "## Monitor de Resultado/Homologacao (Passo 12)\nCron a cada 12h: licitacoes_resumos com prazo_proposta vencido, resultado ainda\n\"pendente\" e usuario com CNPJ cadastrado em licitacoes_dados_empresa. Consulta\n.../itens (temResultado por item) e .../itens/{n}/resultados (niFornecedor =\nCNPJ do vencedor) no PNCP -- schema confirmado ao vivo contra um caso real\nhomologado nesta sessao. Se bater com o CNPJ do usuario -> vencida + aciona o\nAgente Redator de Contrato. Se todos os itens ja tem resultado e nao bateu ->\nperdida. Enquanto o CNPJ nao estiver cadastrado (caso hoje do Jonas/UpVia), essa\nconsulta simplesmente nao acha nenhuma linha -- fica pronto, sem efeito ainda.\n\nChamadas ao PNCP feitas DENTRO de um unico Code node (this.helpers.httpRequest)\nem vez de um grafo de nodes aninhado -- mais simples de acompanhar pra uma\nlogica que ja e \"pra cada licitacao, pra cada item com resultado, comparar\nCNPJ\", com try/catch por chamada pra 1 licitacao com erro de rede nao travar\no ciclo inteiro.",
+        "width": 900,
+        "height": 260,
+        "color": 4
+      }
+    },
+    {
+      "id": "hom-0002",
+      "name": "Schedule Monitor Homologacao",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 12
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "hom-0003",
+      "name": "Buscar Licitacoes Vencidas",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        220,
+        0
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT r.id AS resumo_id, r.usuario_id, r.pncp_id, r.objeto_resumo, e.cnpj, u.whatsapp_numero\nFROM licitacoes_resumos r\nJOIN licitacoes_dados_empresa e ON e.usuario_id = r.usuario_id\nJOIN licitacoes_usuarios u ON u.id = r.usuario_id\nWHERE r.prazo_proposta < NOW()\n  AND r.resultado = 'pendente'\n  AND r.usuario_id IS NOT NULL\n  AND e.cnpj IS NOT NULL\n  AND r.prazo_proposta > NOW() - INTERVAL '90 days'\n  AND u.ativo = true\nLIMIT 50;",
+        "options": {
+          "queryReplacement": "={{ [] }}"
+        }
+      }
+    },
+    {
+      "id": "hom-0004",
+      "name": "Verificar Resultados PNCP",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// so retorna itens onde o resultado MUDOU (vencida ou perdida) -- licitacoes\n// ainda sem resultado publicado (o caso mais comum) sao filtradas aqui mesmo,\n// nao precisam de nenhum processamento depois.\nfunction normalizarCnpj(v) { return String(v || '').replace(/\\D/g, ''); }\n\nasync function buscarJson(url) {\n  try {\n    return await this.helpers.httpRequest({ method: 'GET', url, json: true });\n  } catch (e) {\n    return null;\n  }\n}\n\nconst saida = [];\nfor (const item of $input.all()) {\n  const r = item.json;\n  const m = String(r.pncp_id || '').match(/^(\\d{14})-\\d+-(\\d+)\\/(\\d{4})$/);\n  if (!m) continue;\n  const cnpjOrgao = m[1], sequencial = String(parseInt(m[2], 10)), ano = m[3];\n  const itensUrl = 'https://pncp.gov.br/pncp-api/v1/orgaos/' + cnpjOrgao + '/compras/' + ano + '/' + sequencial + '/itens';\n  const itens = await buscarJson.call(this, itensUrl);\n  if (!Array.isArray(itens) || itens.length === 0) continue;\n\n  const comResultado = itens.filter(i => i.temResultado === true);\n  if (comResultado.length === 0) continue; // ainda pendente, nada a fazer\n\n  const cnpjUsuario = normalizarCnpj(r.cnpj);\n  let venceu = false;\n  let vencedorInfo = null;\n  for (const i of comResultado) {\n    const resUrl = 'https://pncp.gov.br/pncp-api/v1/orgaos/' + cnpjOrgao + '/compras/' + ano + '/' + sequencial + '/itens/' + i.numeroItem + '/resultados';\n    const resultados = await buscarJson.call(this, resUrl);\n    if (!Array.isArray(resultados)) continue;\n    const match = resultados.find(res => normalizarCnpj(res.niFornecedor) === cnpjUsuario && cnpjUsuario);\n    if (match) { venceu = true; vencedorInfo = match; break; }\n  }\n\n  if (venceu) {\n    saida.push({ json: { ...r, novo_resultado: 'vencida', valor_homologado: vencedorInfo.valorTotalHomologado } });\n  } else if (comResultado.length === itens.length) {\n    // todos os itens ja tem resultado publicado e o usuario nao apareceu em nenhum\n    saida.push({ json: { ...r, novo_resultado: 'perdida' } });\n  }\n  // senao: alguns itens ainda sem resultado e usuario nao apareceu nos que ja tem --\n  // continua pendente, tenta de novo no proximo ciclo (nao adiciona em \"saida\").\n}\nreturn saida;"
+      }
+    },
+    {
+      "id": "hom-0005",
+      "name": "Atualizar Resultado Licitacao",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        660,
+        0
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE licitacoes_resumos SET resultado = $2 WHERE id = $1;",
+        "options": {
+          "queryReplacement": "={{ [ $json.resumo_id, $json.novo_resultado ] }}"
+        }
+      }
+    },
+    {
+      "id": "hom-0006",
+      "name": "Foi Vencida?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "hom-0007",
+              "leftValue": "={{ $json.novo_resultado }}",
+              "rightValue": "vencida",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "hom-0008",
+      "name": "Montar Mensagem Vencida",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        -140
+      ],
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nfunction formataValor(v) {\n  if (v == null) return 'valor nao informado';\n  return 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 });\n}\nconst texto = '🎉 Voce venceu a licitacao \"' + (item.objeto_resumo || item.pncp_id) + '\"! Valor homologado: ' + formataValor(item.valor_homologado) + '. Ja vou preparar um rascunho de contrato pra voce revisar.';\nreturn [{ json: { ...item, numero: (item.whatsapp_numero || '').replace(/\\D/g, ''), texto } }];"
+      }
+    },
+    {
+      "id": "hom-0009",
+      "name": "Enviar Mensagem Vencida WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        -140
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://evo.upviaagentes.com/message/sendText/Upvia_adm' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: $json.numero, text: $json.texto }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "hom-000a",
+      "name": "Chamar Agente Contrato",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1540,
+        -140
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://n8n.upviaagentes.com/webhook/licitacoes/agente-contrato' }}",
+        "sendHeaders": false,
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ resumo_id: $('Montar Mensagem Vencida').first().json.resumo_id, usuario_id: $('Montar Mensagem Vencida').first().json.usuario_id }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "hom-000b",
+      "name": "Montar Mensagem Perdida",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        140
+      ],
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nconst texto = 'A licitacao \"' + (item.objeto_resumo || item.pncp_id) + '\" ja tem resultado publicado e nao foi voce o vencedor dessa vez.';\nreturn [{ json: { numero: (item.whatsapp_numero || '').replace(/\\D/g, ''), texto } }];"
+      }
+    },
+    {
+      "id": "hom-000c",
+      "name": "Enviar Mensagem Perdida WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        140
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://evo.upviaagentes.com/message/sendText/Upvia_adm' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: $json.numero, text: $json.texto }) }}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Monitor Homologacao": {
+      "main": [
+        [
+          {
+            "node": "Buscar Licitacoes Vencidas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Licitacoes Vencidas": {
+      "main": [
+        [
+          {
+            "node": "Verificar Resultados PNCP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verificar Resultados PNCP": {
+      "main": [
+        [
+          {
+            "node": "Atualizar Resultado Licitacao",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualizar Resultado Licitacao": {
+      "main": [
+        [
+          {
+            "node": "Foi Vencida?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Foi Vencida?": {
+      "main": [
+        [
+          {
+            "node": "Montar Mensagem Vencida",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Montar Mensagem Perdida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Mensagem Vencida": {
+      "main": [
+        [
+          {
+            "node": "Enviar Mensagem Vencida WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Mensagem Vencida WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Chamar Agente Contrato",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Mensagem Perdida": {
+      "main": [
+        [
+          {
+            "node": "Enviar Mensagem Perdida WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
