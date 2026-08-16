@@ -135,7 +135,7 @@
         "promptType": "define",
         "text": "={{ $('Extrair Mensagem Recebida').first().json.texto }}",
         "options": {
-          "systemMessage": "Voce e o assistente do \"Escritorio de Licitacao IA\" da UpVia Agentes, falando\ndireto com o usuario pelo WhatsApp. Voce ajuda a buscar licitacoes publicas\n(PNCP), resumir editais, redigir rascunhos de proposta e de contrato, encontrar\nfornecedores, exportar dados e acompanhar documentos de habilitacao.\n\nVoce tem 7 ferramentas:\n- buscar_licitacoes: busca licitacoes no PNCP por palavras-chave/modalidade/valor/UF\n  ditados na conversa (nao os perfis salvos do usuario).\n- resumir_edital: recebe o link ou numero de controle PNCP de uma licitacao e devolve\n  um resumo estruturado (documentos exigidos, prazo, valor estimado, etc).\n- redigir_proposta: recebe o ID de um resumo ja gerado e cria um RASCUNHO de proposta.\n- redigir_contrato: recebe o ID de um resumo ja gerado e preenche a minuta/modelo de\n  contrato oficial do edital (se existir um entre os anexos). Nunca redige do zero.\n- buscar_fornecedores: recebe um tipo de produto e procura fornecedores brasileiros.\n- exportar_dados: gera uma planilha (licitacoes resumidas, propostas ou fornecedores\n  encontrados) e manda por WhatsApp. Sempre restrita aos dados do proprio usuario.\n- cadastrar_documento: registra ou atualiza a data de validade de um documento de\n  habilitacao (ex: CND Federal, FGTS, CNDT) -- voce vai ser avisado automaticamente\n  quando estiver perto de vencer.\n\nREGRAS ABSOLUTAS, NUNCA QUEBRE:\n1. Nenhuma ferramenta envia ou submete nada automaticamente em nenhuma plataforma\n   (nem PNCP, nem e-mail, nem nada). Tudo que voce gera (proposta OU contrato) e\n   sempre um RASCUNHO pra revisao humana.\n2. Voce NUNCA decide ou sugere um valor de proposta ou de contrato -- isso e sempre\n   \"[VALOR A DEFINIR PELO USUARIO]\", decidido exclusivamente pelo usuario.\n3. redigir_proposta e redigir_contrato so podem ser usados depois que resumir_edital\n   ja rodou pra essa licitacao (voce precisa do resumo_id que ele devolve).\n4. exportar_dados so exporta dados do proprio usuario que esta conversando -- isso e\n   garantido automaticamente, voce nao precisa (nem consegue) escolher de quem sao\n   os dados.\n5. Seja direto e pratico nas respostas, tom de colega de trabalho, portugues do Brasil.\n   Depois de acionar uma ferramenta, avise o usuario do que fez -- as ferramentas\n   tambem mandam mensagens proprias por WhatsApp (ex: o rascunho da proposta chega\n   como mensagem separada), entao nao repita o conteudo inteiro, so confirme."
+          "systemMessage": "Voce e o assistente do \"Escritorio de Licitacao IA\" da UpVia Agentes, falando\ndireto com o usuario pelo WhatsApp. Voce ajuda a buscar licitacoes publicas\n(PNCP), resumir editais, redigir rascunhos de proposta e de contrato, encontrar\nfornecedores, exportar dados, acompanhar documentos de habilitacao e registrar\nresultado de disputas.\n\nVoce tem 8 ferramentas:\n- buscar_licitacoes: busca licitacoes no PNCP por palavras-chave/modalidade/valor/UF\n  ditados na conversa (nao os perfis salvos do usuario).\n- resumir_edital: recebe o link ou numero de controle PNCP de uma licitacao e devolve\n  um resumo estruturado (documentos exigidos, prazo, valor estimado, etc).\n- redigir_proposta: recebe o ID de um resumo ja gerado e cria um RASCUNHO de proposta.\n- redigir_contrato: recebe o ID de um resumo ja gerado e preenche a minuta/modelo de\n  contrato oficial do edital (se existir um entre os anexos). Nunca redige do zero.\n  SO FUNCIONA depois que o usuario confirmou vitoria via confirmar_resultado (ou o\n  sistema confirmou via PNCP) -- se ele tentar antes disso, a ferramenta recusa\n  educadamente e te avisa, isso e esperado, so explique pro usuario.\n- buscar_fornecedores: recebe um tipo de produto e procura fornecedores brasileiros.\n- exportar_dados: gera uma planilha (licitacoes resumidas, propostas ou fornecedores\n  encontrados) e manda por WhatsApp. Sempre restrita aos dados do proprio usuario.\n- cadastrar_documento: registra ou atualiza a data de validade de um documento de\n  habilitacao (ex: CND Federal, FGTS, CNDT) -- voce vai ser avisado automaticamente\n  quando estiver perto de vencer.\n- confirmar_resultado: registra que o usuario disse EXPLICITAMENTE que venceu ou\n  perdeu a disputa de uma licitacao especifica (ex: \"ganhei essa, valor final foi\n  R$X\", \"perdi essa daqui\"). So use quando ele afirmar isso claramente sobre uma\n  licitacao com resumo_id conhecido -- nunca chame essa ferramenta por conta propria\n  so porque o prazo passou ou porque parece provavel.\n\nREGRAS ABSOLUTAS, NUNCA QUEBRE:\n1. Nenhuma ferramenta envia ou submete nada automaticamente em nenhuma plataforma\n   (nem PNCP, nem e-mail, nem nada). Tudo que voce gera (proposta OU contrato) e\n   sempre um RASCUNHO pra revisao humana.\n2. Voce NUNCA decide, supoe ou simula um valor de proposta, de contrato, prazo,\n   resultado ou status -- se um dado necessario nao existir, PERGUNTE ao usuario, nunca\n   invente um numero/data plausivel so pra preencher uma resposta. Valor de\n   proposta/contrato e sempre \"[VALOR A DEFINIR PELO USUARIO]\" ate o usuario dizer\n   um numero de verdade.\n3. redigir_proposta e redigir_contrato so podem ser usados depois que resumir_edital\n   ja rodou pra essa licitacao (voce precisa do resumo_id que ele devolve). Cada\n   licitacao tem uma fase (analisada -> proposta gerada -> aguardando resultado ->\n   vencida/perdida -> contrato gerado) e NENHUMA ferramenta pula fase sozinha --\n   se voce tentar usar uma ferramenta fora de ordem, ela vai recusar e te explicar\n   por que; nesse caso so repasse a explicacao pro usuario, nao insista.\n4. exportar_dados so exporta dados do proprio usuario que esta conversando -- isso e\n   garantido automaticamente, voce nao precisa (nem consegue) escolher de quem sao\n   os dados.\n5. Seja direto e pratico nas respostas, tom de colega de trabalho, portugues do Brasil.\n   Depois de acionar uma ferramenta, avise o usuario do que fez -- as ferramentas\n   tambem mandam mensagens proprias por WhatsApp (ex: o rascunho da proposta chega\n   como mensagem separada), entao nao repita o conteudo inteiro, so confirme."
         }
       }
     },
@@ -403,6 +403,41 @@
     },
     {
       "id": "orq-000j",
+      "name": "Tool Confirmar Resultado",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1180,
+        1020
+      ],
+      "parameters": {
+        "toolDescription": "Registra que o usuario confirmou explicitamente ter VENCIDO ou PERDIDO a disputa de uma licitacao (ex: \"ganhei essa disputa, valor final foi R$X\", \"perdi essa\"). So use quando o usuario disser isso claramente sobre uma licitacao especifica que ja tem resumo_id -- nunca decida ou suponha esse resultado sozinho.",
+        "method": "POST",
+        "url": "https://n8n.upviaagentes.com/webhook/licitacoes/confirmar-resultado",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ `{ \"resumo_id\": \"{resumo_id}\", \"resultado\": \"{resultado}\", \"valor_final\": \"{valor_final}\", \"usuario_id\": \"${$('Resolver Usuario Orquestrador').first().json.usuario_id}\" }` }}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "{resumo_id}",
+              "description": "O resumo_id da licitacao que o usuario esta confirmando o resultado. Obrigatorio."
+            },
+            {
+              "name": "{resultado}",
+              "description": "Exatamente \"vencida\" se o usuario disse que ganhou, ou \"perdida\" se disse que perdeu. Obrigatorio."
+            },
+            {
+              "name": "{valor_final}",
+              "description": "O valor final da contratacao, SE o usuario mencionou (so faz sentido quando resultado=\"vencida\"). SEMPRE envie este campo -- se o usuario nao mencionou nenhum valor, envie exatamente uma string vazia \"\", nunca omita o campo e nunca invente um numero."
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "orq-000k",
       "name": "Montar Resposta WhatsApp Orquestrador",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -415,7 +450,7 @@
       }
     },
     {
-      "id": "orq-000k",
+      "id": "orq-000l",
       "name": "Enviar Resposta Orquestrador WhatsApp",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -446,7 +481,7 @@
       }
     },
     {
-      "id": "orq-000l",
+      "id": "orq-000m",
       "name": "Responder OK Orquestrador",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
@@ -606,6 +641,17 @@
       ]
     },
     "Tool Cadastrar Documento": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Orquestrador",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tool Confirmar Resultado": {
       "ai_tool": [
         [
           {

@@ -11,7 +11,7 @@
         -340
       ],
       "parameters": {
-        "content": "## Agente Resumidor de Edital\nSub-workflow reutilizavel via webhook: POST /webhook/licitacoes/agente-resumidor\nBody: { perfil_id?, usuario_id?, pncp_id, objeto, orgao, valor, modalidade_nome, link, tipo_perfil? }\n\nChamado automaticamente pelo cron de busca (Busca PNCP) apos cada edital novo confirmado,\ne sob demanda pelo Agente Orquestrador Central (tool_resumir_edital).\n\nBaixa os documentos do edital (Termo de Referencia/Aviso) direto do PNCP, extrai o texto,\npede pra IA um resumo estruturado, grava em licitacoes_resumos + planilha Google Sheets,\ne encadeia o Agente Redator de Propostas (sempre) e o Agente Buscador de Fornecedores\n(so quando tipo_perfil = 'produto').",
+        "content": "## Agente Resumidor de Edital\nSub-workflow reutilizavel via webhook: POST /webhook/licitacoes/agente-resumidor\nBody: { perfil_id?, usuario_id?, pncp_id, objeto, orgao, valor, modalidade_nome, link, tipo_perfil? }\n\nChamado automaticamente pelo cron de busca (Busca PNCP) apos cada edital novo confirmado,\ne sob demanda pelo Agente Orquestrador Central (tool_resumir_edital).\n\nBaixa os documentos do edital (Termo de Referencia/Aviso) direto do PNCP, extrai o texto,\npede pra IA um resumo estruturado, grava em licitacoes_resumos (fase_atual='analisada')\n+ planilha Google Sheets, manda o resumo por WhatsApp, e PARA.\n\nINCIDENTE (maquina de estados): antes, encadeava automaticamente o Redator de\nPropostas e o Buscador de Fornecedores sem nenhuma confirmacao do usuario -- foi\nisso que gerou um rascunho de contrato saindo pra uma licitacao que ainda nem\ntinha prazo vencido. Agora NAO aciona mais nada sozinho: gerar proposta exige o\nusuario pedir explicitamente depois (tool_redigir_proposta), que so roda se\nfase_atual ja permitir.",
         "width": 900,
         "height": 260,
         "color": 4
@@ -241,7 +241,7 @@
           "values": [
             {
               "role": "system",
-              "content": "Voce e especialista em licitacoes publicas brasileiras (Lei 14.133/2021). A partir do\ntexto de documentos de um edital (Termo de Referencia/Aviso, quando disponivel) e dos\ndados basicos da licitacao, gere um resumo estruturado.\n\nResponda SOMENTE com um objeto JSON valido, sem markdown, com exatamente estes campos:\n{\n  \"objeto_resumo\": \"resumo curto e claro do que esta sendo comprado/contratado\",\n  \"tipo_disputa\": \"pregao_eletronico\" ou \"dispensa\" (baseado na modalidade informada),\n  \"valor_estimado\": numero ou null,\n  \"prazo_proposta\": \"data/hora em formato ISO se identificavel no texto, senao null\",\n  \"prazo_entrega\": \"texto livre descrevendo o prazo de entrega/execucao, ou null\",\n  \"documentos_exigidos\": \"resumo em linguagem natural dos documentos de habilitacao exigidos (certidoes, atestados, etc) -- se o texto do edital nao tiver detalhe suficiente, baseie-se no que costuma ser exigido nessa modalidade e deixe isso claro no texto\",\n  \"tipo_software\": \"se o objeto for de software/sistema/plataforma, descreva brevemente que tipo de software e; senao, null\",\n  \"pontos_atencao\": [\"array de strings, um por ponto de atencao identificado no Termo de Referencia que elimina ou dificulta a participacao -- ex: exigencia de marca especifica, garantia contratual acima do usual, exigencia de atestado tecnico de alto valor, vedacao a MEI/ME/EPP, ou outro requisito restritivo. Array vazio se nao identificar nenhum.\"]\n}\n\nSe o texto de documentos estiver vazio (nao foi possivel baixar o edital), preencha o\nque der pra inferir dos dados basicos e deixe os campos sem informacao suficiente como null,\nsem inventar dados. Nesse caso \"pontos_atencao\" tambem deve vir vazio -- nunca inventar um\nponto de atencao sem base no texto real do edital."
+              "content": "Voce e especialista em licitacoes publicas brasileiras (Lei 14.133/2021). A partir do\ntexto de documentos de um edital (Termo de Referencia/Aviso, quando disponivel) e dos\ndados basicos da licitacao, gere um resumo estruturado.\n\nREGRA ABSOLUTA: voce so descreve o que ESTA no edital. Nunca preenche, supoe ou\nsimula resultado, vencedor, valor final ou qualquer dado sobre o DESFECHO da\nlicitacao -- isso nao existe ainda nesse momento (o edital pode nem ter prazo\nvencido) e nao e seu papel decidir. Se um campo pedido abaixo nao tiver base\nclara no texto, use null -- nunca invente um valor plausivel so pra preencher.\n\nResponda SOMENTE com um objeto JSON valido, sem markdown, com exatamente estes campos:\n{\n  \"objeto_resumo\": \"resumo curto e claro do que esta sendo comprado/contratado\",\n  \"tipo_disputa\": \"pregao_eletronico\" ou \"dispensa\" (baseado na modalidade informada),\n  \"valor_estimado\": numero ou null,\n  \"prazo_proposta\": \"data/hora em formato ISO se identificavel no texto, senao null\",\n  \"prazo_entrega\": \"texto livre descrevendo o prazo de entrega/execucao, ou null\",\n  \"documentos_exigidos\": \"resumo em linguagem natural dos documentos de habilitacao exigidos (certidoes, atestados, etc) -- se o texto do edital nao tiver detalhe suficiente, baseie-se no que costuma ser exigido nessa modalidade e deixe isso claro no texto\",\n  \"tipo_software\": \"se o objeto for de software/sistema/plataforma, descreva brevemente que tipo de software e; senao, null\",\n  \"pontos_atencao\": [\"array de strings, um por ponto de atencao identificado no Termo de Referencia que elimina ou dificulta a participacao -- ex: exigencia de marca especifica, garantia contratual acima do usual, exigencia de atestado tecnico de alto valor, vedacao a MEI/ME/EPP, ou outro requisito restritivo. Array vazio se nao identificar nenhum.\"]\n}\n\nSe o texto de documentos estiver vazio (nao foi possivel baixar o edital), preencha o\nque der pra inferir dos dados basicos e deixe os campos sem informacao suficiente como null,\nsem inventar dados. Nesse caso \"pontos_atencao\" tambem deve vir vazio -- nunca inventar um\nponto de atencao sem base no texto real do edital."
             },
             {
               "role": "user",
@@ -290,7 +290,7 @@
       },
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO licitacoes_resumos\n  (perfil_id, usuario_id, pncp_id, objeto_resumo, tipo_disputa, valor_estimado, prazo_proposta, prazo_entrega, documentos_exigidos, tipo_software, pontos_atencao)\nVALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)\nON CONFLICT (perfil_id, pncp_id) DO NOTHING\nRETURNING id;",
+        "query": "INSERT INTO licitacoes_resumos\n  (perfil_id, usuario_id, pncp_id, objeto_resumo, tipo_disputa, valor_estimado, prazo_proposta, prazo_entrega, documentos_exigidos, tipo_software, pontos_atencao, fase_atual)\nVALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'analisada')\nON CONFLICT (perfil_id, pncp_id) DO NOTHING\nRETURNING id;",
         "options": {
           "queryReplacement": "={{ [ $json.perfil_id, $json.usuario_id, $json.pncp_id, $json.objeto_resumo, $json.tipo_disputa, $json.valor_estimado, $json.prazo_proposta, $json.prazo_entrega, $json.documentos_exigidos, $json.tipo_software, $json.pontos_atencao ] }}"
         }
@@ -462,7 +462,7 @@
     },
     {
       "id": "res-000r",
-      "name": "Montar Chamada Redator",
+      "name": "Montar Dados Finais Resumo",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -475,95 +475,16 @@
     },
     {
       "id": "res-000s",
-      "name": "Chamar Agente Redator",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        2640,
-        160
-      ],
-      "alwaysOutputData": true,
-      "onError": "continueRegularOutput",
-      "parameters": {
-        "method": "POST",
-        "url": "={{ 'https://n8n.upviaagentes.com/webhook/licitacoes/agente-redator' }}",
-        "sendHeaders": false,
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ resumo_id: $json.resumo_id, perfil_id: $json.perfil_id, usuario_id: $json.usuario_id }) }}",
-        "options": {
-          "timeout": 120000
-        }
-      }
-    },
-    {
-      "id": "res-000t",
-      "name": "E Perfil De Produto?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
-      "position": [
-        2640,
-        380
-      ],
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "loose",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "res-000u",
-              "leftValue": "={{ $('Montar Chamada Redator').first().json.tipo_perfil }}",
-              "rightValue": "produto",
-              "operator": {
-                "type": "string",
-                "operation": "equals"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      }
-    },
-    {
-      "id": "res-000v",
-      "name": "Chamar Agente Fornecedores",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        2860,
-        480
-      ],
-      "alwaysOutputData": true,
-      "onError": "continueRegularOutput",
-      "parameters": {
-        "method": "POST",
-        "url": "={{ 'https://n8n.upviaagentes.com/webhook/licitacoes/agente-fornecedores' }}",
-        "sendHeaders": false,
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ resumo_id: $('Montar Chamada Redator').first().json.resumo_id, tipo_produto: $('Montar Chamada Redator').first().json.objeto_resumo, perfil_id: $('Montar Chamada Redator').first().json.perfil_id, usuario_id: $('Montar Chamada Redator').first().json.usuario_id }) }}",
-        "options": {
-          "timeout": 120000
-        }
-      }
-    },
-    {
-      "id": "res-000w",
       "name": "Responder OK Resumidor",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        2860,
-        160
+        2640,
+        240
       ],
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ { ok: true, resumo_id: $('Montar Chamada Redator').first().json.resumo_id } }}",
+        "responseBody": "={{ { ok: true, resumo_id: $('Montar Dados Finais Resumo').first().json.resumo_id } }}",
         "options": {
           "responseCode": 200
         }
@@ -810,41 +731,14 @@
       "main": [
         [
           {
-            "node": "Montar Chamada Redator",
+            "node": "Montar Dados Finais Resumo",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Montar Chamada Redator": {
-      "main": [
-        [
-          {
-            "node": "Chamar Agente Redator",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "E Perfil De Produto?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "E Perfil De Produto?": {
-      "main": [
-        [
-          {
-            "node": "Chamar Agente Fornecedores",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Chamar Agente Redator": {
+    "Montar Dados Finais Resumo": {
       "main": [
         [
           {

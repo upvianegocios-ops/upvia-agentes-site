@@ -11,7 +11,7 @@
         -380
       ],
       "parameters": {
-        "content": "## Agente Redator de Contrato (Passo 10)\nSub-workflow reutilizavel via webhook: POST /webhook/licitacoes/agente-contrato\nBody: { resumo_id, usuario_id }\n\nChamado sob demanda pelo Orquestrador Central (tool_redigir_contrato) e automaticamente\npelo monitor de homologacao (Passo 12) quando o usuario vence uma licitacao.\n\nBusca a minuta de contrato OFICIAL entre os anexos do edital (pelo titulo/tipo do\ndocumento, endpoint de metadados do PNCP -- nao baixa arquivos as cegas). Se nao achar\nminuta, avisa o usuario e NAO tenta redigir do zero. Se achar, preenche os campos\nvariaveis (empresa, valor, prazo) mantendo a estrutura original -- nunca reescreve\nclausulas. Valor sempre \"[VALOR A DEFINIR PELO USUARIO]\" se nao houver valor_ofertado\nregistrado. Sempre rascunho pra revisao humana, nunca documento final assinavel.",
+        "content": "## Agente Redator de Contrato (Passo 10)\nSub-workflow reutilizavel via webhook: POST /webhook/licitacoes/agente-contrato\nBody: { resumo_id, usuario_id }\n\nChamado sob demanda pelo Orquestrador Central (tool_redigir_contrato) e automaticamente\npelo monitor de homologacao (Passo 12) quando o usuario vence uma licitacao.\n\nINCIDENTE (fase_atual): so roda se a licitacao ja estiver com fase_atual = 'vencida'\n(checado logo no inicio, antes de qualquer trabalho). Antes disso, gerava contrato\npra QUALQUER resumo_id, e um contrato real chegou a ser mandado pro Jonas pra uma\nlicitacao cujo prazo de proposta nem tinha vencido ainda. Ao concluir com sucesso,\navanca fase_atual para 'contrato_gerado'.\n\nBusca a minuta de contrato OFICIAL entre os anexos do edital (pelo titulo/tipo do\ndocumento, endpoint de metadados do PNCP -- nao baixa arquivos as cegas). Se nao achar\nminuta, avisa o usuario e NAO tenta redigir do zero. Se achar, preenche os campos\nvariaveis (empresa, valor, prazo) mantendo a estrutura original -- nunca reescreve\nclausulas. Valor sempre \"[VALOR A DEFINIR PELO USUARIO]\" se nao houver valor_ofertado\nregistrado. Sempre rascunho pra revisao humana, nunca documento final assinavel.",
         "width": 900,
         "height": 280,
         "color": 4
@@ -66,7 +66,7 @@
       },
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT id AS resumo_id, pncp_id, objeto_resumo, prazo_entrega FROM licitacoes_resumos WHERE id = $1;",
+        "query": "SELECT id AS resumo_id, pncp_id, objeto_resumo, prazo_entrega, fase_atual FROM licitacoes_resumos WHERE id = $1;",
         "options": {
           "queryReplacement": "={{ [ $json.resumo_id ] }}"
         }
@@ -74,6 +74,39 @@
     },
     {
       "id": "ctr-0006",
+      "name": "Fase Permite Contrato?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        560,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ctr-0007",
+              "leftValue": "={{ $json.fase_atual }}",
+              "rightValue": "vencida",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "ctr-0008",
       "name": "Extrair CNPJ Ano Sequencial Contrato",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -86,7 +119,7 @@
       }
     },
     {
-      "id": "ctr-0007",
+      "id": "ctr-0009",
       "name": "Buscar Metadados Anexos",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -103,7 +136,7 @@
       }
     },
     {
-      "id": "ctr-0008",
+      "id": "ctr-000a",
       "name": "Encontrar Minuta",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -116,7 +149,7 @@
       }
     },
     {
-      "id": "ctr-0009",
+      "id": "ctr-000b",
       "name": "Minuta Encontrada?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
@@ -134,7 +167,7 @@
           },
           "conditions": [
             {
-              "id": "ctr-000a",
+              "id": "ctr-000c",
               "leftValue": "={{ $json.minuta_encontrada }}",
               "rightValue": true,
               "operator": {
@@ -149,7 +182,7 @@
       }
     },
     {
-      "id": "ctr-000b",
+      "id": "ctr-000d",
       "name": "Buscar Arquivo Minuta",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -172,7 +205,7 @@
       }
     },
     {
-      "id": "ctr-000c",
+      "id": "ctr-000e",
       "name": "Extrair Texto Minuta",
       "type": "n8n-nodes-base.extractFromFile",
       "typeVersion": 1,
@@ -187,7 +220,7 @@
       }
     },
     {
-      "id": "ctr-000d",
+      "id": "ctr-000f",
       "name": "Marcar Texto Minuta",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -200,7 +233,7 @@
       }
     },
     {
-      "id": "ctr-000e",
+      "id": "ctr-000g",
       "name": "Texto Minuta Valido?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
@@ -218,7 +251,7 @@
           },
           "conditions": [
             {
-              "id": "ctr-000f",
+              "id": "ctr-000h",
               "leftValue": "={{ ($json.texto_minuta || \"\").length }}",
               "rightValue": 200,
               "operator": {
@@ -233,7 +266,7 @@
       }
     },
     {
-      "id": "ctr-000g",
+      "id": "ctr-000i",
       "name": "Buscar Usuario Contrato",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
@@ -258,7 +291,7 @@
       }
     },
     {
-      "id": "ctr-000h",
+      "id": "ctr-000j",
       "name": "Buscar Dados Empresa Contrato",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
@@ -283,7 +316,7 @@
       }
     },
     {
-      "id": "ctr-000i",
+      "id": "ctr-000k",
       "name": "Buscar Valor Proposta",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
@@ -308,7 +341,7 @@
       }
     },
     {
-      "id": "ctr-000j",
+      "id": "ctr-000l",
       "name": "Montar Contexto Contrato",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -321,7 +354,7 @@
       }
     },
     {
-      "id": "ctr-000k",
+      "id": "ctr-000m",
       "name": "Preencher Minuta de Contrato",
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.6,
@@ -361,7 +394,7 @@
       }
     },
     {
-      "id": "ctr-000l",
+      "id": "ctr-000n",
       "name": "Extrair Texto Contrato",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -374,7 +407,7 @@
       }
     },
     {
-      "id": "ctr-000m",
+      "id": "ctr-000o",
       "name": "Salvar Contrato",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
@@ -399,12 +432,37 @@
       }
     },
     {
-      "id": "ctr-000n",
+      "id": "ctr-000p",
+      "name": "Atualizar Fase Contrato",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        3960,
+        -260
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE licitacoes_resumos SET fase_atual = 'contrato_gerado' WHERE id = $1;",
+        "options": {
+          "queryReplacement": "={{ [ $('Extrair Texto Contrato').first().json.resumo_id ] }}"
+        }
+      }
+    },
+    {
+      "id": "ctr-000q",
       "name": "Montar Mensagem WhatsApp Contrato",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3960,
+        4180,
         -260
       ],
       "parameters": {
@@ -412,7 +470,7 @@
       }
     },
     {
-      "id": "ctr-000o",
+      "id": "ctr-000r",
       "name": "Enviar Contrato WhatsApp",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -441,7 +499,7 @@
       }
     },
     {
-      "id": "ctr-000p",
+      "id": "ctr-000s",
       "name": "Responder OK Contrato",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
@@ -458,7 +516,7 @@
       }
     },
     {
-      "id": "ctr-000q",
+      "id": "ctr-000t",
       "name": "Buscar Usuario Sem Minuta",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
@@ -483,7 +541,7 @@
       }
     },
     {
-      "id": "ctr-000r",
+      "id": "ctr-000u",
       "name": "Montar Mensagem Sem Minuta",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -496,7 +554,7 @@
       }
     },
     {
-      "id": "ctr-000s",
+      "id": "ctr-000v",
       "name": "Enviar Sem Minuta WhatsApp",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -525,7 +583,7 @@
       }
     },
     {
-      "id": "ctr-000t",
+      "id": "ctr-000w",
       "name": "Responder Sem Minuta",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
@@ -536,6 +594,90 @@
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ { ok: true, minuta_encontrada: false } }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    },
+    {
+      "id": "ctr-000x",
+      "name": "Buscar Usuario Fase Bloqueada Contrato",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        700,
+        460
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT whatsapp_numero FROM licitacoes_usuarios WHERE id = $1;",
+        "options": {
+          "queryReplacement": "={{ [ $('Extrair Corpo Contrato').first().json.usuario_id ] }}"
+        }
+      }
+    },
+    {
+      "id": "ctr-000y",
+      "name": "Montar Mensagem Fase Bloqueada Contrato",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        920,
+        460
+      ],
+      "parameters": {
+        "jsCode": "const resumo = $('Buscar Resumo Contrato').first().json;\nconst usuario = $input.first().json || {};\nif (!usuario.whatsapp_numero) return [];\nconst texto = 'Ainda nao posso gerar o contrato dessa licitacao: ela precisa estar confirmada como VENCIDA primeiro (fase atual: \"' + resumo.fase_atual + '\"). Se voce ja tiver o resultado oficial, me conta que eu confirmo e libero o contrato.';\nreturn [{ json: { numero: usuario.whatsapp_numero.replace(/\\D/g, ''), texto } }];"
+      }
+    },
+    {
+      "id": "ctr-000z",
+      "name": "Enviar Fase Bloqueada Contrato WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1140,
+        460
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://evo.upviaagentes.com/message/sendText/Upvia_adm' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: $json.numero, text: $json.texto }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "ctr-0010",
+      "name": "Responder Fase Bloqueada Contrato",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1360,
+        460
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, gerado: false } }}",
         "options": {
           "responseCode": 200
         }
@@ -569,7 +711,25 @@
       "main": [
         [
           {
+            "node": "Fase Permite Contrato?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fase Permite Contrato?": {
+      "main": [
+        [
+          {
             "node": "Extrair CNPJ Ano Sequencial Contrato",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Buscar Usuario Fase Bloqueada Contrato",
             "type": "main",
             "index": 0
           }
@@ -748,6 +908,17 @@
       "main": [
         [
           {
+            "node": "Atualizar Fase Contrato",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualizar Fase Contrato": {
+      "main": [
+        [
+          {
             "node": "Montar Mensagem WhatsApp Contrato",
             "type": "main",
             "index": 0
@@ -804,6 +975,39 @@
         [
           {
             "node": "Responder Sem Minuta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Usuario Fase Bloqueada Contrato": {
+      "main": [
+        [
+          {
+            "node": "Montar Mensagem Fase Bloqueada Contrato",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Mensagem Fase Bloqueada Contrato": {
+      "main": [
+        [
+          {
+            "node": "Enviar Fase Bloqueada Contrato WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Fase Bloqueada Contrato WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Responder Fase Bloqueada Contrato",
             "type": "main",
             "index": 0
           }

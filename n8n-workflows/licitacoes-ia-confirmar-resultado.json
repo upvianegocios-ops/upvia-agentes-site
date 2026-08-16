@@ -1,0 +1,519 @@
+{
+  "name": "Licitacoes IA - Confirmar Resultado",
+  "nodes": [
+    {
+      "id": "cnf-0001",
+      "name": "Nota Confirmar Resultado",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -300
+      ],
+      "parameters": {
+        "content": "## Confirmar Resultado (INCIDENTE, Passo 3)\nSub-workflow reutilizavel via webhook: POST /webhook/licitacoes/confirmar-resultado\nBody: { resumo_id, resultado, valor_final?, usuario_id }\n\nChamado sob demanda pelo Orquestrador Central (tool_confirmar_resultado), quando o\nusuario diz explicitamente que venceu ou perdeu uma disputa. E uma fonte de verdade\nlegitima (confirmacao humana), diferente do Monitor de Homologacao (fonte PNCP) --\nmas mesma regra: a IA nunca decide isso sozinha, so registra o que o usuario disse.\n\nSo aceita a partir de fase_atual='aguardando_resultado'. Se vencida, aciona\nautomaticamente o Agente Redator de Contrato (mesmo fluxo do Monitor de\nHomologacao) -- e a fase ja estara 'vencida' quando ele rodar, entao a trava\ndele passa normalmente.",
+        "width": 900,
+        "height": 240,
+        "color": 4
+      }
+    },
+    {
+      "id": "cnf-0002",
+      "name": "Webhook Confirmar Resultado",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "cnf-0003",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "licitacoes/confirmar-resultado",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "cnf-0004",
+      "name": "Extrair Corpo Confirmar Resultado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nconst resultadoBruto = String(body.resultado || '').trim().toLowerCase();\nconst resultado = ['vencida', 'perdida'].includes(resultadoBruto) ? resultadoBruto : null;\nconst valorFinal = body.valor_final != null && body.valor_final !== '' ? Number(body.valor_final) : null;\nreturn [{ json: {\n  resumo_id: body.resumo_id || null,\n  usuario_id: body.usuario_id || null,\n  resultado,\n  resultado_bruto: resultadoBruto,\n  valor_final: (valorFinal != null && !isNaN(valorFinal)) ? valorFinal : null\n} }];"
+      }
+    },
+    {
+      "id": "cnf-0005",
+      "name": "Buscar Resumo Confirmar",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        440,
+        0
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id AS resumo_id, objeto_resumo, fase_atual FROM licitacoes_resumos WHERE id = $1;",
+        "options": {
+          "queryReplacement": "={{ [ $json.resumo_id ] }}"
+        }
+      }
+    },
+    {
+      "id": "cnf-0006",
+      "name": "Buscar Usuario Confirmar",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        660,
+        0
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT whatsapp_numero FROM licitacoes_usuarios WHERE id = $1;",
+        "options": {
+          "queryReplacement": "={{ [ $('Extrair Corpo Confirmar Resultado').first().json.usuario_id ] }}"
+        }
+      }
+    },
+    {
+      "id": "cnf-0007",
+      "name": "Confirmacao Valida?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cnf-0008",
+              "leftValue": "={{ !!$('Extrair Corpo Confirmar Resultado').first().json.resultado && $('Buscar Resumo Confirmar').first().json.fase_atual === 'aguardando_resultado' }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "cnf-0009",
+      "name": "Atualizar Fase Confirmada",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1100,
+        -140
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE licitacoes_resumos SET resultado = $2, fase_atual = $2 WHERE id = $1;",
+        "options": {
+          "queryReplacement": "={{ [ $('Extrair Corpo Confirmar Resultado').first().json.resumo_id, $('Extrair Corpo Confirmar Resultado').first().json.resultado ] }}"
+        }
+      }
+    },
+    {
+      "id": "cnf-000a",
+      "name": "Atualizar Valor Proposta",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1320,
+        -140
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE licitacoes_propostas SET valor_ofertado = $2\nWHERE resumo_id = $1 AND valor_ofertado IS NULL\n  AND id = (SELECT id FROM licitacoes_propostas WHERE resumo_id = $1 ORDER BY criado_em DESC LIMIT 1);",
+        "options": {
+          "queryReplacement": "={{ [ $('Extrair Corpo Confirmar Resultado').first().json.resumo_id, $('Extrair Corpo Confirmar Resultado').first().json.valor_final ] }}"
+        }
+      }
+    },
+    {
+      "id": "cnf-000b",
+      "name": "Montar Mensagem Confirmacao Resultado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        -140
+      ],
+      "parameters": {
+        "jsCode": "const ctx = $('Extrair Corpo Confirmar Resultado').first().json;\nconst resumo = $('Buscar Resumo Confirmar').first().json;\nconst usuario = $('Buscar Usuario Confirmar').first().json || {};\nif (!usuario.whatsapp_numero) return [];\nlet texto;\nif (ctx.resultado === 'vencida') {\n  texto = '🎉 Show! Registrei que voce venceu \"' + (resumo.objeto_resumo || resumo.resumo_id) + '\"' +\n    (ctx.valor_final != null ? (' pelo valor de R$ ' + ctx.valor_final.toLocaleString('pt-BR', { minimumFractionDigits: 2 })) : '') +\n    '. Ja vou preparar um rascunho de contrato pra voce revisar.';\n} else {\n  texto = 'Registrado: \"' + (resumo.objeto_resumo || resumo.resumo_id) + '\" nao foi vencida dessa vez. Obrigado por avisar!';\n}\nreturn [{ json: { numero: usuario.whatsapp_numero.replace(/\\D/g, ''), texto } }];"
+      }
+    },
+    {
+      "id": "cnf-000c",
+      "name": "Enviar Confirmacao Resultado WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        -140
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://evo.upviaagentes.com/message/sendText/Upvia_adm' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: $json.numero, text: $json.texto }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "cnf-000d",
+      "name": "Foi Vencida Confirmacao?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1980,
+        -140
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cnf-000e",
+              "leftValue": "={{ $('Extrair Corpo Confirmar Resultado').first().json.resultado }}",
+              "rightValue": "vencida",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "cnf-000f",
+      "name": "Chamar Agente Contrato Confirmacao",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2200,
+        -220
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://n8n.upviaagentes.com/webhook/licitacoes/agente-contrato' }}",
+        "sendHeaders": false,
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ resumo_id: $('Extrair Corpo Confirmar Resultado').first().json.resumo_id, usuario_id: $('Extrair Corpo Confirmar Resultado').first().json.usuario_id }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "cnf-000g",
+      "name": "Responder OK Confirmar Resultado",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2420,
+        -140
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, registrado: true } }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    },
+    {
+      "id": "cnf-000h",
+      "name": "Montar Mensagem Confirmacao Invalida",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        220
+      ],
+      "parameters": {
+        "jsCode": "const ctx = $('Extrair Corpo Confirmar Resultado').first().json;\nconst resumo = $('Buscar Resumo Confirmar').first().json;\nconst usuario = $('Buscar Usuario Confirmar').first().json || {};\nif (!usuario.whatsapp_numero) return [];\nlet texto;\nif (!ctx.resultado) {\n  texto = 'Nao entendi se voce venceu ou perdeu essa licitacao -- me diz claramente \"ganhei\" ou \"perdi\".';\n} else {\n  texto = 'Nao consigo confirmar esse resultado agora: a licitacao esta na fase \"' + resumo.fase_atual + '\", e so aceito confirmacao de vitoria/derrota depois que uma proposta ja foi gerada (fase \"aguardando_resultado\").';\n}\nreturn [{ json: { numero: usuario.whatsapp_numero.replace(/\\D/g, ''), texto } }];"
+      }
+    },
+    {
+      "id": "cnf-000i",
+      "name": "Enviar Confirmacao Invalida WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        220
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://evo.upviaagentes.com/message/sendText/Upvia_adm' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: $json.numero, text: $json.texto }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "cnf-000j",
+      "name": "Responder Confirmacao Invalida",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1540,
+        220
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, registrado: false } }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Confirmar Resultado": {
+      "main": [
+        [
+          {
+            "node": "Extrair Corpo Confirmar Resultado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Corpo Confirmar Resultado": {
+      "main": [
+        [
+          {
+            "node": "Buscar Resumo Confirmar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Resumo Confirmar": {
+      "main": [
+        [
+          {
+            "node": "Buscar Usuario Confirmar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Usuario Confirmar": {
+      "main": [
+        [
+          {
+            "node": "Confirmacao Valida?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Confirmacao Valida?": {
+      "main": [
+        [
+          {
+            "node": "Atualizar Fase Confirmada",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Montar Mensagem Confirmacao Invalida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualizar Fase Confirmada": {
+      "main": [
+        [
+          {
+            "node": "Atualizar Valor Proposta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualizar Valor Proposta": {
+      "main": [
+        [
+          {
+            "node": "Montar Mensagem Confirmacao Resultado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Mensagem Confirmacao Resultado": {
+      "main": [
+        [
+          {
+            "node": "Enviar Confirmacao Resultado WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Confirmacao Resultado WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Foi Vencida Confirmacao?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Foi Vencida Confirmacao?": {
+      "main": [
+        [
+          {
+            "node": "Chamar Agente Contrato Confirmacao",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder OK Confirmar Resultado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chamar Agente Contrato Confirmacao": {
+      "main": [
+        [
+          {
+            "node": "Responder OK Confirmar Resultado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Mensagem Confirmacao Invalida": {
+      "main": [
+        [
+          {
+            "node": "Enviar Confirmacao Invalida WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Confirmacao Invalida WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Responder Confirmacao Invalida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

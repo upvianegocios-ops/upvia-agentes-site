@@ -56,7 +56,7 @@
       },
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT r.id AS resumo_id, r.usuario_id, r.pncp_id, r.objeto_resumo, e.cnpj, u.whatsapp_numero\nFROM licitacoes_resumos r\nJOIN licitacoes_dados_empresa e ON e.usuario_id = r.usuario_id\nJOIN licitacoes_usuarios u ON u.id = r.usuario_id\nWHERE r.prazo_proposta < NOW()\n  AND r.resultado = 'pendente'\n  AND r.usuario_id IS NOT NULL\n  AND e.cnpj IS NOT NULL\n  AND r.prazo_proposta > NOW() - INTERVAL '90 days'\n  AND u.ativo = true\nLIMIT 50;",
+        "query": "SELECT r.id AS resumo_id, r.usuario_id, r.pncp_id, r.objeto_resumo, e.cnpj, u.whatsapp_numero\nFROM licitacoes_resumos r\nJOIN licitacoes_dados_empresa e ON e.usuario_id = r.usuario_id\nJOIN licitacoes_usuarios u ON u.id = r.usuario_id\nWHERE r.prazo_proposta < NOW()\n  AND r.resultado = 'pendente'\n  AND r.fase_atual = 'aguardando_resultado'\n  AND r.usuario_id IS NOT NULL\n  AND e.cnpj IS NOT NULL\n  AND r.prazo_proposta > NOW() - INTERVAL '90 days'\n  AND u.ativo = true\nLIMIT 50;",
         "options": {
           "queryReplacement": "={{ [] }}"
         }
@@ -94,7 +94,7 @@
       },
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE licitacoes_resumos SET resultado = $2 WHERE id = $1;",
+        "query": "UPDATE licitacoes_resumos SET resultado = $2, fase_atual = $2 WHERE id = $1;",
         "options": {
           "queryReplacement": "={{ [ $json.resumo_id, $json.novo_resultado ] }}"
         }

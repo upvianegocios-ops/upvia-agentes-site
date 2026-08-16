@@ -66,7 +66,7 @@
       },
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT id, perfil_id, pncp_id, objeto_resumo, tipo_disputa, valor_estimado, prazo_proposta, prazo_entrega, documentos_exigidos FROM licitacoes_resumos WHERE id = $1;",
+        "query": "SELECT id, perfil_id, pncp_id, objeto_resumo, tipo_disputa, valor_estimado, prazo_proposta, prazo_entrega, documentos_exigidos, fase_atual FROM licitacoes_resumos WHERE id = $1;",
         "options": {
           "queryReplacement": "={{ [ $json.resumo_id ] }}"
         }
@@ -74,12 +74,45 @@
     },
     {
       "id": "red-0006",
+      "name": "Fase Permite Proposta?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        560,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "red-0007",
+              "leftValue": "={{ ['analisada','aguardando_resultado'].includes($json.fase_atual) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "red-0008",
       "name": "Buscar Usuario",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
       "position": [
-        660,
-        0
+        700,
+        -140
       ],
       "alwaysOutputData": true,
       "onError": "continueRegularOutput",
@@ -98,7 +131,7 @@
       }
     },
     {
-      "id": "red-0007",
+      "id": "red-0009",
       "name": "Buscar Dados Empresa",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
@@ -123,7 +156,7 @@
       }
     },
     {
-      "id": "red-0008",
+      "id": "red-000a",
       "name": "Montar Contexto Proposta",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -136,7 +169,7 @@
       }
     },
     {
-      "id": "red-0009",
+      "id": "red-000b",
       "name": "Redigir Rascunho Proposta",
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.6,
@@ -176,7 +209,7 @@
       }
     },
     {
-      "id": "red-000a",
+      "id": "red-000c",
       "name": "Extrair Texto Proposta",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -189,7 +222,7 @@
       }
     },
     {
-      "id": "red-000b",
+      "id": "red-000d",
       "name": "Salvar Proposta",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
@@ -214,12 +247,37 @@
       }
     },
     {
-      "id": "red-000c",
+      "id": "red-000e",
+      "name": "Atualizar Fase Proposta",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1980,
+        0
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE licitacoes_resumos SET fase_atual = 'aguardando_resultado' WHERE id = $1;",
+        "options": {
+          "queryReplacement": "={{ [ $('Extrair Texto Proposta').first().json.resumo_id ] }}"
+        }
+      }
+    },
+    {
+      "id": "red-000f",
       "name": "Montar Mensagem WhatsApp Proposta",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1980,
+        2200,
         0
       ],
       "parameters": {
@@ -227,12 +285,12 @@
       }
     },
     {
-      "id": "red-000d",
+      "id": "red-000g",
       "name": "Enviar Proposta WhatsApp",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2200,
+        2420,
         0
       ],
       "alwaysOutputData": true,
@@ -256,17 +314,101 @@
       }
     },
     {
-      "id": "red-000e",
+      "id": "red-000h",
       "name": "Responder OK Redator",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        2420,
+        2640,
         0
       ],
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ { ok: true } }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    },
+    {
+      "id": "red-000i",
+      "name": "Buscar Usuario Fase Bloqueada",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        700,
+        200
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "VxM0N4ryXNa6wkI2",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT u.id AS usuario_id, u.whatsapp_numero\nFROM licitacoes_usuarios u\nWHERE u.id = $1\n   OR u.id = (SELECT usuario_id FROM licitacoes_perfis_busca WHERE id = $2)\nLIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ [ $('Extrair Corpo Redator').first().json.usuario_id, $('Extrair Corpo Redator').first().json.perfil_id ] }}"
+        }
+      }
+    },
+    {
+      "id": "red-000j",
+      "name": "Montar Mensagem Fase Bloqueada",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        920,
+        200
+      ],
+      "parameters": {
+        "jsCode": "const resumo = $('Buscar Resumo').first().json;\nconst usuario = $input.first().json || {};\nif (!usuario.whatsapp_numero) return [];\nconst explicacoes = {\n  identificada: 'essa licitacao ainda nao foi totalmente analisada',\n  vencida: 'essa licitacao ja foi marcada como vencida -- se quiser, posso gerar o contrato em vez da proposta',\n  perdida: 'essa licitacao ja foi marcada como perdida, nao faz sentido gerar proposta agora',\n  proposta_readequada: 'essa licitacao ja esta em readequacao de proposta',\n  contrato_gerado: 'essa licitacao ja tem contrato gerado -- o processo de proposta ja foi concluido'\n};\nconst motivo = explicacoes[resumo.fase_atual] || ('a licitacao esta na fase \"' + resumo.fase_atual + '\"');\nconst texto = 'Nao consegui gerar a proposta agora: ' + motivo + '.';\nreturn [{ json: { numero: usuario.whatsapp_numero.replace(/\\D/g, ''), texto } }];"
+      }
+    },
+    {
+      "id": "red-000k",
+      "name": "Enviar Fase Bloqueada WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1140,
+        200
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "https://evo.upviaagentes.com/message/sendText/Upvia_adm",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "3gl0eq56t0ahsh3m5lx7ruv8i764qcvd"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: $json.numero, text: $json.texto }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "red-000l",
+      "name": "Responder Fase Bloqueada",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1360,
+        200
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, gerado: false } }}",
         "options": {
           "responseCode": 200
         }
@@ -300,7 +442,25 @@
       "main": [
         [
           {
+            "node": "Fase Permite Proposta?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fase Permite Proposta?": {
+      "main": [
+        [
+          {
             "node": "Buscar Usuario",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Buscar Usuario Fase Bloqueada",
             "type": "main",
             "index": 0
           }
@@ -366,6 +526,17 @@
       "main": [
         [
           {
+            "node": "Atualizar Fase Proposta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualizar Fase Proposta": {
+      "main": [
+        [
+          {
             "node": "Montar Mensagem WhatsApp Proposta",
             "type": "main",
             "index": 0
@@ -389,6 +560,39 @@
         [
           {
             "node": "Responder OK Redator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Usuario Fase Bloqueada": {
+      "main": [
+        [
+          {
+            "node": "Montar Mensagem Fase Bloqueada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Mensagem Fase Bloqueada": {
+      "main": [
+        [
+          {
+            "node": "Enviar Fase Bloqueada WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Fase Bloqueada WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Responder Fase Bloqueada",
             "type": "main",
             "index": 0
           }
