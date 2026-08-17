@@ -1,5 +1,6 @@
 # 🤖 UpVia Agentes — Contexto do Projeto para Claude Code
-V4 Enterprise | **Atualizado:** Junho 2025
+V4 Enterprise | **Atualizado:** Junho 
+2025
 > Este arquivo é o contexto principal. Para auditoria, ver `SKILL_AUDITOR_N8N.md`. Para governança e segurança, ver `SKILL_GOVERNANCA.md`.
 
 ---
@@ -170,6 +171,12 @@ Provisiona instância automaticamente. Integrado ao Asaas para cobrança recorre
 - **Coletar resultados de dentro de um loop (Split in Batches):** `$('NomeDoNode').all()` dentro de um Code node só enxerga a ÚLTIMA rodada do node referenciado, não todas as voltas do loop. Pra pegar tudo que passou pelo loop, use `$input.all()` no node que recebe o branch "done" — é ele quem de fato agrega os itens de todas as iterações.
 - **Nó `Sem Erros?` IF:** usar `notEquals`, não `isEmpty` (null ≠ "" com validação estrita)
 - **`fromMe` detection:** simplificar para boolean `true` com "Convert types where required"
+- **Split in Batches ANINHADO (loop dentro de loop) vaza estado entre iterações do loop externo** — CONFIRMADO AO VIVO 17/08 (incidente `Licitacoes IA - Busca PNCP`, ver `d702bfc`): um loop interno reusado a cada iteração do loop externo não reseta seu estado sozinho — itens de uma iteração anterior "vazam" pra iteração seguinte, causando reenvio duplicado do que já foi processado e nunca alcançando os itens seguintes do loop externo. **Evitar aninhar Split in Batches sempre que possível** — preferir um único Code node fazendo o trabalho sequencial (`await` em loop `for`, sem node de loop) pra qualquer sub-iteração dentro de um loop externo já existente.
+- **Code node (task runner) do n8n mata a execução após 300s** (env var `N8N_RUNNERS_TASK_TIMEOUT`) — sem aviso prévio, sem dado parcial preservado, e sem disparar o branch de erro do node (a task é simplesmente abortada). Qualquer Code node que faça trabalho sequencial longo (múltiplas chamadas HTTP em loop, por exemplo) precisa de um **prazo interno bem abaixo de 300s** (`Date.now()` comparado a um limite tipo 220s), checado antes de cada chamada, retornando de forma graciosa com o que já foi coletado em vez de arriscar ser morto no meio.
+
+### PNCP (`pncp.gov.br/api/consulta`)
+- **Rate limiting agressivo sob paginação sustentada** — CONFIRMADO AO VIVO 17/08: buscar várias páginas em sequência sem pausa nenhuma derruba com HTTP 429 rapidamente, e o bloqueio parece persistir por um tempo (novas tentativas imediatas continuam levando 429). Necessário espaçamento preventivo (~600ms) entre TODAS as chamadas, não só como retry reativo.
+- **Instabilidade geral observada** — 503 "Service Unavailable" (resolvido sozinho em minutos) e até 500 já apareceram em produção. Tratar como uma API pública instável, não 100% confiável — sempre com retry curto e sem deixar uma falha aqui derrubar o restante do fluxo (perfis/consultas seguintes).
 
 ### Evolution API
 - `sendMedia` exige URL publicamente acessível
