@@ -8,12 +8,12 @@
       "typeVersion": 1,
       "position": [
         0,
-        -320
+        -380
       ],
       "parameters": {
-        "content": "## Licitacoes IA - Busca no PNCP (a cada 3h)\nFluxo: busca perfis ativos -> para cada perfil, consulta o PNCP por modalidade -> filtra por\npalavra-chave/valor/UF/municipio -> ignora o que ja foi enviado -> manda WhatsApp e registra.\n\nCodigos de modalidade oficiais (Manual de Integracao PNCP): Pregao Eletronico = 6, Dispensa = 8.\nEndpoint: GET https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao\n\nATENCAO Split In Batches: nesta instancia, testado ao vivo, output 0 = Done, output 1 = Loop\n(inverso do que a maioria espera). Ver CLAUDE.md.",
-        "width": 900,
-        "height": 260,
+        "content": "## Licitacoes IA - Busca no PNCP (a cada 3h)\nFluxo: busca perfis ativos -> para cada perfil, consulta o PNCP por modalidade -> filtra por\npalavra-chave/valor/UF/municipio -> ignora o que ja foi enviado -> manda WhatsApp e registra.\n\nCodigos de modalidade oficiais (Manual de Integracao PNCP): Pregao Eletronico = 6, Dispensa = 8.\nEndpoint: GET https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao\n\nATENCAO Split In Batches: nesta instancia, testado ao vivo, output 0 = Done, output 1 = Loop\n(inverso do que a maioria espera). Ver CLAUDE.md.\n\nINCIDENTE 17/08: \"Loop Consultas\" (Split in Batches ANINHADO dentro de \"Loop Perfis\") vazava\nitens de perfis anteriores pros seguintes -- confirmado ao vivo (execucao 140169): o perfil do\nJean (SAAS, processado primeiro) foi reenviado 4x, e os 3 perfis do Jonas (processados depois)\nnunca tiveram chance de gerar resultado proprio, porque a cada iteracao do loop externo o loop\ninterno reaproveitava o estado acumulado dos perfis anteriores em vez de comecar do zero.\nSplit in Batches aninhado (loop dentro de loop) e uma limitacao conhecida do n8n -- corrigido\neliminando o loop interno por completo: \"Buscar Editais Do Perfil\" agora busca as 2 modalidades\ne todas as paginas de cada uma sequencialmente, dentro de UM UNICO Code node por iteracao do\nloop externo (unico loop que resta no fluxo inteiro). Retry com backoff (3 tentativas, 3s de\nespera) tambem foi embutido nesse mesmo node, pra absorver instabilidades passageiras da API do\nPNCP (confirmado ao vivo: 503 \"Service Unavailable\" na execucao 140078, resolvido sozinho\nminutos depois).",
+        "width": 1000,
+        "height": 340,
         "color": 4
       }
     },
@@ -88,7 +88,7 @@
     },
     {
       "id": "pncp-0006",
-      "name": "Montar Consultas Modalidade",
+      "name": "Buscar Editais Do Perfil",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -96,191 +96,24 @@
         160
       ],
       "parameters": {
-        "jsCode": "const perfil = $input.first().json;\nconst MODALIDADES = { pregao_eletronico: 6, dispensa: 8 };\n\nconst hoje = new Date();\nconst ontem = new Date(hoje.getTime() - 24 * 60 * 60 * 1000);\nconst fmt = (d) => d.toISOString().slice(0, 10).replace(/-/g, '');\n\nconst modalidades = Array.isArray(perfil.modalidades) ? perfil.modalidades : [];\nconst out = [];\nfor (const m of modalidades) {\n  const codigo = MODALIDADES[m];\n  if (!codigo) continue;\n  out.push({ json: {\n    perfil_id: perfil.perfil_id,\n    nome_perfil: perfil.nome_perfil,\n    whatsapp_numero: perfil.whatsapp_numero,\n    palavras: perfil.objeto_palavras_chave || [],\n    valor_min: perfil.valor_min,\n    valor_max: perfil.valor_max,\n    uf: perfil.uf || [],\n    municipio: perfil.municipio || [],\n    tipo_perfil: perfil.tipo_perfil,\n    usuario_id: perfil.usuario_id,\n    modalidade_codigo: codigo,\n    dataInicial: fmt(ontem),\n    dataFinal: fmt(hoje)\n  } });\n}\nreturn out;"
+        "jsCode": "const perfil = $input.first().json;\nconst helpers = this.helpers;\nconst MODALIDADES = { pregao_eletronico: 6, dispensa: 8 };\n\nconst hoje = new Date();\nconst ontem = new Date(hoje.getTime() - 24 * 60 * 60 * 1000);\nconst fmt = (d) => d.toISOString().slice(0, 10).replace(/-/g, '');\nconst dataInicial = fmt(ontem);\nconst dataFinal = fmt(hoje);\n\n// retry com backoff fixo -- absorve instabilidades passageiras da API do PNCP\n// (confirmado ao vivo: 503 \"Service Unavailable\" que se resolveu sozinho minutos\n// depois). So retenta erro de transporte/servidor, nao ha nada a ganhar retentando\n// uma URL malformada -- mas como a URL e sempre montada aqui mesmo com dados\n// validos, qualquer falha e tratada igual (erro de rede/servidor e o caso comum).\nasync function fetchComRetry(url, tentativas, esperaMs) {\n  let ultimoErro = null;\n  for (let i = 0; i < tentativas; i++) {\n    try {\n      return await helpers.httpRequest({ method: 'GET', url, json: true });\n    } catch (e) {\n      ultimoErro = e;\n      if (i < tentativas - 1) await new Promise((r) => setTimeout(r, esperaMs));\n    }\n  }\n  const erro = new Error((ultimoErro && ultimoErro.message) || 'Erro desconhecido na consulta ao PNCP');\n  erro.original = ultimoErro;\n  throw erro;\n}\n\nconst modalidadesPerfil = Array.isArray(perfil.modalidades) ? perfil.modalidades : [];\nconst consultas = [];\n\nfor (const m of modalidadesPerfil) {\n  const codigo = MODALIDADES[m];\n  if (!codigo) continue;\n\n  const baseUrl = 'https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao?dataInicial=' + dataInicial +\n    '&dataFinal=' + dataFinal + '&codigoModalidadeContratacao=' + codigo + '&tamanhoPagina=50';\n\n  let registros = [];\n  let erroApi = false;\n  let erroApiDetalhe = null;\n\n  try {\n    const pagina1 = await fetchComRetry(baseUrl + '&pagina=1', 3, 3000);\n    registros = registros.concat((pagina1 && pagina1.data) || []);\n    const totalPaginas = Math.min((pagina1 && pagina1.totalPaginas) || 1, 150);\n    for (let p = 2; p <= totalPaginas; p++) {\n      const paginaN = await fetchComRetry(baseUrl + '&pagina=' + p, 3, 3000);\n      registros = registros.concat((paginaN && paginaN.data) || []);\n    }\n  } catch (e) {\n    erroApi = true;\n    erroApiDetalhe = e.message;\n  }\n\n  consultas.push({\n    perfil_id: perfil.perfil_id,\n    nome_perfil: perfil.nome_perfil,\n    whatsapp_numero: perfil.whatsapp_numero,\n    palavras: perfil.objeto_palavras_chave || [],\n    valor_min: perfil.valor_min,\n    valor_max: perfil.valor_max,\n    uf: perfil.uf || [],\n    municipio: perfil.municipio || [],\n    tipo_perfil: perfil.tipo_perfil,\n    usuario_id: perfil.usuario_id,\n    modalidade_codigo: codigo,\n    dataInicial,\n    dataFinal,\n    data: registros,\n    erro_api: erroApi,\n    erro_api_detalhe: erroApiDetalhe\n  });\n}\n\nreturn consultas.map((json) => ({ json }));"
       }
     },
     {
       "id": "pncp-0007",
-      "name": "Loop Consultas",
-      "type": "n8n-nodes-base.splitInBatches",
-      "typeVersion": 3,
+      "name": "Extrair e Filtrar Editais",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
         880,
         160
       ],
       "parameters": {
-        "options": {}
+        "jsCode": "function normalizar(s) {\n  return String(s || '').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '');\n}\n\nconst combinados = $input.all();\nconst resultados = [];\nlet consultasComErro = 0;\n\nfor (const item of combinados) {\n  const consulta = item.json;\n  if (consulta.erro_api) consultasComErro++;\n  const registros = consulta.data || [];\n  const palavrasNorm = (consulta.palavras || []).map(normalizar).filter(Boolean);\n  const ufsPerfil = consulta.uf || [];\n  const municipiosNorm = (consulta.municipio || []).map(normalizar).filter(Boolean);\n\n  for (const r of registros) {\n    const objetoNorm = normalizar(r.objetoCompra);\n    const bateuPalavra = palavrasNorm.some(p => objetoNorm.includes(p));\n    if (!bateuPalavra) continue;\n\n    const valor = r.valorTotalEstimado != null ? Number(r.valorTotalEstimado) : null;\n    if (consulta.valor_min != null && (valor == null || valor < consulta.valor_min)) continue;\n    if (consulta.valor_max != null && (valor == null || valor > consulta.valor_max)) continue;\n\n    const uf = r.unidadeOrgao ? r.unidadeOrgao.ufSigla : null;\n    if (ufsPerfil.length && !ufsPerfil.includes(uf)) continue;\n\n    const municipio = r.unidadeOrgao ? r.unidadeOrgao.municipioNome : null;\n    if (municipiosNorm.length && !municipiosNorm.includes(normalizar(municipio))) continue;\n\n    const cnpj = (r.orgaoEntidade && r.orgaoEntidade.cnpj) || (r.orgaoSubRogado && r.orgaoSubRogado.cnpj) || '';\n    const link = 'https://pncp.gov.br/app/editais/' + cnpj + '/' + r.anoCompra + '/' + r.sequencialCompra;\n\n    resultados.push({\n      perfil_id: consulta.perfil_id,\n      nome_perfil: consulta.nome_perfil,\n      whatsapp_numero: consulta.whatsapp_numero,\n      pncp_id: r.numeroControlePNCP,\n      objeto: r.objetoCompra,\n      orgao: (r.orgaoEntidade && r.orgaoEntidade.razaoSocial) || '',\n      valor,\n      uf,\n      municipio,\n      modalidade_nome: r.modalidadeNome,\n      link,\n      data_abertura_proposta: r.dataAberturaProposta || null,\n      data_encerramento_proposta: r.dataEncerramentoProposta || null,\n      tipo_perfil: consulta.tipo_perfil,\n      usuario_id: consulta.usuario_id\n    });\n  }\n}\n// envelope (1 item sempre) -- ver nota abaixo sobre o gotcha de 0 itens matando o loop\nreturn [{ json: { resultados, consultasComErro, totalConsultas: combinados.length } }];"
       }
     },
     {
       "id": "pncp-0008",
-      "name": "Fim Busca Consultas",
-      "type": "n8n-nodes-base.noOp",
-      "typeVersion": 1,
-      "position": [
-        1100,
-        -160
-      ],
-      "parameters": {}
-    },
-    {
-      "id": "pncp-0009",
-      "name": "Buscar Pagina 1",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        1100,
-        160
-      ],
-      "alwaysOutputData": true,
-      "onError": "continueRegularOutput",
-      "parameters": {
-        "method": "GET",
-        "url": "={{ 'https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao?dataInicial=' + $json.dataInicial + '&dataFinal=' + $json.dataFinal + '&codigoModalidadeContratacao=' + $json.modalidade_codigo + '&pagina=1&tamanhoPagina=50' }}",
-        "options": {}
-      }
-    },
-    {
-      "id": "pncp-000a",
-      "name": "Calcular Paginacao",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1320,
-        160
-      ],
-      "parameters": {
-        "jsCode": "const consulta = $('Loop Consultas').first().json;\nconst resp = $input.first().json;\nconst registrosPagina1 = (resp && resp.data) || [];\nconst totalPaginas = (resp && resp.totalPaginas) || 1;\nconst paginasFaltando = [];\nfor (let p = 2; p <= Math.min(totalPaginas, 150); p++) paginasFaltando.push(p);\nreturn [{ json: { consulta, registrosPagina1, paginasFaltando, totalPaginas } }];"
-      }
-    },
-    {
-      "id": "pncp-000b",
-      "name": "Tem Mais Paginas?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
-      "position": [
-        1540,
-        160
-      ],
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "loose",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "pncp-000c",
-              "leftValue": "={{ $json.paginasFaltando.length }}",
-              "rightValue": 0,
-              "operator": {
-                "type": "number",
-                "operation": "notEquals"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      }
-    },
-    {
-      "id": "pncp-000d",
-      "name": "Combinar Sem Extras",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1760,
-        260
-      ],
-      "parameters": {
-        "jsCode": "const item = $input.first().json;\nreturn [{ json: { ...item.consulta, data: item.registrosPagina1 } }];"
-      }
-    },
-    {
-      "id": "pncp-000e",
-      "name": "Expandir Paginas Faltando",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1760,
-        60
-      ],
-      "parameters": {
-        "jsCode": "return $input.first().json.paginasFaltando.map(pagina => ({ json: { pagina } }));"
-      }
-    },
-    {
-      "id": "pncp-000f",
-      "name": "Loop Paginas Restantes",
-      "type": "n8n-nodes-base.splitInBatches",
-      "typeVersion": 3,
-      "position": [
-        1980,
-        60
-      ],
-      "parameters": {
-        "options": {}
-      }
-    },
-    {
-      "id": "pncp-000g",
-      "name": "Buscar Pagina N",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        2200,
-        60
-      ],
-      "alwaysOutputData": true,
-      "onError": "continueRegularOutput",
-      "parameters": {
-        "method": "GET",
-        "url": "={{ 'https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao?dataInicial=' + $('Calcular Paginacao').first().json.consulta.dataInicial + '&dataFinal=' + $('Calcular Paginacao').first().json.consulta.dataFinal + '&codigoModalidadeContratacao=' + $('Calcular Paginacao').first().json.consulta.modalidade_codigo + '&pagina=' + $json.pagina + '&tamanhoPagina=50' }}",
-        "options": {}
-      }
-    },
-    {
-      "id": "pncp-000h",
-      "name": "Combinar Com Extras",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        2200,
-        260
-      ],
-      "parameters": {
-        "jsCode": "const base = $('Calcular Paginacao').first().json;\nconst extras = $input.all().map(i => (i.json && i.json.data) || []).flat();\nreturn [{ json: { ...base.consulta, data: base.registrosPagina1.concat(extras) } }];"
-      }
-    },
-    {
-      "id": "pncp-000i",
-      "name": "Fim Iteracao Consulta",
-      "type": "n8n-nodes-base.noOp",
-      "typeVersion": 1,
-      "position": [
-        2420,
-        160
-      ],
-      "parameters": {}
-    },
-    {
-      "id": "pncp-000j",
-      "name": "Extrair e Filtrar Editais",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1100,
-        400
-      ],
-      "parameters": {
-        "jsCode": "function normalizar(s) {\n  return String(s || '').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '');\n}\n\nconst combinados = $input.all();\nconst resultados = [];\n\nfor (const item of combinados) {\n  const consulta = item.json;\n  const registros = consulta.data || [];\n  const palavrasNorm = (consulta.palavras || []).map(normalizar).filter(Boolean);\n  const ufsPerfil = consulta.uf || [];\n  const municipiosNorm = (consulta.municipio || []).map(normalizar).filter(Boolean);\n\n  for (const r of registros) {\n    const objetoNorm = normalizar(r.objetoCompra);\n    const bateuPalavra = palavrasNorm.some(p => objetoNorm.includes(p));\n    if (!bateuPalavra) continue;\n\n    const valor = r.valorTotalEstimado != null ? Number(r.valorTotalEstimado) : null;\n    if (consulta.valor_min != null && (valor == null || valor < consulta.valor_min)) continue;\n    if (consulta.valor_max != null && (valor == null || valor > consulta.valor_max)) continue;\n\n    const uf = r.unidadeOrgao ? r.unidadeOrgao.ufSigla : null;\n    if (ufsPerfil.length && !ufsPerfil.includes(uf)) continue;\n\n    const municipio = r.unidadeOrgao ? r.unidadeOrgao.municipioNome : null;\n    if (municipiosNorm.length && !municipiosNorm.includes(normalizar(municipio))) continue;\n\n    const cnpj = (r.orgaoEntidade && r.orgaoEntidade.cnpj) || (r.orgaoSubRogado && r.orgaoSubRogado.cnpj) || '';\n    const link = 'https://pncp.gov.br/app/editais/' + cnpj + '/' + r.anoCompra + '/' + r.sequencialCompra;\n\n    resultados.push({\n      perfil_id: consulta.perfil_id,\n      nome_perfil: consulta.nome_perfil,\n      whatsapp_numero: consulta.whatsapp_numero,\n      pncp_id: r.numeroControlePNCP,\n      objeto: r.objetoCompra,\n      orgao: (r.orgaoEntidade && r.orgaoEntidade.razaoSocial) || '',\n      valor,\n      uf,\n      municipio,\n      modalidade_nome: r.modalidadeNome,\n      link,\n      data_abertura_proposta: r.dataAberturaProposta || null,\n      data_encerramento_proposta: r.dataEncerramentoProposta || null,\n      tipo_perfil: consulta.tipo_perfil,\n      usuario_id: consulta.usuario_id\n    });\n  }\n}\n// envelope (1 item sempre) -- ver nota abaixo sobre o gotcha de 0 itens matando o loop\nreturn [{ json: { resultados } }];"
-      }
-    },
-    {
-      "id": "pncp-000k",
       "name": "Fim Iteracao Perfil",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
@@ -291,12 +124,12 @@
       "parameters": {}
     },
     {
-      "id": "pncp-000l",
+      "id": "pncp-0009",
       "name": "Tem Resultados Filtrados?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        1320,
+        1100,
         160
       ],
       "parameters": {
@@ -309,7 +142,7 @@
           },
           "conditions": [
             {
-              "id": "pncp-000m",
+              "id": "pncp-000a",
               "leftValue": "={{ $json.resultados.length }}",
               "rightValue": 0,
               "operator": {
@@ -324,12 +157,12 @@
       }
     },
     {
-      "id": "pncp-000n",
+      "id": "pncp-000b",
       "name": "Expandir Resultados Filtrados",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1540,
+        1320,
         160
       ],
       "parameters": {
@@ -337,12 +170,12 @@
       }
     },
     {
-      "id": "pncp-000o",
+      "id": "pncp-000c",
       "name": "Verificar Duplicados",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
       "position": [
-        1760,
+        1540,
         160
       ],
       "alwaysOutputData": true,
@@ -362,25 +195,25 @@
       }
     },
     {
-      "id": "pncp-000p",
+      "id": "pncp-000d",
       "name": "Filtrar Duplicados",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1980,
+        1760,
         160
       ],
       "parameters": {
-        "jsCode": "const candidatos = $('Expandir Resultados Filtrados').all().map(i => i.json);\nconst jaEnviados = new Set($input.all().map(i => i.json && i.json.pncp_id).filter(Boolean));\nconst novos = candidatos.filter(c => !jaEnviados.has(c.pncp_id));\nreturn [{ json: { novos } }];"
+        "jsCode": "const candidatos = $('Expandir Resultados Filtrados').all().map(i => i.json);\nconst jaEnviados = new Set($input.all().map(i => i.json && i.json.pncp_id).filter(Boolean));\n// dedup tambem DENTRO do proprio lote (defensivo -- alem de contra o que ja esta\n// registrado no banco, nunca manda o mesmo pncp_id duas vezes no mesmo ciclo,\n// mesmo que ele apareca repetido nos candidatos por algum motivo upstream).\nconst vistosNesteLote = new Set();\nconst novos = [];\nfor (const c of candidatos) {\n  if (jaEnviados.has(c.pncp_id)) continue;\n  if (vistosNesteLote.has(c.pncp_id)) continue;\n  vistosNesteLote.add(c.pncp_id);\n  novos.push(c);\n}\nreturn [{ json: { novos } }];"
       }
     },
     {
-      "id": "pncp-000q",
+      "id": "pncp-000e",
       "name": "Tem Novos Para Enviar?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        2200,
+        1980,
         160
       ],
       "parameters": {
@@ -393,7 +226,7 @@
           },
           "conditions": [
             {
-              "id": "pncp-000r",
+              "id": "pncp-000f",
               "leftValue": "={{ $json.novos.length }}",
               "rightValue": 0,
               "operator": {
@@ -408,12 +241,12 @@
       }
     },
     {
-      "id": "pncp-000s",
+      "id": "pncp-000g",
       "name": "Expandir Novos Para Enviar",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2200,
+        1980,
         350
       ],
       "parameters": {
@@ -421,7 +254,7 @@
       }
     },
     {
-      "id": "pncp-000t",
+      "id": "pncp-000h",
       "name": "Montar Mensagem Edital",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -434,7 +267,7 @@
       }
     },
     {
-      "id": "pncp-000u",
+      "id": "pncp-000i",
       "name": "Enviar Edital WhatsApp",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -463,7 +296,7 @@
       }
     },
     {
-      "id": "pncp-000v",
+      "id": "pncp-000j",
       "name": "Registrar Envio",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
@@ -488,7 +321,7 @@
       }
     },
     {
-      "id": "pncp-000w",
+      "id": "pncp-000k",
       "name": "Chamar Agente Resumidor",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -546,156 +379,14 @@
         ],
         [
           {
-            "node": "Montar Consultas Modalidade",
+            "node": "Buscar Editais Do Perfil",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Montar Consultas Modalidade": {
-      "main": [
-        [
-          {
-            "node": "Loop Consultas",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Loop Consultas": {
-      "main": [
-        [
-          {
-            "node": "Fim Busca Consultas",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Buscar Pagina 1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Buscar Pagina 1": {
-      "main": [
-        [
-          {
-            "node": "Calcular Paginacao",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Calcular Paginacao": {
-      "main": [
-        [
-          {
-            "node": "Tem Mais Paginas?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Tem Mais Paginas?": {
-      "main": [
-        [
-          {
-            "node": "Expandir Paginas Faltando",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Combinar Sem Extras",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Expandir Paginas Faltando": {
-      "main": [
-        [
-          {
-            "node": "Loop Paginas Restantes",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Loop Paginas Restantes": {
-      "main": [
-        [
-          {
-            "node": "Combinar Com Extras",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Buscar Pagina N",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Buscar Pagina N": {
-      "main": [
-        [
-          {
-            "node": "Loop Paginas Restantes",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Combinar Sem Extras": {
-      "main": [
-        [
-          {
-            "node": "Fim Iteracao Consulta",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Combinar Com Extras": {
-      "main": [
-        [
-          {
-            "node": "Fim Iteracao Consulta",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Fim Iteracao Consulta": {
-      "main": [
-        [
-          {
-            "node": "Loop Consultas",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Fim Busca Consultas": {
+    "Buscar Editais Do Perfil": {
       "main": [
         [
           {
